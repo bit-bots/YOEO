@@ -1,0 +1,4 @@
+classes=2
+train=data/train.txt
+valid=data/test.txt
+names=data/261.names
