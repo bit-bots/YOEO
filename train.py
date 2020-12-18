@@ -14,6 +14,7 @@ import sys
 import time
 import datetime
 import argparse
+import tqdm
 
 import torch
 from torch.utils.data import DataLoader
@@ -96,7 +97,7 @@ if __name__ == "__main__":
     for epoch in range(opt.epochs):
         model.train()
         start_time = time.time()
-        for batch_i, (_, imgs, targets) in enumerate(dataloader):
+        for batch_i, (_, imgs, targets) in enumerate(tqdm.tqdm(dataloader, desc="Training")):
             batches_done = len(dataloader) * epoch + batch_i
 
             imgs = Variable(imgs.to(device))
@@ -143,7 +144,7 @@ if __name__ == "__main__":
             time_left = datetime.timedelta(seconds=epoch_batches_left * (time.time() - start_time) / (batch_i + 1))
             log_str += f"\n---- ETA {time_left}"
 
-            print(log_str)
+            #print(log_str)
 
             model.seen += imgs.size(0)
 
