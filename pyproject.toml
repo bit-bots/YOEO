@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "YOEO"
+version = "0.0.1"
+description = "A hybrid CNN for object detection and semantic segmentation"
+authors = ["Florian Vahl <git@flova.de>", "Jan Gutsche <git@jagut.de>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+torch = "1.7.1"
+torchvision = "^0.8.2"
+tqdm = "^4.54.1"
+matplotlib = "^3.3.3"
+terminaltables = "^3.1.0"
+tensorboard = "^2.4.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
