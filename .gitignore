@@ -6,8 +6,9 @@ build
 *.egg-info
 dist
 output
-data/coco
+data/
 backup
 weights/*.weights
 __pycache__
 checkpoints
+logs/
