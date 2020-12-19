@@ -97,13 +97,14 @@ if __name__ == "__main__":
     for epoch in range(opt.epochs):
         model.train()
         start_time = time.time()
-        for batch_i, (_, imgs, targets) in enumerate(tqdm.tqdm(dataloader, desc=f"Training Epoch {epoch}")):
+        for batch_i, (_, imgs, bb_targets, mask_targets) in enumerate(tqdm.tqdm(dataloader, desc=f"Training Epoch {epoch}")):
             batches_done = len(dataloader) * epoch + batch_i
 
             imgs = Variable(imgs.to(device))
-            targets = Variable(targets.to(device), requires_grad=False)
+            bb_targets = Variable(bb_targets.to(device), requires_grad=False)
+            mask_targets = Variable(mask_targets.to(device=device), requires_grad=False)
 
-            loss, outputs = model(imgs, targets)
+            loss, bb_outputs, seg_outputs = model(imgs, bb_targets, mask_targets)
             loss.backward()
 
             if batches_done % opt.gradient_accumulations:
