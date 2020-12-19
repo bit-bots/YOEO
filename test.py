@@ -50,10 +50,7 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
             bb_outputs = non_max_suppression(bb_outputs, conf_thres=conf_thres, nms_thres=nms_thres)
 
         if batch_i % 1 == 0:
-            print(Variable(segmentation_outputs[0].to("cpu"), requires_grad=False)[0].numpy().transpose(1, 2, 0)[:,:,1] * 255)
-            cv2.imshow("test_img_old", Variable(segmentation_outputs[0].to("cpu"), requires_grad=False)[0].numpy().transpose(1, 2, 0)[:,:,1] * 255)
-
-            cv2.imshow("test", Variable(segmentation_outputs[0].to("cpu"), requires_grad=False)[0].numpy().argmax(axis=0)[:,:,np.newaxis].astype(np.uint8) * 255)
+            cv2.imshow("test", Variable(segmentation_outputs[0].to("cpu"), requires_grad=False)[0].numpy()[:,:,np.newaxis].astype(np.uint8) * 255)
             cv2.imshow("test_img", Variable(imgs.type(Tensor).to("cpu"), requires_grad=False)[0].numpy().transpose(1, 2, 0))
             cv2.waitKey(1)
 
