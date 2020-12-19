@@ -12,6 +12,7 @@ tqdm = "^4.54.1"
 matplotlib = "^3.3.3"
 terminaltables = "^3.1.0"
 tensorboard = "^2.4.0"
+PyYAML = "^5.3.1"
 
 [tool.poetry.dev-dependencies]
 
