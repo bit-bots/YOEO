@@ -4,20 +4,22 @@ import os
 import glob
 import sys
 import yaml
+import cv2
+import numpy as np
 
 """
 Expects following format:
 
 Superset/
     - Dataset1/
-        - Images/
-        - Labels/
-        - Masks/
+        - images/
+        - labels/
+        - masks/
         - annotations.yaml
     - Dataset2/
-        - Images/
-        - Labels/
-        - Masks/
+        - images/
+        - labels/
+        - masks/
         - annotations.yaml
 ...
 """
@@ -78,8 +80,21 @@ for yamlfile in imagetagger_annotation_files:
                         annolist.append("{} {} {} {} {}".format(classid, relcenter_x, relcenter_y, relannowidth, relannoheight,))
                     else:
                         pass
+
                 if annotation['type'] in ["field edge"]:
-                    pass
+
+                    mask = np.zeros((imgheight, imgwidth, 3), dtype=np.uint8)
+
+                    vector = [list(pts) for pts in list(annotation['vector'])]
+                    vector.append([imgwidth - 1, imgheight - 0])
+                    vector.append([0, imgheight - 1])  # extending the points to fill the space below the horizon
+                    
+                    points = np.array(vector, dtype=np.int32)
+                    points = points.reshape((1, -1, 2))
+                    cv2.fillPoly(mask, points, (255, 255, 255))
+
+                    cv2.imwrite(os.path.join(d, "masks", name + ".png"), mask)
+
         with open(os.path.join(d, "labels", name + ".txt"), "w") as output:
             for line in annolist:
                 output.write(line + "\n")
