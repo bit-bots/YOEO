@@ -11,6 +11,7 @@ import time
 import datetime
 import argparse
 import tqdm
+import cv2
 
 import torch
 from torch.utils.data import DataLoader
@@ -48,6 +49,13 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
             bb_outputs, segmentation_outputs = model(imgs)
             bb_outputs = non_max_suppression(bb_outputs, conf_thres=conf_thres, nms_thres=nms_thres)
 
+        if batch_i % 1 == 0:
+            print(Variable(segmentation_outputs[0].to("cpu"), requires_grad=False)[0].numpy().transpose(1, 2, 0)[:,:,1] * 255)
+            cv2.imshow("test_img_old", Variable(segmentation_outputs[0].to("cpu"), requires_grad=False)[0].numpy().transpose(1, 2, 0)[:,:,1] * 255)
+
+            cv2.imshow("test", Variable(segmentation_outputs[0].to("cpu"), requires_grad=False)[0].numpy().argmax(axis=0)[:,:,np.newaxis].astype(np.uint8) * 255)
+            cv2.imshow("test_img", Variable(imgs.type(Tensor).to("cpu"), requires_grad=False)[0].numpy().transpose(1, 2, 0))
+            cv2.waitKey(1)
 
         sample_metrics += get_batch_statistics(bb_outputs, bb_targets, iou_threshold=iou_thres)
 
