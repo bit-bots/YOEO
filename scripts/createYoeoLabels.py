@@ -1,34 +1,53 @@
+#!/usr/bin/env python
+
 import os
 import glob
 import sys
-
 import yaml
 
+"""
+Expects following format:
+
+Superset/
+    - Dataset1/
+        - Images/
+        - Labels/
+        - Masks/
+        - annotations.yaml
+    - Dataset2/
+        - Images/
+        - Labels/
+        - Masks/
+        - annotations.yaml
+...
+"""
+
+
 if len(sys.argv[0]) == 0:
-    directory = input("absolute path to root of your datasets:")
+    superset = os.path.abspath(input("path to root of your datasets:"))
 else:
-    directory = sys.argv[1]
-datasets = [x[0] for x in os.walk(directory)]  # generate a list of all subdirectories (including root directory)
-datasets = datasets[1:]  # remove root directory
-print("The following datasets will be considered:")
+    superset = os.path.abspath(sys.argv[1])
+
+imagetagger_annotation_files = glob.glob(f"{superset}/*/*.yaml")
+datasets = list(map(lambda x: os.path.basename(os.path.dirname(x)), imagetagger_annotation_files))
+
+datasets_serialized = '\n'.join(datasets)
+print(f"The following datasets will be considered: \n {datasets_serialized}")
 
 trainImages = []  # this ensures only images with labels are used
 
-for d in datasets:
-    yamlfile = glob.glob(f"{d}/*.yaml")
-    print(yamlfile)
-    if len(yamlfile) > 1:
-        print(f"There was more than one yaml file in {d}, this is probably unwanted...")
-        print("I will use {} now. Be careful if this is not the one you expected me to use.".format(yamlfile[0]))
-    if len(yamlfile) < 1:
-        print(f"There was no yaml file. Skipping dataset")
-        continue
-    with open(yamlfile[0]) as f:
+# Iterate over all datasets
+for yamlfile in imagetagger_annotation_files:
+    d = os.path.dirname(yamlfile)
+
+    print(f"Creating files for {os.path.basename(d)}\n")
+
+    with open(yamlfile) as f:
         export = yaml.safe_load(f)
 
-
-    for name, frame in export['images'].items():
-        trainImages.append(f"{d}/{name}".replace("labels", "images"))
+    for img_name, frame in export['images'].items():
+        trainImages.append(os.path.join(d, "images", img_name))
+        name = os.path.splitext(img_name)[0] # Remove extenion
         annolist = []
         for annotation in frame['annotations']:
             if not (annotation['vector'][0] == 'notinimage'):
@@ -51,7 +70,6 @@ for d in datasets:
                         relcenter_x = center_x / imgwidth
                         relcenter_y = center_y / imgheight
 
-                        # TODO this needs to be changed from hand for now
                         if annotation['type'] == "ball":
                             classid = 0
                         if annotation['type'] == "goalpost":
@@ -62,13 +80,12 @@ for d in datasets:
                         pass
                 if annotation['type'] in ["field edge"]:
                     pass
-        imgname = name.replace(".png", "").replace(".jpg", "")
-        with open(d + "/" + imgname + ".txt", "w") as output:
-            for e in annolist:
-                output.write(e + "\n")
+        with open(os.path.join(d, "labels", name + ".txt"), "w") as output:
+            for line in annolist:
+                output.write(line + "\n")
 
 trainImages = set(trainImages) # prevent images from showing up twice
-with open(f"{directory}/train.txt", "w") as traintxt:
+with open(os.path.join(superset, "train.txt"), "w") as traintxt:
     for e in trainImages:
         traintxt.write(e + "\n")
 
