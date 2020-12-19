@@ -65,6 +65,10 @@ class ListDataset(Dataset):
             path.replace("images", "labels").replace(".png", ".txt").replace(".jpg", ".txt")
             for path in self.img_files
         ]
+        self.mask_files = [
+            path.replace("images", "masks")
+            for path in self.img_files
+        ]
         self.img_size = img_size
         self.max_objects = 100
         self.augment = augment
@@ -102,7 +106,7 @@ class ListDataset(Dataset):
 
         label_path = self.label_files[index % len(self.img_files)].rstrip()
 
-        targets = None
+        bb_targets = None
         if os.path.exists(label_path):
             boxes = torch.from_numpy(np.loadtxt(label_path).reshape(-1, 5))
             # Extract coordinates for unpadded + unscaled image
@@ -121,31 +125,57 @@ class ListDataset(Dataset):
             boxes[:, 3] *= w_factor / padded_w
             boxes[:, 4] *= h_factor / padded_h
 
-            targets = torch.zeros((len(boxes), 6))
-            targets[:, 1:] = boxes
+            bb_targets = torch.zeros((len(boxes), 6))
+            bb_targets[:, 1:] = boxes
+
+        # ---------
+        #  Segmentation Mask
+        # ---------
+
+        mask_path = self.mask_files[index % len(self.img_files)].rstrip()
+
+        # Extract image as PyTorch tensor
+        mask = transforms.ToTensor()(Image.open(mask_path).convert('RGB')) * 255
+
+        # Handle images with less than three channels
+        if len(mask.shape) != 3:
+            mask = mask.unsqueeze(0)
+            mask = mask.expand((3, img.shape[1:]))
+
+        _, h, w = mask.shape
+        h_factor, w_factor = (h, w) if self.normalized_labels else (1, 1)
+
+        # Pad to square resolution
+        mask, pad = pad_to_square(mask, 0)
+        _, padded_h, padded_w = mask.shape
+
+        mask_targets = mask
 
         # Apply augmentations
-        if self.augment:
+        if self.augment and False: #TODO impement better aug
             if np.random.random() < 0.5:
-                img, targets = horisontal_flip(img, targets)
+                img, bb_targets = horisontal_flip(img, bb_targets)
 
-        return img_path, img, targets
+        return img_path, img, bb_targets, mask_targets
 
     def collate_fn(self, batch):
-        paths, imgs, targets = list(zip(*batch))
+        paths, imgs, bb_targets, mask_targets= list(zip(*batch))
         # Remove empty placeholder targets
-        targets = [boxes for boxes in targets if boxes is not None]
+        bb_targets = [boxes for boxes in bb_targets if boxes[0] is not None]
         # Add sample index to targets
-        for i, boxes in enumerate(targets):
+        for i, boxes in enumerate(bb_targets):
             boxes[:, 0] = i
-        targets = torch.cat(targets, 0)
+        bb_targets = torch.cat(bb_targets, 0)
         # Selects new image size every tenth batch
         if self.multiscale and self.batch_count % 10 == 0:
             self.img_size = random.choice(range(self.min_size, self.max_size + 1, 32))
         # Resize images to input shape
         imgs = torch.stack([resize(img, self.img_size) for img in imgs])
         self.batch_count += 1
-        return paths, imgs, targets
+        # Stack masks
+        mask_targets = torch.stack([resize(mask, self.img_size) for mask in mask_targets])
+
+        return paths, imgs, bb_targets, mask_targets[:,0,:,:].reshape(-1, 1, self.img_size, self.img_size).long()
 
     def __len__(self):
         return len(self.img_files)
