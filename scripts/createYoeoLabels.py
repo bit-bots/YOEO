@@ -91,7 +91,7 @@ for yamlfile in imagetagger_annotation_files:
                     
                     points = np.array(vector, dtype=np.int32)
                     points = points.reshape((1, -1, 2))
-                    cv2.fillPoly(mask, points, (255, 255, 255))
+                    cv2.fillPoly(mask, points, (1, 1, 1))
 
                     cv2.imwrite(os.path.join(d, "masks", name + ".png"), mask)
 
