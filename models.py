@@ -76,6 +76,9 @@ def create_modules(module_defs):
             # Define detection layer
             yolo_layer = YOLOLayer(anchors, num_classes, img_size)
             modules.add_module(f"yolo_{module_i}", yolo_layer)
+        elif module_def["type"] == "seg":
+            filters = sum([output_filters[1:][i] for i in layers]) # TODO Redo cleaner
+            modules.add_module(f"seg_{module_i}", EmptyLayer())
         # Register module list and number of output filters
         module_list.append(modules)
         output_filters.append(filters)
@@ -243,10 +246,10 @@ class Darknet(nn.Module):
         self.seen = 0
         self.header_info = np.array([0, 0, 0, self.seen, 0], dtype=np.int32)
 
-    def forward(self, x, targets=None):
+    def forward(self, x, bb_targets=None, mask_targets=None):
         img_dim = x.shape[2]
         loss = 0
-        layer_outputs, yolo_outputs = [], []
+        layer_outputs, yolo_outputs, segmentation_outputs = [], [], []
         for i, (module_def, module) in enumerate(zip(self.module_defs, self.module_list)):
             if module_def["type"] in ["convolutional", "upsample", "maxpool"]:
                 x = module(x)
@@ -256,12 +259,17 @@ class Darknet(nn.Module):
                 layer_i = int(module_def["from"])
                 x = layer_outputs[-1] + layer_outputs[layer_i]
             elif module_def["type"] == "yolo":
-                x, layer_loss = module[0](x, targets, img_dim)
+                x, layer_loss = module[0](x, bb_targets, img_dim)
                 loss += layer_loss
                 yolo_outputs.append(x)
+            elif module_def["type"] == "seg":
+                if mask_targets is not None:
+                    layer_loss = nn.CrossEntropyLoss()(x, mask_targets.squeeze(1))
+                    loss += layer_loss # TODO more suffisticated layer loss viz
+                segmentation_outputs.append(x)
             layer_outputs.append(x)
         yolo_outputs = to_cpu(torch.cat(yolo_outputs, 1))
-        return yolo_outputs if targets is None else (loss, yolo_outputs)
+        return (yolo_outputs, segmentation_outputs) if (bb_targets is None and bb_targets is None) else (loss, yolo_outputs, segmentation_outputs)
 
     def load_darknet_weights(self, weights_path):
         """Parses and loads the weights stored in 'weights_path'"""
