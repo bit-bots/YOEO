@@ -13,6 +13,8 @@ import argparse
 import tqdm
 import cv2
 
+from imgaug.augmentables.segmaps import SegmentationMapsOnImage
+
 import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets
@@ -42,17 +44,19 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
         bb_targets[:, 2:] = xywh2xyxy(bb_targets[:, 2:])
         bb_targets[:, 2:] *= img_size
 
-        imgs = Variable(imgs.type(Tensor), requires_grad=False)
+        imgs_tensor = Variable(imgs.type(Tensor), requires_grad=False)
 
 
         with torch.no_grad():
-            bb_outputs, segmentation_outputs = model(imgs)
+            bb_outputs, segmentation_outputs = model(imgs_tensor)
             bb_outputs = non_max_suppression(bb_outputs, conf_thres=conf_thres, nms_thres=nms_thres)
 
-        if batch_i % 1 == 0:
-            cv2.imshow("test", Variable(segmentation_outputs[0].to("cpu"), requires_grad=False)[0].numpy()[:,:,np.newaxis].astype(np.uint8) * 255)
-            cv2.imshow("test_img", Variable(imgs.type(Tensor).to("cpu"), requires_grad=False)[0].numpy().transpose(1, 2, 0))
-            cv2.waitKey(1)
+
+        img = (Variable(imgs.type(Tensor).to("cpu"), requires_grad=False)[0].numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
+        segs = Variable(segmentation_outputs[0].to("cpu"), requires_grad=False)[0].numpy()[:,:,np.newaxis].astype(np.uint8)
+        segmap = SegmentationMapsOnImage(segs, shape=img.shape)
+        cv2.imshow("test", segmap.draw_on_image(img)[0])
+        cv2.waitKey(1)
 
         sample_metrics += get_batch_statistics(bb_outputs, bb_targets, iou_threshold=iou_thres)
 
