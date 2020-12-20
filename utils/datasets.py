@@ -4,10 +4,14 @@ import os
 import sys
 import numpy as np
 from PIL import Image
+
+import imgaug.augmenters as iaa
+from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
+from imgaug.augmentables.segmaps import SegmentationMapsOnImage
+
 import torch
 import torch.nn.functional as F
 
-from utils.augmentations import horisontal_flip
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 
@@ -86,16 +90,70 @@ class ListDataset(Dataset):
 
         img_path = self.img_files[index % len(self.img_files)].rstrip()
 
-        # Extract image as PyTorch tensor
-        img = transforms.ToTensor()(Image.open(img_path).convert('RGB'))
-
-        # Handle images with less than three channels
-        if len(img.shape) != 3:
-            img = img.unsqueeze(0)
-            img = img.expand((3, img.shape[1:]))
+        img = np.array(Image.open(img_path).convert('RGB'), dtype=np.uint8)
 
         _, h, w = img.shape
         h_factor, w_factor = (h, w) if self.normalized_labels else (1, 1)
+
+        # ---------
+        #  Label
+        # ---------
+
+        label_path = self.label_files[index % len(self.img_files)].rstrip()
+
+        bounding_boxes = []
+        if os.path.exists(label_path):
+            boxes = np.loadtxt(label_path).reshape(-1, 5)
+            for box in boxes:
+                # Extract coordinates for unpadded + unscaled image
+                bounding_boxes.append(
+                    BoundingBox(
+                        x1 = w_factor * (box[1] - box[3] / 2),
+                        y1 = h_factor * (box[2] - box[4] / 2),
+                        x2 = w_factor * (box[1] + box[3] / 2),
+                        y2 = h_factor * (box[2] + box[4] / 2),
+                        label = box[0]
+                    ))
+
+        bounding_boxes = BoundingBoxesOnImage(bounding_boxes, shape=img.shape)
+
+        # ---------
+        #  Segmentation Mask
+        # ---------
+
+        mask_path = self.mask_files[index % len(self.img_files)].rstrip()
+
+        # Extract image as PyTorch tensor
+        mask = np.array(Image.open(mask_path).convert('RGB'), dtype=np.uint8) * 255
+
+        segmentation_mask = SegmentationMapsOnImage(mask, shape=img.shape)
+
+        # ---------
+        #  Augmentations
+        # ---------
+
+        if self.augment or True:
+            seq = iaa.Sequential([
+                iaa.Dropout([0.05, 0.2]),      # drop 5% or 20% of all pixels
+                iaa.Sharpen((0.0, 1.0)),       # sharpen the image
+                iaa.Affine(rotate=(-45, 45)),  # rotate by -45 to 45 degrees (affects segmaps)
+                iaa.ElasticTransformation(alpha=50, sigma=5)  # apply water effect (affects segmaps)
+            ], random_order=True)
+        else:
+            seq = iaa.Sequential([])
+
+        img, bounding_boxes, segmentation_mask = seq(
+            image=img, 
+            bounding_boxes=bounding_boxes, 
+            segmentation_maps=segmentation_mask)
+
+        # ---------
+        #  Image
+        # ---------
+
+        # Extract image as PyTorch tensor
+        img = transforms.ToTensor()(img)
+
         # Pad to square resolution
         img, pad = pad_to_square(img, 0)
         _, padded_h, padded_w = img.shape
@@ -108,53 +166,36 @@ class ListDataset(Dataset):
 
         bb_targets = None
         if os.path.exists(label_path):
-            boxes = torch.from_numpy(np.loadtxt(label_path).reshape(-1, 5))
-            # Extract coordinates for unpadded + unscaled image
-            x1 = w_factor * (boxes[:, 1] - boxes[:, 3] / 2)
-            y1 = h_factor * (boxes[:, 2] - boxes[:, 4] / 2)
-            x2 = w_factor * (boxes[:, 1] + boxes[:, 3] / 2)
-            y2 = h_factor * (boxes[:, 2] + boxes[:, 4] / 2)
-            # Adjust for added padding
-            x1 += pad[0]
-            y1 += pad[2]
-            x2 += pad[1]
-            y2 += pad[3]
-            # Returns (x, y, w, h)
-            boxes[:, 1] = ((x1 + x2) / 2) / padded_w
-            boxes[:, 2] = ((y1 + y2) / 2) / padded_h
-            boxes[:, 3] *= w_factor / padded_w
-            boxes[:, 4] *= h_factor / padded_h
+            boxes = np.zeros((len(bounding_boxes), 5))
+            for box_idx, box in enumerate(bounding_boxes):
+                # Extract coordinates for unpadded + unscaled image
+                x1 = box.x1
+                y1 = box.y1
+                x2 = box.x2
+                y2 = box.y2
+                # Adjust for added padding
+                x1 += pad[0]
+                y1 += pad[2]
+                x2 += pad[1]
+                y2 += pad[3]
+                # Returns (x, y, w, h)
+                boxes[box_idx, 0] = box.label
+                boxes[box_idx, 1] = ((x1 + x2) / 2) / padded_w
+                boxes[box_idx, 2] = ((y1 + y2) / 2) / padded_h
+                boxes[box_idx, 3] = (x2 - x1)
+                boxes[box_idx, 4] = (y2 - y1)
 
             bb_targets = torch.zeros((len(boxes), 6))
-            bb_targets[:, 1:] = boxes
+            bb_targets[:, 1:] = transforms.ToTensor()(boxes)
 
         # ---------
         #  Segmentation Mask
         # ---------
 
-        mask_path = self.mask_files[index % len(self.img_files)].rstrip()
-
-        # Extract image as PyTorch tensor
-        mask = transforms.ToTensor()(Image.open(mask_path).convert('RGB')) * 255
-
-        # Handle images with less than three channels
-        if len(mask.shape) != 3:
-            mask = mask.unsqueeze(0)
-            mask = mask.expand((3, img.shape[1:]))
-
-        _, h, w = mask.shape
-        h_factor, w_factor = (h, w) if self.normalized_labels else (1, 1)
+        mask = transforms.ToTensor()(segmentation_mask.get_arr())
 
         # Pad to square resolution
-        mask, pad = pad_to_square(mask, 0)
-        _, padded_h, padded_w = mask.shape
-
-        mask_targets = mask
-
-        # Apply augmentations
-        if self.augment and False: #TODO impement better aug
-            if np.random.random() < 0.5:
-                img, bb_targets = horisontal_flip(img, bb_targets)
+        mask_targets, pad = pad_to_square(mask, 0)
 
         return img_path, img, bb_targets, mask_targets
 
