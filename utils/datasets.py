@@ -13,7 +13,9 @@ import torch
 import torch.nn.functional as F
 
 from torch.utils.data import Dataset
+from .utils import xywh2xyxy_np
 import torchvision.transforms as transforms
+
 
 
 def pad_to_square(img, pad_value):
@@ -92,7 +94,7 @@ class ListDataset(Dataset):
 
         img = np.array(Image.open(img_path).convert('RGB'), dtype=np.uint8)
 
-        _, h, w = img.shape
+        w, h, _ = img.shape
         h_factor, w_factor = (h, w) if self.normalized_labels else (1, 1)
 
         # ---------
@@ -106,14 +108,13 @@ class ListDataset(Dataset):
             boxes = np.loadtxt(label_path).reshape(-1, 5)
             for box in boxes:
                 # Extract coordinates for unpadded + unscaled image
+                conv_box = xywh2xyxy_np(np.array([box[1:]]))[0]
+
+                conv_box[[0,2]] *= h  
+                conv_box[[1,3]] *= w
+
                 bounding_boxes.append(
-                    BoundingBox(
-                        x1 = w_factor * (box[1] - box[3] / 2),
-                        y1 = h_factor * (box[2] - box[4] / 2),
-                        x2 = w_factor * (box[1] + box[3] / 2),
-                        y2 = h_factor * (box[2] + box[4] / 2),
-                        label = box[0]
-                    ))
+                    BoundingBox(*conv_box, label=box[0]))
 
         bounding_boxes = BoundingBoxesOnImage(bounding_boxes, shape=img.shape)
 
@@ -134,10 +135,13 @@ class ListDataset(Dataset):
 
         if self.augment or True:
             seq = iaa.Sequential([
-                iaa.Dropout([0.05, 0.2]),      # drop 5% or 20% of all pixels
-                iaa.Sharpen((0.0, 1.0)),       # sharpen the image
-                iaa.Affine(rotate=(-45, 45)),  # rotate by -45 to 45 degrees (affects segmaps)
-                iaa.ElasticTransformation(alpha=50, sigma=5)  # apply water effect (affects segmaps)
+                iaa.Dropout([0.0, 0.1]),      # drop 5% or 20% of all pixels
+                iaa.Sharpen((0.0, 0.2)),       # sharpen the image
+                iaa.Affine(rotate=(-20, 20), translate_percent=(-0.2,0.2)),  # rotate by -45 to 45 degrees (affects segmaps)
+                iaa.AddToBrightness((-30, 30)), 
+                iaa.AddToHue((-20, 20)),
+                iaa.Fliplr(0.5),
+                #iaa.ElasticTransformation(alpha=80, sigma=10)  # apply water effect (affects segmaps)
             ], random_order=True)
         else:
             seq = iaa.Sequential([])
@@ -162,7 +166,8 @@ class ListDataset(Dataset):
         #  Label
         # ---------
 
-        label_path = self.label_files[index % len(self.img_files)].rstrip()
+        bounding_boxes = bounding_boxes.clip_out_of_image()
+        #print(bounding_boxes)
 
         bb_targets = None
         if os.path.exists(label_path):
@@ -173,17 +178,19 @@ class ListDataset(Dataset):
                 y1 = box.y1
                 x2 = box.x2
                 y2 = box.y2
+
                 # Adjust for added padding
                 x1 += pad[0]
                 y1 += pad[2]
                 x2 += pad[1]
                 y2 += pad[3]
+
                 # Returns (x, y, w, h)
                 boxes[box_idx, 0] = box.label
                 boxes[box_idx, 1] = ((x1 + x2) / 2) / padded_w
                 boxes[box_idx, 2] = ((y1 + y2) / 2) / padded_h
-                boxes[box_idx, 3] = (x2 - x1)
-                boxes[box_idx, 4] = (y2 - y1)
+                boxes[box_idx, 3] = (x2 - x1) / padded_h
+                boxes[box_idx, 4] = (y2 - y1) / padded_w
 
             bb_targets = torch.zeros((len(boxes), 6))
             bb_targets[:, 1:] = transforms.ToTensor()(boxes)
@@ -202,7 +209,6 @@ class ListDataset(Dataset):
     def collate_fn(self, batch):
         paths, imgs, bb_targets, mask_targets= list(zip(*batch))
         # Remove empty placeholder targets
-        bb_targets = [boxes for boxes in bb_targets if boxes[0] is not None]
         # Add sample index to targets
         for i, boxes in enumerate(bb_targets):
             boxes[:, 0] = i
