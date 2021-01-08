@@ -58,13 +58,15 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
         # Iterate over images in batch
         for image_idx_in_batch, img in enumerate(imgs):
             if bb_outputs[image_idx_in_batch] is not None:
-                bbs = [BoundingBox(
-                        x1=box[0], 
-                        y1=box[1], 
-                        x2=box[2], 
-                        y2=box[3], 
-                        )
-                    for box in bb_outputs[image_idx_in_batch]]
+                bbs = []
+                for box in bb_outputs[image_idx_in_batch]:
+                    bbs.append(BoundingBox(
+                            x1=box[0], 
+                            y1=box[1], 
+                            x2=box[2], 
+                            y2=box[3],
+                            label=["Ball", "Goalpost"][int(box[6])],
+                            ))
             else:
                 bbs = []
 
@@ -74,6 +76,8 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
 
             cv2.imshow("test", bbs_in_img.draw_on_image(segmap.draw_on_image(img)[0]))
             cv2.waitKey(1)
+
+            time.sleep(0.1)
 
         sample_metrics += get_batch_statistics(bb_outputs, bb_targets, iou_threshold=iou_thres)
 
