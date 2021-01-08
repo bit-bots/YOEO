@@ -95,7 +95,6 @@ class ListDataset(Dataset):
         img = np.array(Image.open(img_path).convert('RGB'), dtype=np.uint8)
 
         w, h, _ = img.shape
-        h_factor, w_factor = (h, w) if self.normalized_labels else (1, 1)
 
         # ---------
         #  Label
@@ -104,17 +103,21 @@ class ListDataset(Dataset):
         label_path = self.label_files[index % len(self.img_files)].rstrip()
 
         bounding_boxes = []
-        if os.path.exists(label_path):
+        # Ignore warning if file is empty
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             boxes = np.loadtxt(label_path).reshape(-1, 5)
-            for box in boxes:
-                # Extract coordinates for unpadded + unscaled image
-                conv_box = xywh2xyxy_np(np.array([box[1:]]))[0]
+        for box in boxes:
+            # Extract coordinates for unpadded + unscaled image
+            conv_box = xywh2xyxy_np(np.array([box[1:]]))[0]
 
+            conv_box[[0,2]] *= h  
                 conv_box[[0,2]] *= h  
-                conv_box[[1,3]] *= w
+            conv_box[[0,2]] *= h  
+            conv_box[[1,3]] *= w
 
-                bounding_boxes.append(
-                    BoundingBox(*conv_box, label=box[0]))
+            bounding_boxes.append(
+                BoundingBox(*conv_box, label=box[0]))
 
         bounding_boxes = BoundingBoxesOnImage(bounding_boxes, shape=img.shape)
 
