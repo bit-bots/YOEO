@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import glob
@@ -8,19 +8,46 @@ import cv2
 import numpy as np
 
 """
-Expects following format:
+Expected YAML format:
+=====================
+
+We use the ``Bit-Bots/YOEOyaml`` export format of the `Bit-Bots ImageTagger <https://imagetagger.bit-bots.de>`_.
+
+set: <imageset_name>
+images:
+    <image_name>:
+        width: <image_width>
+        height: <image_height>
+        annotations:
+          - {type: <annotation_type>,
+             blurred: <bool, is annotation blurred?>,
+             concealed: <bool, is annotation concealed?>,
+             vector:
+                [
+                    [x1,y1],
+                    [x2,y2],
+                ]}
+          - {type: <annotation_type>,
+             vector:
+                [notinimage]}
+    <next_image_name>:
+        ...
+
+
+Expects following directories:
+==============================
 
 Superset/
     - Dataset1/
         - images/
         - labels/
         - masks/
-        - annotations.yaml
+        - <annotation_file>.yaml
     - Dataset2/
         - images/
         - labels/
         - masks/
-        - annotations.yaml
+        - <annotation_file>.yaml
 ...
 """
 
@@ -34,7 +61,7 @@ imagetagger_annotation_files = glob.glob(f"{superset}/*/*.yaml")
 datasets = list(map(lambda x: os.path.basename(os.path.dirname(x)), imagetagger_annotation_files))
 
 datasets_serialized = '\n'.join(datasets)
-print(f"The following datasets will be considered: \n {datasets_serialized}")
+print(f"The following datasets will be considered: \n{datasets_serialized}")
 
 trainImages = []  # this ensures only images with labels are used
 
@@ -95,7 +122,10 @@ for yamlfile in imagetagger_annotation_files:
 
                     cv2.imwrite(os.path.join(d, "masks", name + ".png"), mask)
 
-        with open(os.path.join(d, "labels", name + ".txt"), "w") as output:
+        label_dir = os.path.join(d, "labels")
+        if not os.path.exists(label_dir):
+            os.makedirs(label_dir)
+        with open(os.path.join(label_dir, name + ".txt"), "w") as output:
             for line in annolist:
                 output.write(line + "\n")
 
@@ -103,4 +133,3 @@ trainImages = set(trainImages) # prevent images from showing up twice
 with open(os.path.join(superset, "train.txt"), "w") as traintxt:
     for e in trainImages:
         traintxt.write(e + "\n")
-
