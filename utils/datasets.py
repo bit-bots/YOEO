@@ -2,6 +2,7 @@ import glob
 import random
 import os
 import sys
+import warnings
 import numpy as np
 from PIL import Image
 
@@ -112,8 +113,6 @@ class ListDataset(Dataset):
             conv_box = xywh2xyxy_np(np.array([box[1:]]))[0]
 
             conv_box[[0,2]] *= h  
-                conv_box[[0,2]] *= h  
-            conv_box[[0,2]] *= h  
             conv_box[[1,3]] *= w
 
             bounding_boxes.append(
@@ -173,30 +172,29 @@ class ListDataset(Dataset):
         #print(bounding_boxes)
 
         bb_targets = None
-        if os.path.exists(label_path):
-            boxes = np.zeros((len(bounding_boxes), 5))
-            for box_idx, box in enumerate(bounding_boxes):
-                # Extract coordinates for unpadded + unscaled image
-                x1 = box.x1
-                y1 = box.y1
-                x2 = box.x2
-                y2 = box.y2
+        boxes = np.zeros((len(bounding_boxes), 5))
+        for box_idx, box in enumerate(bounding_boxes):
+            # Extract coordinates for unpadded + unscaled image
+            x1 = box.x1
+            y1 = box.y1
+            x2 = box.x2
+            y2 = box.y2
 
-                # Adjust for added padding
-                x1 += pad[0]
-                y1 += pad[2]
-                x2 += pad[1]
-                y2 += pad[3]
+            # Adjust for added padding
+            x1 += pad[0]
+            y1 += pad[2]
+            x2 += pad[1]
+            y2 += pad[3]
 
-                # Returns (x, y, w, h)
-                boxes[box_idx, 0] = box.label
-                boxes[box_idx, 1] = ((x1 + x2) / 2) / padded_w
-                boxes[box_idx, 2] = ((y1 + y2) / 2) / padded_h
-                boxes[box_idx, 3] = (x2 - x1) / padded_h
-                boxes[box_idx, 4] = (y2 - y1) / padded_w
+            # Returns (x, y, w, h)
+            boxes[box_idx, 0] = box.label
+            boxes[box_idx, 1] = ((x1 + x2) / 2) / padded_w
+            boxes[box_idx, 2] = ((y1 + y2) / 2) / padded_h
+            boxes[box_idx, 3] = (x2 - x1) / padded_h
+            boxes[box_idx, 4] = (y2 - y1) / padded_w
 
-            bb_targets = torch.zeros((len(boxes), 6))
-            bb_targets[:, 1:] = transforms.ToTensor()(boxes)
+        bb_targets = torch.zeros((len(boxes), 6))
+        bb_targets[:, 1:] = transforms.ToTensor()(boxes)
 
         # ---------
         #  Segmentation Mask
@@ -210,22 +208,28 @@ class ListDataset(Dataset):
         return img_path, img, bb_targets, mask_targets
 
     def collate_fn(self, batch):
+        self.batch_count += 1
         paths, imgs, bb_targets, mask_targets= list(zip(*batch))
-        # Remove empty placeholder targets
+        
+        # Selects new image size every tenth batch
+        if self.multiscale and self.batch_count % 10 == 0:
+            self.img_size = random.choice(range(self.min_size, self.max_size + 1, 32))
+        
+        # Resize images to input shape
+        imgs = torch.stack([resize(img, self.img_size) for img in imgs])
+
         # Add sample index to targets
         for i, boxes in enumerate(bb_targets):
             boxes[:, 0] = i
         bb_targets = torch.cat(bb_targets, 0)
-        # Selects new image size every tenth batch
-        if self.multiscale and self.batch_count % 10 == 0:
-            self.img_size = random.choice(range(self.min_size, self.max_size + 1, 32))
-        # Resize images to input shape
-        imgs = torch.stack([resize(img, self.img_size) for img in imgs])
-        self.batch_count += 1
-        # Stack masks
-        mask_targets = torch.stack([resize(mask, self.img_size) for mask in mask_targets])
+        
 
-        return paths, imgs, bb_targets, mask_targets[:,0,:,:].reshape(-1, 1, self.img_size, self.img_size).long() # TODO look at this
+        # Stack masks and drop the 2 duplicated channels 
+        mask_targets = torch.stack([resize(mask, self.img_size)[0] for mask in mask_targets])
+        # Reshape mask and convert to long
+        mask_targets = mask_targets.reshape(-1, 1, self.img_size, self.img_size).long()
+
+        return paths, imgs, bb_targets, mask_targets
 
     def __len__(self):
         return len(self.img_files)
