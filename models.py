@@ -265,7 +265,7 @@ class Darknet(nn.Module):
             elif module_def["type"] == "seg":
                 if mask_targets is not None:
                     layer_loss = nn.CrossEntropyLoss()(x, mask_targets.squeeze(1))
-                    loss += layer_loss # TODO more suffisticated layer loss viz
+                    loss += layer_loss * 0.05 # TODO more suffisticated layer loss viz
                 i = torch.argmax(x, dim=1)
                 segmentation_outputs.append(i)
             layer_outputs.append(x)
