@@ -72,7 +72,7 @@ class ListDataset(Dataset):
             for path in self.img_files
         ]
         self.mask_files = [
-            path.replace("images", "masks")
+            path.replace("images", "masks").replace(".jpg", ".png")
             for path in self.img_files
         ]
         self.img_size = img_size
@@ -133,7 +133,7 @@ class ListDataset(Dataset):
         #  Augmentations
         # ---------
 
-        if self.augment or True:
+        if self.augment:
             seq = iaa.Sequential([
                 iaa.Dropout([0.0, 0.1]),      # drop 5% or 20% of all pixels
                 iaa.Sharpen((0.0, 0.2)),       # sharpen the image
@@ -222,7 +222,7 @@ class ListDataset(Dataset):
         # Stack masks
         mask_targets = torch.stack([resize(mask, self.img_size) for mask in mask_targets])
 
-        return paths, imgs, bb_targets, mask_targets[:,0,:,:].reshape(-1, 1, self.img_size, self.img_size).long()
+        return paths, imgs, bb_targets, mask_targets[:,0,:,:].reshape(-1, 1, self.img_size, self.img_size).long() # TODO look at this
 
     def __len__(self):
         return len(self.img_files)
