@@ -70,6 +70,10 @@ for yamlfile in imagetagger_annotation_files:
     d = os.path.dirname(yamlfile)
 
     print(f"Creating files for {os.path.basename(d)}\n")
+    
+    masks_dir = os.path.join(d, "masks")
+    if not os.path.exists(masks_dir):
+            os.makedirs(masks_dir)
 
     with open(yamlfile) as f:
         export = yaml.safe_load(f)
@@ -120,7 +124,7 @@ for yamlfile in imagetagger_annotation_files:
                     points = points.reshape((1, -1, 2))
                     cv2.fillPoly(mask, points, (1, 1, 1))
 
-                    cv2.imwrite(os.path.join(d, "masks", name + ".png"), mask)
+                    cv2.imwrite(os.path.join(masks_dir, name + ".png"), mask)
 
         label_dir = os.path.join(d, "labels")
         if not os.path.exists(label_dir):
