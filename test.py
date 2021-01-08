@@ -50,44 +50,30 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
         with torch.no_grad():
             bb_outputs, segmentation_outputs = model(imgs_tensor)
             bb_outputs = non_max_suppression(bb_outputs, conf_thres=conf_thres, nms_thres=nms_thres)
+        
+        # Pull to cpu, convert to numpy and transpose to usable shape
+        imgs = (Variable(imgs.type(Tensor).to("cpu"), requires_grad=False).numpy().transpose(0, 2, 3, 1) * 255).astype(np.uint8)
+        segs = Variable(segmentation_outputs[0].to("cpu"), requires_grad=False).numpy()[:,:,:,np.newaxis].astype(np.uint8)
 
+        # Iterate over images in batch
+        for image_idx_in_batch, img in enumerate(imgs):
+            if bb_outputs[image_idx_in_batch] is not None:
+                bbs = [BoundingBox(
+                        x1=box[0], 
+                        y1=box[1], 
+                        x2=box[2], 
+                        y2=box[3], 
+                        )
+                    for box in bb_outputs[image_idx_in_batch]]
+            else:
+                bbs = []
 
-        img = (Variable(imgs.type(Tensor).to("cpu"), requires_grad=False)[0].numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
-        segs = Variable(segmentation_outputs[0].to("cpu"), requires_grad=False)[0].numpy()[:,:,np.newaxis].astype(np.uint8)
-        segmap = SegmentationMapsOnImage(segs, shape=img.shape)
+            bbs_in_img = BoundingBoxesOnImage(bbs, shape=img.shape)
 
-        """
-        a = [b for b in bb_outputs if b is not None]
+            segmap = SegmentationMapsOnImage(segs[image_idx_in_batch], shape=img.shape)
 
-        bbs = BoundingBoxesOnImage(
-            [
-                BoundingBox(
-                    x1=box[1], 
-                    y1=box[2], 
-                    x2=box[3], 
-                    y2=box[4], 
-                    )
-                for box in a[0]
-            ], shape=img.shape)
-
-        # for box in bb_targets[bb_targets[:,0] == 0][:, 1:]
-        """
-
-        a = [b for b in bb_outputs if b is not None] # TODO better
-
-        bbs = BoundingBoxesOnImage(
-            [
-                BoundingBox(
-                    x1=box[0], 
-                    y1=box[1], 
-                    x2=box[2], 
-                    y2=box[3], 
-                    )
-                for box in a[0]
-            ], shape=img.shape)
-
-        cv2.imshow("test", bbs.draw_on_image(segmap.draw_on_image(img)[0]))
-        cv2.waitKey(1)
+            cv2.imshow("test", bbs_in_img.draw_on_image(segmap.draw_on_image(img)[0]))
+            cv2.waitKey(1)
 
         sample_metrics += get_batch_statistics(bb_outputs, bb_targets, iou_threshold=iou_thres)
 
