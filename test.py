@@ -22,12 +22,15 @@ from torchvision import transforms
 from torch.autograd import Variable
 import torch.optim as optim
 
+from utils.augmentations import *
+from utils.transforms import *
+
 
 def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size):
     model.eval()
 
     # Get dataloader
-    dataset = ListDataset(path, img_size=img_size, augment=False, multiscale=False)
+    dataset = ListDataset(path, img_size=img_size, multiscale=False, transform=DEFAULT_TRANSFORMS)
     dataloader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=False, num_workers=1, collate_fn=dataset.collate_fn
     )
@@ -45,7 +48,6 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
         bb_targets[:, 2:] *= img_size
 
         imgs_tensor = Variable(imgs.type(Tensor), requires_grad=False)
-
 
         with torch.no_grad():
             bb_outputs, segmentation_outputs = model(imgs_tensor)
