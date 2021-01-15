@@ -216,5 +216,5 @@ data_path = os.path.join(args.superset, "yoeo.data")
 with open(data_path, "w") as data_file:
     data_file.write(f"classes={len(CLASSES['bb_classes'])}\n")
     data_file.write(f"train={train_path}\n")
-    data_file.write(f"test={test_path}\n")
+    data_file.write(f"valid={test_path}\n")
     data_file.write(f"names={names_path}\n")
