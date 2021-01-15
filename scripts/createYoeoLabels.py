@@ -5,9 +5,23 @@ import glob
 import sys
 import yaml
 import cv2
+import random
+import argparse
 import numpy as np
 
+
+# Available classes for YOEO
+CLASSES = {
+    'bb_classes': ['ball', 'goalpost', 'robot'],
+    'segmentation_classes': ['field edge', 'lines'],
+    }
+
+
 """
+This script reads annotations in the expected yaml format below 
+to generate the corresponding yolo .txt files and the segmentation masks.
+
+
 Expected YAML format:
 =====================
 
@@ -19,58 +33,103 @@ images:
         width: <image_width>
         height: <image_height>
         annotations:
-          - {type: <annotation_type>,
-             blurred: <bool, is annotation blurred?>,
-             concealed: <bool, is annotation concealed?>,
-             vector:
-                [
-                    [x1,y1],
-                    [x2,y2],
-                ]}
-          - {type: <annotation_type>,
-             vector:
-                [notinimage]}
+          - {
+                type: <annotation_type>,
+                blurred: <bool, is annotation blurred?>,
+                concealed: <bool, is annotation concealed?>,
+                vector:
+                    [
+                        [x1,y1],
+                        [x2,y2],
+                    ]}
+          - {
+                type: <annotation_type>,
+                vector:
+                    [notinimage]}
     <next_image_name>:
         ...
 
 
-Expects following directories:
-==============================
+Expects following file tree:
+============================
 
-Superset/
-    - Dataset1/
-        - images/
-        - labels/
-        - masks/
-        - <annotation_file>.yaml
-    - Dataset2/
-        - images/
-        - labels/
-        - masks/
-        - <annotation_file>.yaml
+<superset>/
+    - <dataset1>/
+        - images/<image_files>
+        - <dataset1_annotation_file>.yaml
+    - <dataset2>/
+        - images/<image_files>
+        - <dataset2_annotation_file>.yaml
 ...
+
+
+Produces the following file tree:
+=================================
+
+<superset>/
+    - train.txt
+    - test.txt
+    - yoeo.names
+    - yoeo.data
+    - <dataset1>/
+        - images/<image_files>
+        - labels/<yolo_txt_files>
+        - masks/<segmentation_mask_files>
+        - <dataset1_annotation_file>.yaml
+    - <dataset2>/
+        - images/<image_files>
+        - labels/<yolo_txt_files>
+        - masks/<segmentation_mask_files>
+        - <dataset2_annotation_file>.yaml
+...
+
+with train.txt and test.txt containing absolute imagepaths for training and evaluation respectively
+with yoeo.names containing the class names of bounding boxes
+with yoeo.data: containing number of bounding box classes as well as absolute path to train.txt, test.txt and yoeo.names
 """
 
 
-if len(sys.argv[0]) == 0:
-    superset = os.path.abspath(input("path to root of your datasets:"))
-else:
-    superset = os.path.abspath(sys.argv[1])
+parser = argparse.ArgumentParser(description="Create YOEO labels from yaml files.")
+parser.add_argument("superset", type=str, help="The directory that contains the datasets as subdirectories")
+parser.add_argument("trainsplit", type=float, help="Amount of train images from total images: train/test split (between 0 and 1)")
+parser.add_argument("--ignore-blurred", action="store_true", help="Ignore blurred labels")
+parser.add_argument("--ignore-conceiled", action="store_true", help="Ignore conceiled labels")
+parser.add_argument("--ignore-classes", nargs="+", default=[], help="Append class names, to be ignored")
+args = parser.parse_args()
 
-imagetagger_annotation_files = glob.glob(f"{superset}/*/*.yaml")
+# Remove ignored classes from CLASSES list
+for ignore_class in args.ignore_classes:
+    for category in CLASSES.keys():
+        if ignore_class in CLASSES[category]:
+            CLASSES[category].remove(ignore_class)
+            print(f"Ignoring class '{ignore_class}'")
+
+imagetagger_annotation_files = glob.glob(f"{args.superset}/*/*.yaml")
 datasets = list(map(lambda x: os.path.basename(os.path.dirname(x)), imagetagger_annotation_files))
 
 datasets_serialized = '\n'.join(datasets)
 print(f"The following datasets will be considered: \n{datasets_serialized}")
 
-trainImages = []  # this ensures only images with labels are used
+# Collect image path for train/test split
+train_images = []
+test_images = []
+
+def trainsplit():
+    if random.random() <= args.trainsplit:
+        return train_images
+    else:
+        return test_images
 
 # Iterate over all datasets
 for yamlfile in imagetagger_annotation_files:
     d = os.path.dirname(yamlfile)
 
-    print(f"Creating files for {os.path.basename(d)}\n")
-    
+    print(f"Creating labels for {os.path.basename(d)}")
+
+    labels_dir = os.path.join(d, "labels")
+    if not os.path.exists(labels_dir):
+            os.makedirs(labels_dir)
+
     masks_dir = os.path.join(d, "masks")
     if not os.path.exists(masks_dir):
             os.makedirs(masks_dir)
@@ -79,15 +138,18 @@ for yamlfile in imagetagger_annotation_files:
         export = yaml.safe_load(f)
 
     for img_name, frame in export['images'].items():
-        trainImages.append(os.path.join(d, "images", img_name))
-        name = os.path.splitext(img_name)[0] # Remove extenion
-        annolist = []
+        trainsplit().append(os.path.join(d, "images", img_name))
+        name = os.path.splitext(img_name)[0]  # Remove file extension
+        imgwidth = frame['width']
+        imgheight = frame['height']
+        annotations = []
         for annotation in frame['annotations']:
-            if not (annotation['vector'][0] == 'notinimage'):
-                imgwidth = frame['width']
-                imgheight = frame['height']
-                if annotation['type'] in ["ball", "goalpost"]:
-                    if not (annotation['vector'][0] == 'notinimage'):
+            # Ignore if blurred or conceiled and should be ignored
+            if not ((args.ignore_blurred and annotation['blurred']) or
+                (args.ignore_conceiled and annotation['conceiled'])):
+
+                if annotation['type'] in CLASSES['bb_classes']:  # Handle bounding boxes
+                    if not annotation['vector'][0] == 'notinimage':  # Ignore if annotation is not in image
                         min_x = min(map(lambda x: x[0], annotation['vector']))
                         max_x = max(map(lambda x: x[0], annotation['vector']))
                         min_y = min(map(lambda x: x[1], annotation['vector']))
@@ -103,37 +165,51 @@ for yamlfile in imagetagger_annotation_files:
                         relcenter_x = center_x / imgwidth
                         relcenter_y = center_y / imgheight
 
-                        if annotation['type'] == "ball":
-                            classid = 0
-                        if annotation['type'] == "goalpost":
-                            classid = 1
+                        classID = CLASSES['bb_classes'].index(annotation['type'])  # Derive classID from index in predefined classes
+                        annotations.append(f"{classID} {relcenter_x} {relcenter_y} {relannowidth} {relannoheight}")  # Append to store it later
+                elif annotation['type'] in CLASSES['segmentation_classes']:  # Handle segmentations
+                    if annotation['type'] == 'field edge':
+                        mask = np.zeros((imgheight, imgwidth, 3), dtype=np.uint8)  # Init black mask
 
-                        annolist.append("{} {} {} {} {}".format(classid, relcenter_x, relcenter_y, relannowidth, relannoheight,))
+                        if not annotation['vector'][0] == 'notinimage':  # Only draw polygon if annotation is known
+                            vector = [list(pts) for pts in list(annotation['vector'])]
+                            # Extending the points with corners to fill the space below the horizon
+                            vector.append([imgwidth - 1, imgheight - 0])
+                            vector.append([0, imgheight - 1])
+
+                            # Generate polygon from vector points
+                            points = np.array(vector, dtype=np.int32)
+                            points = points.reshape((1, -1, 2))
+                            cv2.fillPoly(mask, points, (1, 1, 1))  # Fill mask with not so black polygon
+
+                        cv2.imwrite(os.path.join(masks_dir, name + ".png"), mask)  # Store mask on disk
                     else:
-                        pass
+                        print(f"The annotation type '{annotation['type']}' is not supported or should be ignored. Image: '{img_name}'")
+                else:
+                    print(f"The annotation type '{annotation['type']}' is not supported or should be ignored. Image: '{img_name}'")
 
-                if annotation['type'] in ["field edge"]:
+        # Store BB annotations in .txt file
+        with open(os.path.join(labels_dir, name + ".txt"), "w") as output:
+            output.writelines([annotation + "\n" for annotation in annotations])
 
-                    mask = np.zeros((imgheight, imgwidth, 3), dtype=np.uint8)
+# Generate meta files
+train_images = set(train_images)  # Prevent images from showing up twice
+train_path = os.path.join(args.superset, "train.txt")
+with open(train_path, "w") as train_file:
+    train_file.writelines([image_path + "\n" for image_path in train_images])
 
-                    vector = [list(pts) for pts in list(annotation['vector'])]
-                    vector.append([imgwidth - 1, imgheight - 0])
-                    vector.append([0, imgheight - 1])  # extending the points to fill the space below the horizon
-                    
-                    points = np.array(vector, dtype=np.int32)
-                    points = points.reshape((1, -1, 2))
-                    cv2.fillPoly(mask, points, (1, 1, 1))
+test_images = set(test_images)  # Prevent images from showing up twice
+test_path = os.path.join(args.superset, "test.txt")
+with open(test_path, "w") as test_file:
+    test_file.writelines([image_path + "\n" for image_path in test_images])
 
-                    cv2.imwrite(os.path.join(masks_dir, name + ".png"), mask)
+names_path = os.path.join(args.superset, "yoeo.names")
+with open(names_path, "w") as names_file:
+    names_file.writelines([class_name + "\n" for class_name in CLASSES['bb_classes']])
 
-        label_dir = os.path.join(d, "labels")
-        if not os.path.exists(label_dir):
-            os.makedirs(label_dir)
-        with open(os.path.join(label_dir, name + ".txt"), "w") as output:
-            for line in annolist:
-                output.write(line + "\n")
-
-trainImages = set(trainImages) # prevent images from showing up twice
-with open(os.path.join(superset, "train.txt"), "w") as traintxt:
-    for e in trainImages:
-        traintxt.write(e + "\n")
+data_path = os.path.join(args.superset, "yoeo.data")
+with open(data_path, "w") as data_file:
+    data_file.write(f"classes={len(CLASSES['bb_classes'])}\n")
+    data_file.write(f"train={train_path}\n")
+    data_file.write(f"test={test_path}\n")
+    data_file.write(f"names={names_path}\n")
