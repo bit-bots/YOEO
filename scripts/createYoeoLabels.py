@@ -92,10 +92,15 @@ with yoeo.data: containing number of bounding box classes as well as absolute pa
 parser = argparse.ArgumentParser(description="Create YOEO labels from yaml files.")
 parser.add_argument("superset", type=str, help="The directory that contains the datasets as subdirectories")
 parser.add_argument("trainsplit", type=float, help="Amount of train images from total images: train/test split (between 0 and 1)")
+parser.add_argument("-s", "--seed", type=int, default=random.randint(0, (2**64)-1), help="Seed that controlles the train/test split (integer)")
 parser.add_argument("--ignore-blurred", action="store_true", help="Ignore blurred labels")
 parser.add_argument("--ignore-conceiled", action="store_true", help="Ignore conceiled labels")
 parser.add_argument("--ignore-classes", nargs="+", default=[], help="Append class names, to be ignored")
 args = parser.parse_args()
+
+# Seed is used for train/test split
+random.seed(args.seed)
+print(f"Using seed: {args.seed}")
 
 # Remove ignored classes from CLASSES list
 for ignore_class in args.ignore_classes:
