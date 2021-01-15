@@ -6,7 +6,6 @@ from torch.utils.tensorboard import SummaryWriter
 class Logger(object):
     def __init__(self, log_dir, log_hist=True):
         """Create a summary writer logging to log_dir."""
-
         if log_hist:    # Check a new folder for each log should be dreated
             log_dir = os.path.join(
                 log_dir,
@@ -19,5 +18,5 @@ class Logger(object):
 
     def list_of_scalars_summary(self, tag_value_pairs, step):
         """Log scalar variables."""
-        [self.writer.add_scalar(tag, value, step) for tag, value in tag_value_pairs]
-
+        for tag, value in tag_value_pairs:
+            self.writer.add_scalar(tag, value, step)

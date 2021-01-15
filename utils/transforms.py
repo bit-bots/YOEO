@@ -15,31 +15,28 @@ class ImgAug(object):
         self.augmentations = augmentations
 
     def __call__(self, data):
+        # Unpack data
         img, boxes, seg = data
 
+        # Convert xywh to xyxy
+        boxes = np.array(boxes)
+        boxes[:, 1:] = xywh2xyxy_np(boxes[:, 1:])
+        
         # Convert bounding boxes to imgaug        
-        bounding_boxes = []
-        for box in boxes:
-            # Extract coordinates for unpadded + unscaled image
-            conv_box = xywh2xyxy_np(np.array([box[1:]]))[0]
-
-            bounding_boxes.append(
-                BoundingBox(*conv_box, label=box[0]))
-        bounding_boxes = BoundingBoxesOnImage(bounding_boxes, shape=img.shape)
+        bounding_boxes = BoundingBoxesOnImage(
+            [BoundingBox(*box[1:], label=box[0]) for box in boxes], 
+            shape=img.shape)
 
         # Convert sementations to imgaug
         segmentation_mask = SegmentationMapsOnImage(seg, shape=img.shape)
 
-        # ---------
-        #  Augmentations
-        # ---------
+        # Apply augmentations
         img, bounding_boxes, segmentation_mask = self.augmentations(
             image=img, 
-            bounding_boxes=bounding_boxes, 
+            bounding_boxes=bounding_boxes,
             segmentation_maps=segmentation_mask)
 
-
-        # Clip out of image
+        # Clip out of image boxes
         bounding_boxes = bounding_boxes.clip_out_of_image()
 
         # Convert bounding boxes back to numpy
@@ -110,7 +107,18 @@ class ToTensor(object):
         bb_targets = torch.zeros((len(boxes), 6))
         bb_targets[:, 1:] = transforms.ToTensor()(boxes)
 
-        return img, bb_targets, seg
+        return img, bb_targets
+
+
+class Resize(object):
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, data):
+        img, boxes, seg = data
+        img = F.interpolate(img.unsqueeze(0), size=self.size, mode="nearest").squeeze(0)
+        seg = F.interpolate(seg.unsqueeze(0), size=self.size, mode="nearest").squeeze(0)
+        return img, boxes, seg
 
 
 DEFAULT_TRANSFORMS = transforms.Compose([

@@ -10,7 +10,6 @@ class DefaultAug(ImgAug):
             iaa.AddToBrightness((-30, 30)), 
             iaa.AddToHue((-20, 20)),
             iaa.Fliplr(0.5),
-            #iaa.ElasticTransformation(alpha=80, sigma=10)  # apply water effect (affects segmaps)
         ], random_order=True)
 
 

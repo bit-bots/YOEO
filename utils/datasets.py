@@ -5,6 +5,9 @@ import sys
 import warnings
 import numpy as np
 from PIL import Image
+from PIL import ImageFile
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 import imgaug.augmenters as iaa
 from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
@@ -14,9 +17,7 @@ import torch
 import torch.nn.functional as F
 
 from torch.utils.data import Dataset
-from .utils import xywh2xyxy_np
 import torchvision.transforms as transforms
-
 
 
 def pad_to_square(img, pad_value):
@@ -37,25 +38,25 @@ def resize(image, size):
     return image
 
 
-def random_resize(images, min_size=288, max_size=448):
-    new_size = random.sample(list(range(min_size, max_size + 1, 32)), 1)[0]
-    images = F.interpolate(images, size=new_size, mode="nearest")
-    return images
-
-
 class ImageFolder(Dataset):
-    def __init__(self, folder_path, img_size=416):
+    def __init__(self, folder_path, transform=None):
         self.files = sorted(glob.glob("%s/*.*" % folder_path))
-        self.img_size = img_size
+        self.transform = transform
 
     def __getitem__(self, index):
+
         img_path = self.files[index % len(self.files)]
-        # Extract image as PyTorch tensor
-        img = transforms.ToTensor()(Image.open(img_path))
-        # Pad to square resolution
-        img, _ = pad_to_square(img, 0)
-        # Resize
-        img = resize(img, self.img_size)
+        img = np.array(
+            Image.open(img_path).convert('RGB'), 
+            dtype=np.uint8)
+
+        # Label Placeholder
+        boxes = np.zeros((1, 5))
+        segmaps = np.zeros_like(img)
+
+        # Apply transforms
+        if self.transform:
+            img, _, _ = self.transform((img, boxes, segmaps))
 
         return img_path, img
 
@@ -85,45 +86,66 @@ class ListDataset(Dataset):
         self.transform = transform
 
     def __getitem__(self, index):
-
+        
         # ---------
         #  Image
         # ---------
+        try:
 
-        img_path = self.img_files[index % len(self.img_files)].rstrip()
+            img_path = self.img_files[index % len(self.img_files)].rstrip()
 
-        img = np.array(Image.open(img_path).convert('RGB'), dtype=np.uint8)
+            img = np.array(Image.open(img_path).convert('RGB'), dtype=np.uint8)
+        except Exception as e:
+            print(f"Could not read image '{img_path}'.")
+            return
 
         # ---------
         #  Label
         # ---------
+        try:
+            label_path = self.label_files[index % len(self.img_files)].rstrip()
 
-        label_path = self.label_files[index % len(self.img_files)].rstrip()
+            # Ignore warning if file is empty
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                boxes = np.loadtxt(label_path).reshape(-1, 5)
+        except Exception as e:
+            print(f"Could not read label '{label_path}'.")
+            return
 
-        # Ignore warning if file is empty
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            boxes = np.loadtxt(label_path).reshape(-1, 5)
-        
         # ---------
         #  Segmentation Mask
         # ---------
+        try:
+            mask_path = self.mask_files[index % len(self.img_files)].rstrip()
 
-        mask_path = self.mask_files[index % len(self.img_files)].rstrip()
+            # Extract image as PyTorch tensor
+            mask = np.array(Image.open(mask_path).convert('RGB'), dtype=np.uint8) * 255
+        except Exception as e:
+            print(f"Could not mask '{mask_path}'.")
+            return
 
-        # Extract image as PyTorch tensor
-        mask = np.array(Image.open(mask_path).convert('RGB'), dtype=np.uint8) * 255
-
+        # -----------
+        #  Transform
+        # -----------
         if self.transform:
-            img, bb_targets, mask_targets = self.transform(
-                (img, boxes, mask)
-            )
+            try:
+                img, bb_targets, mask_targets = self.transform(
+                    (img, boxes, mask)
+                )
+            except:
+                print(f"Could not apply transform.")
+                return
 
         return img_path, img, bb_targets, mask_targets
 
     def collate_fn(self, batch):
         self.batch_count += 1
-        paths, imgs, bb_targets, mask_targets= list(zip(*batch))
+
+        # Drop invalid images
+        batch = [data for data in batch if data is not None]
+
+        paths, imgs, bb_targets, mask_targets = list(zip(*batch))
         
         # Selects new image size every tenth batch
         if self.multiscale and self.batch_count % 10 == 0:

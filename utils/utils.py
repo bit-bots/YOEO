@@ -67,6 +67,7 @@ def xywh2xyxy_np(x):
     y[..., 3] = x[..., 1] + x[..., 3] / 2
     return y
 
+
 def ap_per_class(tp, conf, pred_cls, target_cls):
     """ Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.

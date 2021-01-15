@@ -5,6 +5,7 @@ from utils.logger import *
 from utils.utils import *
 from utils.datasets import *
 from utils.augmentations import *
+from utils.transforms import *
 from utils.parse_config import *
 from test import evaluate
 
@@ -38,6 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--evaluation_interval", type=int, default=1, help="interval evaluations on validation set")
     parser.add_argument("--compute_map", default=False, help="if True computes mAP every tenth batch")
     parser.add_argument("--multiscale_training", default=True, help="allow for multi-scale training")
+    parser.add_argument("--verbose", "-v", default=False, action='store_true', help="Makes the training more verbose")
     opt = parser.parse_args()
     print(opt)
 
@@ -134,14 +136,19 @@ if __name__ == "__main__":
                 for j, yolo in enumerate(model.yolo_layers):
                     for name, metric in yolo.metrics.items():
                         if name != "grid_size":
-                            tensorboard_log += [(f"{name}_{j+1}", metric)]
-                tensorboard_log += [("loss", loss.item())]
+                            tensorboard_log += [(f"train/{name}_{j+1}", metric)]
+                tensorboard_log += [("train/loss", to_cpu(loss).item())]
                 logger.list_of_scalars_summary(tensorboard_log, batches_done)
 
             log_str += AsciiTable(metric_table).table
-            log_str += f"\nTotal loss {loss.item()}"
+            log_str += f"\nTotal loss {to_cpu(loss).item()}"
 
-            print(log_str)
+            # Determine approximate time left for epoch
+            epoch_batches_left = len(dataloader) - (batch_i + 1)
+            time_left = datetime.timedelta(seconds=epoch_batches_left * (time.time() - start_time) / (batch_i + 1))
+            log_str += f"\n---- ETA {time_left}"
+
+            if opt.verbose: print(log_str)
 
             model.seen += imgs.size(0)
 
@@ -158,10 +165,10 @@ if __name__ == "__main__":
                 batch_size=8,
             )
             evaluation_metrics = [
-                ("val_precision", precision.mean()),
-                ("val_recall", recall.mean()),
-                ("val_mAP", AP.mean()),
-                ("val_f1", f1.mean()),
+                ("validation/precision", precision.mean()),
+                ("validation/recall", recall.mean()),
+                ("validation/mAP", AP.mean()),
+                ("validation/f1", f1.mean()),
             ]
             logger.list_of_scalars_summary(evaluation_metrics, epoch)
 

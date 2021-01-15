@@ -1,8 +1,9 @@
 numpy
-torch>=1.0
+torch>=1.2
 torchvision
 matplotlib
 tensorboard
 terminaltables
 pillow
 tqdm
+imgaug
