@@ -153,6 +153,11 @@ if __name__ == "__main__":
 
             model.seen += imgs.size(0)
 
+        if epoch % opt.checkpoint_interval == 0:
+            checkpoint_path = f"checkpoints/yoeo_checkpoint_{epoch}.pth"
+            print(f"Saving checkpoint: '{checkpoint_path}'")
+            torch.save(model.state_dict(), checkpoint_path)
+
         if epoch % opt.evaluation_interval == 0:
             print("\n---- Evaluating Model ----")
             # Evaluate the model on the validation set
@@ -180,5 +185,3 @@ if __name__ == "__main__":
             print(AsciiTable(ap_table).table)
             print(f"---- mAP {AP.mean()}")
 
-        if epoch % opt.checkpoint_interval == 0:
-            torch.save(model.state_dict(), f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
