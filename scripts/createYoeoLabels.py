@@ -91,7 +91,7 @@ with yoeo.data: containing number of bounding box classes as well as absolute pa
 
 parser = argparse.ArgumentParser(description="Create YOEO labels from yaml files.")
 parser.add_argument("superset", type=str, help="The directory that contains the datasets as subdirectories")
-parser.add_argument("trainsplit", type=float, help="Amount of train images from total images: train/test split (between 0 and 1)")
+parser.add_argument("testsplit", type=float, help="Amount of test images from total images: train/test split (between 0 and 1)")
 parser.add_argument("-s", "--seed", type=int, default=random.randint(0, (2**64)-1), help="Seed that controlles the train/test split (integer)")
 parser.add_argument("--ignore-blurred", action="store_true", help="Ignore blurred labels")
 parser.add_argument("--ignore-conceiled", action="store_true", help="Ignore conceiled labels")
@@ -119,11 +119,11 @@ print(f"The following datasets will be considered: \n{datasets_serialized}")
 train_images = []
 test_images = []
 
-def trainsplit():
-    if random.random() <= args.trainsplit:
-        return train_images
-    else:
+def testsplit():
+    if random.random() <= args.testsplit:
         return test_images
+    else:
+        return train_images
 
 # Iterate over all datasets
 for yamlfile in imagetagger_annotation_files:
@@ -143,7 +143,7 @@ for yamlfile in imagetagger_annotation_files:
         export = yaml.safe_load(f)
 
     for img_name, frame in export['images'].items():
-        trainsplit().append(os.path.join(d, "images", img_name))
+        testsplit().append(os.path.join(d, "images", img_name))
         name = os.path.splitext(img_name)[0]  # Remove file extension
         imgwidth = frame['width']
         imgheight = frame['height']
