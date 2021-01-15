@@ -107,7 +107,7 @@ class ToTensor(object):
         bb_targets = torch.zeros((len(boxes), 6))
         bb_targets[:, 1:] = transforms.ToTensor()(boxes)
 
-        return img, bb_targets
+        return img, bb_targets, seg
 
 
 class Resize(object):
