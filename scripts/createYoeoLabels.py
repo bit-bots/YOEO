@@ -89,18 +89,29 @@ with yoeo.data: containing number of bounding box classes as well as absolute pa
 """
 
 
+def range_limited_float_type_0_to_1(arg):
+    """Type function for argparse - a float within some predefined bounds
+    Derived from 'https://stackoverflow.com/questions/55324449/how-to-specify-a-minimum-or-maximum-float-value-with-argparse/55410582#55410582'.
+    """
+    minimum = 0.0
+    maximum = 1.0
+    try:
+        f = float(arg)
+    except ValueError:
+        raise argparse.ArgumentTypeError("Must be a floating point number")
+    if f < minimum or f > maximum:
+        raise argparse.ArgumentTypeError(f"Argument must be between {minimum} and {maximum}")
+    return f
+
+
 parser = argparse.ArgumentParser(description="Create YOEO labels from yaml files.")
 parser.add_argument("superset", type=str, help="The directory that contains the datasets as subdirectories")
-parser.add_argument("testsplit", type=float, help="Amount of test images from total images: train/test split (between 0 and 1)")
+parser.add_argument("testsplit", type=range_limited_float_type_0_to_1, help="Amount of test images from total images: train/test split (between 0.0 and 1.0)")
 parser.add_argument("-s", "--seed", type=int, default=random.randint(0, (2**64)-1), help="Seed that controlles the train/test split (integer)")
 parser.add_argument("--ignore-blurred", action="store_true", help="Ignore blurred labels")
 parser.add_argument("--ignore-conceiled", action="store_true", help="Ignore conceiled labels")
 parser.add_argument("--ignore-classes", nargs="+", default=[], help="Append class names, to be ignored")
 args = parser.parse_args()
-
-# Seed is used for train/test split
-random.seed(args.seed)
-print(f"Using seed: {args.seed}")
 
 # Remove ignored classes from CLASSES list
 for ignore_class in args.ignore_classes:
@@ -115,15 +126,8 @@ datasets = list(map(lambda x: os.path.basename(os.path.dirname(x)), imagetagger_
 datasets_serialized = '\n'.join(datasets)
 print(f"The following datasets will be considered: \n{datasets_serialized}")
 
-# Collect image path for train/test split
-train_images = []
-test_images = []
-
-def testsplit():
-    if random.random() <= args.testsplit:
-        return test_images
-    else:
-        return train_images
+# Collect image paths for train/test split
+images = []
 
 # Iterate over all datasets
 for yamlfile in imagetagger_annotation_files:
@@ -143,7 +147,7 @@ for yamlfile in imagetagger_annotation_files:
         export = yaml.safe_load(f)
 
     for img_name, frame in export['images'].items():
-        testsplit().append(os.path.join(d, "images", img_name))
+        images.append(os.path.join(d, "images", img_name))
         name = os.path.splitext(img_name)[0]  # Remove file extension
         imgwidth = frame['width']
         imgheight = frame['height']
@@ -196,6 +200,15 @@ for yamlfile in imagetagger_annotation_files:
         # Store BB annotations in .txt file
         with open(os.path.join(labels_dir, name + ".txt"), "w") as output:
             output.writelines([annotation + "\n" for annotation in annotations])
+
+# Seed is used for train/test split
+random.seed(args.seed)
+print(f"Using seed: {args.seed}")
+
+# Generate train/testsplit of images
+random.shuffle(sorted(images))  # Sort for consistant order then shuffle with seed
+train_images = images[0:round(len(images) * (1 - args.testsplit))]  # Split first range
+test_images = images[round(len(images) * (1 - args.testsplit)) + 1:-1]  # Split last range
 
 # Generate meta files
 train_images = set(train_images)  # Prevent images from showing up twice
