@@ -69,7 +69,7 @@ if __name__ == "__main__":
             model.load_darknet_weights(opt.pretrained_weights)
 
     # Get dataloader
-    dataset = ListDataset(train_path, multiscale=opt.multiscale_training, transform=AUGMENTATION_TRANSFORMS)
+    dataset = ListDataset(train_path, multiscale=opt.multiscale_training, img_size=opt.img_size, transform=AUGMENTATION_TRANSFORMS)
     dataloader = torch.utils.data.DataLoader(
         dataset,
         batch_size=opt.batch_size,
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         collate_fn=dataset.collate_fn,
     )
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.0000)
+    optimizer = torch.optim.Adam(model.parameters())
 
     metrics = [
         "grid_size",
