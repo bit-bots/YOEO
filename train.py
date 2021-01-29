@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(model.parameters())
 
-    metrics = [
+    yolo_metrics = [
         "grid_size",
         "loss",
         "x",
@@ -96,6 +96,11 @@ if __name__ == "__main__":
         "precision",
         "conf_obj",
         "conf_noobj",
+    ]
+
+    seg_metrics = [
+        "iou",
+        "loss",
     ]
 
     for epoch in range(opt.epochs):
@@ -122,26 +127,42 @@ if __name__ == "__main__":
 
             log_str = "\n---- [Epoch %d/%d, Batch %d/%d] ----\n" % (epoch, opt.epochs, batch_i, len(dataloader))
 
-            metric_table = [["Metrics", *[f"YOLO Layer {i}" for i in range(len(model.yolo_layers))]]]
+            yolo_metric_table = [["Metrics", *[f"YOLO Layer {i}" for i in range(len(model.yolo_layers))]]]
+
+            seg_metric_table =[["Metrics", *[f"Seg Layer {i}" for i in range(len(model.seg_layers))]]]
 
             # Log metrics at each YOLO layer
-            for i, metric in enumerate(metrics):
-                formats = {m: "%.6f" for m in metrics}
+            for i, metric in enumerate(yolo_metrics):
+                formats = {m: "%.6f" for m in yolo_metrics}
                 formats["grid_size"] = "%2d"
                 formats["cls_acc"] = "%.2f%%"
                 row_metrics = [formats[metric] % yolo.metrics.get(metric, 0) for yolo in model.yolo_layers]
-                metric_table += [[metric, *row_metrics]]
+                yolo_metric_table += [[metric, *row_metrics]]
 
-                # Tensorboard logging
-                tensorboard_log = []
-                for j, yolo in enumerate(model.yolo_layers):
-                    for name, metric in yolo.metrics.items():
-                        if name != "grid_size":
-                            tensorboard_log += [(f"train/{name}_{j+1}", metric)]
-                tensorboard_log += [("train/loss", to_cpu(loss).item())]
-                logger.list_of_scalars_summary(tensorboard_log, batches_done)
+            log_str += AsciiTable(yolo_metric_table).table + "\n"
 
-            log_str += AsciiTable(metric_table).table
+            for i, metric in enumerate(seg_metrics):
+                formats = {m: "%.6f" for m in seg_metrics}
+                row_metrics = [formats[metric] % seg.metrics.get(metric, 0) for seg in model.seg_layers]
+                seg_metric_table += [[metric, *row_metrics]]
+
+            log_str += AsciiTable(seg_metric_table).table
+
+            # Tensorboard logging
+            tensorboard_log = []
+            for j, yolo in enumerate(model.yolo_layers):
+                for name, metric in yolo.metrics.items():
+                    if name != "grid_size":
+                        tensorboard_log += [(f"train/{name}_{j+1}", metric)]
+            tensorboard_log += [("train/loss", to_cpu(loss).item())]
+            logger.list_of_scalars_summary(tensorboard_log, batches_done)
+
+            tensorboard_log = []
+            for j, seg in enumerate(model.seg_layers):
+                for name, metric in seg.metrics.items():
+                    tensorboard_log += [(f"train/seg_{name}_{j+1}", metric)]
+            logger.list_of_scalars_summary(tensorboard_log, batches_done)
+
             log_str += f"\nTotal loss {to_cpu(loss).item()}"
 
             # Determine approximate time left for epoch
@@ -172,12 +193,13 @@ if __name__ == "__main__":
             )
             
             if metrics_output is not None:
-                precision, recall, AP, f1, ap_class = metrics_output
+                precision, recall, AP, f1, ap_class, seg_class_ious = metrics_output
                 evaluation_metrics = [
                 ("validation/precision", precision.mean()),
                 ("validation/recall", recall.mean()),
                 ("validation/mAP", AP.mean()),
                 ("validation/f1", f1.mean()),
+                ("validation/seg/iou", np.array(seg_class_ious).mean())
                 ]
                 logger.list_of_scalars_summary(evaluation_metrics, epoch)
 
@@ -186,7 +208,10 @@ if __name__ == "__main__":
                 for i, c in enumerate(ap_class):
                     ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
                 print(AsciiTable(ap_table).table)
-                print(f"---- mAP {AP.mean()}")                
+                print(f"---- mAP {AP.mean()}")    
+
+                print("Segmentation IoUs:")
+                [print(f"- Class {class_id}: {iou}") for class_id, iou in enumerate(seg_class_ious)]            
             else:
                 print( "---- mAP not measured (no detections found by model)")
 
