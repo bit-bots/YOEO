@@ -42,6 +42,7 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
 
     labels = []
     sample_metrics = []  # List of tuples (TP, confs, pred)
+    seg_ious = []
     for batch_i, (_, imgs, bb_targets, mask_targets) in enumerate(tqdm.tqdm(dataloader, desc="Detecting objects")):
 
         # Extract labels
@@ -59,6 +60,8 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
         # Pull to cpu, convert to numpy and transpose to usable shape
         imgs = (Variable(imgs.type(Tensor).to("cpu"), requires_grad=False).numpy().transpose(0, 2, 3, 1) * 255).astype(np.uint8)
         segs = Variable(segmentation_outputs[0].to("cpu"), requires_grad=False).numpy()[:,:,:,np.newaxis].astype(np.uint8)
+
+        seg_ious.append(seg_iou(segmentation_outputs[0], mask_targets, 1))
 
         # Iterate over images in batch
         for image_idx_in_batch, img in enumerate(imgs):
@@ -93,7 +96,10 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
     true_positives, pred_scores, pred_labels = [np.concatenate(x, 0) for x in list(zip(*sample_metrics))]
     precision, recall, AP, f1, ap_class = ap_per_class(true_positives, pred_scores, pred_labels, labels)
 
-    return precision, recall, AP, f1, ap_class
+    # Calculate mean IOU for each class
+    seg_class_ious = [np.array(class_ious).mean() for class_ious in list(zip(*seg_ious))]
+
+    return precision, recall, AP, f1, ap_class, seg_class_ious
 
 
 if __name__ == "__main__":
@@ -128,7 +134,7 @@ if __name__ == "__main__":
 
     print("Compute mAP...")
 
-    precision, recall, AP, f1, ap_class = evaluate(
+    precision, recall, AP, f1, ap_class, seg_class_ious = evaluate(
         model,
         path=valid_path,
         iou_thres=opt.iou_thres,
@@ -143,3 +149,6 @@ if __name__ == "__main__":
         print(f"+ Class '{c}' ({class_names[c]}) - AP: {AP[i]}")
 
     print(f"mAP: {AP.mean()}")
+
+    print("Segmentation IoUs:")
+    [print(f"- Class {class_id}: {iou}") for class_id, iou in enumerate(seg_class_ious)]
