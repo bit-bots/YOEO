@@ -7,7 +7,7 @@ from torch.autograd import Variable
 import numpy as np
 
 from utils.parse_config import *
-from utils.utils import build_targets, to_cpu, non_max_suppression
+from utils.utils import build_targets, to_cpu, non_max_suppression, seg_iou
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -77,8 +77,8 @@ def create_modules(module_defs):
             yolo_layer = YOLOLayer(anchors, num_classes, img_size)
             modules.add_module(f"yolo_{module_i}", yolo_layer)
         elif module_def["type"] == "seg":
-            filters = sum([output_filters[1:][i] for i in layers]) # TODO Redo cleaner
-            modules.add_module(f"seg_{module_i}", EmptyLayer())
+            num_classes = int(module_def["classes"])
+            modules.add_module(f"seg_{module_i}", SegLayer(num_classes))
         # Register module list and number of output filters
         module_list.append(modules)
         output_filters.append(filters)
@@ -233,6 +233,30 @@ class YOLOLayer(nn.Module):
             return output, total_loss
 
 
+class SegLayer(nn.Module):
+    """Detection layer"""
+
+    def __init__(self, num_classes):
+        super(SegLayer, self).__init__()
+        self.num_classes = num_classes
+        self.metrics = {}
+
+    def forward(self, x, targets=None):
+        output = torch.argmax(x, dim=1)
+
+        if targets is None:
+            return output, 0
+        else:
+            layer_loss = nn.CrossEntropyLoss()(x, targets.squeeze(1))
+
+            self.metrics = {
+                "iou": np.array(seg_iou(output, targets.squeeze(1), self.num_classes)).mean(),
+                "loss": to_cpu(layer_loss).item(),
+            }
+
+            return output, layer_loss
+
+
 class Darknet(nn.Module):
     """YOLOv3 object detection model"""
 
@@ -241,6 +265,7 @@ class Darknet(nn.Module):
         self.module_defs = parse_model_config(config_path)
         self.hyperparams, self.module_list = create_modules(self.module_defs)
         self.yolo_layers = [layer[0] for layer in self.module_list if isinstance(layer[0], YOLOLayer)]
+        self.seg_layers = [layer[0] for layer in self.module_list if isinstance(layer[0], SegLayer)]
         self.img_size = img_size
         self.seen = 0
         self.header_info = np.array([0, 0, 0, self.seen, 0], dtype=np.int32)
@@ -262,11 +287,9 @@ class Darknet(nn.Module):
                 loss += layer_loss
                 yolo_outputs.append(x)
             elif module_def["type"] == "seg":
-                if mask_targets is not None:
-                    layer_loss = nn.CrossEntropyLoss()(x, mask_targets.squeeze(1))
-                    loss += layer_loss * 0.05 # TODO more suffisticated layer loss viz
-                i = torch.argmax(x, dim=1)
-                segmentation_outputs.append(i)
+                x, layer_loss = module[0](x, mask_targets)
+                loss += layer_loss
+                segmentation_outputs.append(x)
             layer_outputs.append(x)
         yolo_outputs = to_cpu(torch.cat(yolo_outputs, 1))
         return (yolo_outputs, segmentation_outputs) if (bb_targets is None and bb_targets is None) else (loss, yolo_outputs, segmentation_outputs)
