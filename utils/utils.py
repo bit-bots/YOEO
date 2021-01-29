@@ -311,8 +311,8 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
     noobj_mask[b, best_n, gj, gi] = 0
 
     # Set noobj mask to zero where iou exceeds ignore threshold
-    for i, anchor_ious in enumerate(ious.t()):
-        noobj_mask[b[i], anchor_ious > ignore_thres, gj[i], gi[i]] = 0
+    #for i, anchor_ious in enumerate(ious.t()):
+    #    noobj_mask[b[i], anchor_ious > ignore_thres, gj[i], gi[i]] = 0
 
     # Coordinates
     tx[b, best_n, gj, gi] = gx - gx.floor()
@@ -328,3 +328,21 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
 
     tconf = obj_mask.float()
     return iou_scores, class_mask, obj_mask, noobj_mask, tx, ty, tw, th, tcls, tconf
+
+
+def seg_iou(pred, target, classes):
+    ious = []
+    pred = pred.view(-1)
+    target = target.view(-1)
+
+    # Ignore IoU for background class ("0")
+    for cls in range(1, classes + 1):  # This goes from 1:n_classes-1 -> class "0" is ignored
+        pred_inds = pred == cls
+        target_inds = target == cls
+        intersection = (pred_inds[target_inds]).long().sum().data.cpu().item()  # Cast to long to prevent overflows
+        union = pred_inds.long().sum().data.cpu().item() + target_inds.long().sum().data.cpu().item() - intersection
+        if union == 0:
+            ious.append(float('nan'))  # If there is no ground truth, do not include in evaluation
+        else:
+            ious.append(float(intersection) / float(max(union, 1)))
+    return ious
