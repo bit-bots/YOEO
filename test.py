@@ -85,7 +85,10 @@ def evaluate(model, path, iou_thres, conf_thres, nms_thres, img_size, batch_size
             time.sleep(0.1)
 
         sample_metrics += get_batch_statistics(bb_outputs, bb_targets, iou_threshold=iou_thres)
-
+    
+    if len(sample_metrics) == 0:  # no detections over whole validation set.
+        return None
+    
     # Concatenate sample statistics
     true_positives, pred_scores, pred_labels = [np.concatenate(x, 0) for x in list(zip(*sample_metrics))]
     precision, recall, AP, f1, ap_class = ap_per_class(true_positives, pred_scores, pred_labels, labels)
