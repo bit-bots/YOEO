@@ -6,8 +6,7 @@ build
 *.egg-info
 dist
 output
-
-data/
+data/*
 backup
 weights/*.weights
 __pycache__

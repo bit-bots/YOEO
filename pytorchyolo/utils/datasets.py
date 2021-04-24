@@ -1,23 +1,15 @@
+from torch.utils.data import Dataset
+import torch.nn.functional as F
+import torch
 import glob
 import random
 import os
-import sys
 import warnings
 import numpy as np
 from PIL import Image
 from PIL import ImageFile
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-
-import imgaug.augmenters as iaa
-from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
-from imgaug.augmentables.segmaps import SegmentationMapsOnImage
-
-import torch
-import torch.nn.functional as F
-
-from torch.utils.data import Dataset
-import torchvision.transforms as transforms
 
 
 def pad_to_square(img, pad_value):
@@ -47,7 +39,7 @@ class ImageFolder(Dataset):
 
         img_path = self.files[index % len(self.files)]
         img = np.array(
-            Image.open(img_path).convert('RGB'), 
+            Image.open(img_path).convert('RGB'),
             dtype=np.uint8)
 
         # Label Placeholder
@@ -69,14 +61,26 @@ class ListDataset(Dataset):
         with open(list_path, "r") as file:
             self.img_files = file.readlines()
 
-        self.label_files = [
-            path.replace("images", "labels").replace(".png", ".txt").replace(".jpg", ".txt")
-            for path in self.img_files
-        ]
-        self.mask_files = [
-            path.replace("images", "masks").replace(".jpg", ".png")
-            for path in self.img_files
-        ]
+        self.label_files = []
+        for path in self.img_files:
+            image_dir = os.path.dirname(path)
+            label_dir = "labels".join(image_dir.rsplit("images", 1))
+            assert label_dir != image_dir, \
+                f"Image path must contain a folder named 'images'! \n'{image_dir}'"
+            label_file = os.path.join(label_dir, os.path.basename(path))
+            label_file = os.path.splitext(label_file)[0] + '.txt'
+            self.label_files.append(label_file)
+
+        self.mask_files = []
+        for path in self.img_files:
+            image_dir = os.path.dirname(path)
+            mask_dir = "masks".join(image_dir.rsplit("images", 1))
+            assert mask_dir != image_dir, \
+                f"Image path must contain a folder named 'images'! \n'{image_dir}'"
+            mask_file = os.path.join(mask_dir, os.path.basename(path))
+            mask_file = os.path.splitext(mask_file)[0] + '.png'
+            self.mask_files.append(mask_file)
+
         self.img_size = img_size
         self.max_objects = 100
         self.multiscale = multiscale
@@ -86,7 +90,7 @@ class ListDataset(Dataset):
         self.transform = transform
 
     def __getitem__(self, index):
-        
+
         # ---------
         #  Image
         # ---------
@@ -95,7 +99,7 @@ class ListDataset(Dataset):
             img_path = self.img_files[index % len(self.img_files)].rstrip()
 
             img = np.array(Image.open(img_path).convert('RGB'), dtype=np.uint8)
-        except Exception as e:
+        except Exception:
             print(f"Could not read image '{img_path}'.")
             return
 
@@ -109,7 +113,7 @@ class ListDataset(Dataset):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 boxes = np.loadtxt(label_path).reshape(-1, 5)
-        except Exception as e:
+        except Exception:
             print(f"Could not read label '{label_path}'.")
             return
 
@@ -133,7 +137,7 @@ class ListDataset(Dataset):
                 img, bb_targets, mask_targets = self.transform(
                     (img, boxes, mask)
                 )
-            except:
+            except Exception:
                 print(f"Could not apply transform.")
                 return
 
@@ -149,8 +153,9 @@ class ListDataset(Dataset):
         
         # Selects new image size every tenth batch
         if self.multiscale and self.batch_count % 10 == 0:
-            self.img_size = random.choice(range(self.min_size, self.max_size + 1, 32))
-        
+            self.img_size = random.choice(
+                range(self.min_size, self.max_size + 1, 32))
+
         # Resize images to input shape
         imgs = torch.stack([resize(img, self.img_size) for img in imgs])
 
@@ -158,7 +163,6 @@ class ListDataset(Dataset):
         for i, boxes in enumerate(bb_targets):
             boxes[:, 0] = i
         bb_targets = torch.cat(bb_targets, 0)
-        
 
         # Stack masks and drop the 2 duplicated channels 
         mask_targets = torch.stack([resize(mask, self.img_size)[0] for mask in mask_targets])
