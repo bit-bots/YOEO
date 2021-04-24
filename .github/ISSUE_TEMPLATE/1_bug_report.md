@@ -11,7 +11,7 @@ assignees: ''
 <!--- Please provide context, as this streamlines the debugging process. Mark the correct cases and follow the instructions. -->
 - [ ] I have installed this repo manually and the issue occurred on this commit:
 <!--- Get the current commit hash either from the first printout of the program or by executing the following command: 'git rev-parse --short HEAD' -->
-- [ ] I have installed this repo via `PIP` and the issue occurred on version: <!--- Get the current version number by executing the following command: 'pip show pytorchyolo' -->
+- [ ] I have installed this repo via `PIP` and the issue occurred on version: <!--- Get the current version number by executing the following command: 'pip show yoeo' -->
 - [ ] The issue occurred when using the following .cfg model:
     - [ ] `yolov3`
     - [ ] `yolov3-tiny`
@@ -21,7 +21,7 @@ assignees: ''
 <!--- Please ensure, you have completed the following checks. This helps to give insight into the issue and prevent already resolved issues. -->
 - [ ] The issue occurred on the newest version
 <!--- If installed manually, run: 'git pull && poetry install'  -->
-<!--- If installed via PIP, run: 'pip install --upgrade pytorchyolo' -->
+<!--- If installed via PIP, run: 'pip install --upgrade yoeo' -->
 - [ ] I couldn't find a similar issue here on this project's github repo
 - [ ] If the issue is CUDA related (CUDA error), I have tested and provided the traceback also when CUDA is turned off <!--- For linux, rerun your steps with the prefix CUDA_VISIBLE_DEVICES="" -->
 - [ ] I have provided all tracebacks or printouts in ```Text Form``` <!--- This makes it easier to search for errors. -->

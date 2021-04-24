@@ -5,7 +5,7 @@ description = "A hybrid CNN for object detection and semantic segmentation"
 authors = ["Florian Vahl <git@flova.de>", "Jan Gutsche <git@jagut.de>"]
 
 [tool.poetry.dependencies]
-python = ">=3.6"
+python = ">=3.6.2"
 numpy = "^1.19.5"
 torch = ">=1.0"
 torchvision = "^0.8.2"
@@ -24,6 +24,6 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-yoeo-detect = "pytorchyolo.detect:run"
-yoeo-train = "pytorchyolo.train:run"
-yoeo-test = "pytorchyolo.test:run"
+yoeo-detect = "yoeo.detect:run"
+yoeo-train = "yoeo.train:run"
+yoeo-test = "yoeo.test:run"

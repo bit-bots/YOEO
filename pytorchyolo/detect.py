@@ -15,10 +15,10 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
-from pytorchyolo.models import load_model
-from pytorchyolo.utils.utils import load_classes, rescale_boxes, non_max_suppression, to_cpu, print_environment_info
-from pytorchyolo.utils.datasets import ImageFolder
-from pytorchyolo.utils.transforms import Resize, DEFAULT_TRANSFORMS
+from yoeo.models import load_model
+from yoeo.utils.utils import load_classes, rescale_boxes, non_max_suppression, to_cpu, print_environment_info
+from yoeo.utils.datasets import ImageFolder
+from yoeo.utils.transforms import Resize, DEFAULT_TRANSFORMS
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches

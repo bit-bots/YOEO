@@ -6,8 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from pytorchyolo.utils.parse_config import parse_model_config
-from pytorchyolo.utils.utils import weights_init_normal, to_cpu, seg_iou
+from yoeo.utils.parse_config import parse_model_config
+from yoeo.utils.utils import weights_init_normal, to_cpu, seg_iou
 
 
 def create_modules(module_defs):
@@ -162,22 +162,12 @@ class SegLayer(nn.Module):
     def __init__(self, num_classes):
         super(SegLayer, self).__init__()
         self.num_classes = num_classes
-        self.metrics = {}
 
-    def forward(self, x, targets=None):
-        output = torch.argmax(x, dim=1)
-
-        if targets is None:
-            return output, 0
+    def forward(self, x):
+        if self.training:
+            return x
         else:
-            layer_loss = nn.CrossEntropyLoss()(x, targets.squeeze(1))
-
-            self.metrics = {
-                "iou": np.array(seg_iou(output, targets.squeeze(1), self.num_classes)).mean(),
-                "loss": to_cpu(layer_loss).item(),
-            }
-
-            return output, layer_loss
+            return torch.argmax(x, dim=1)
 
 
 class Darknet(nn.Module):
@@ -189,6 +179,7 @@ class Darknet(nn.Module):
         self.hyperparams, self.module_list = create_modules(self.module_defs)
         self.yolo_layers = [layer[0] for layer in self.module_list if isinstance(layer[0], YOLOLayer)]
         self.seg_layers = [layer[0] for layer in self.module_list if isinstance(layer[0], SegLayer)]
+        self.num_seg_classes = self.seg_layers[0].num_classes
         self.seen = 0
         self.header_info = np.array([0, 0, 0, self.seen, 0], dtype=np.int32)
 
@@ -210,7 +201,6 @@ class Darknet(nn.Module):
                 yolo_outputs.append(x)
             elif module_def["type"] == "seg":
                 x = module[0](x)
-                loss += layer_loss
                 segmentation_outputs.append(x)
             layer_outputs.append(x)
         return (yolo_outputs, segmentation_outputs) if self.training else (torch.cat(yolo_outputs, 1), torch.cat(segmentation_outputs, 1))

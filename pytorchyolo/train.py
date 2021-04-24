@@ -9,16 +9,17 @@ import tqdm
 import torch
 from torch.utils.data import DataLoader
 import torch.optim as optim
+from torch.autograd import Variable
 
-from pytorchyolo.models import load_model
-from pytorchyolo.utils.logger import Logger
-from pytorchyolo.utils.utils import to_cpu, load_classes, print_environment_info
-from pytorchyolo.utils.datasets import ListDataset
-from pytorchyolo.utils.augmentations import AUGMENTATION_TRANSFORMS
-# from pytorchyolo.utils.transforms import DEFAULT_TRANSFORMS
-from pytorchyolo.utils.parse_config import parse_data_config
-from pytorchyolo.utils.loss import compute_loss
-from pytorchyolo.test import _evaluate, _create_validation_data_loader
+from yoeo.models import load_model
+from yoeo.utils.logger import Logger
+from yoeo.utils.utils import to_cpu, load_classes, print_environment_info
+from yoeo.utils.datasets import ListDataset
+from yoeo.utils.augmentations import AUGMENTATION_TRANSFORMS
+# from yoeo.utils.transforms import DEFAULT_TRANSFORMS
+from yoeo.utils.parse_config import parse_data_config
+from yoeo.utils.loss import compute_loss
+from yoeo.test import _evaluate, _create_validation_data_loader
 
 from terminaltables import AsciiTable
 
@@ -146,15 +147,16 @@ def run():
 
         model.train()  # Set model to training mode
 
-        for batch_i, (_, imgs, targets) in enumerate(tqdm.tqdm(dataloader, desc=f"Training Epoch {epoch}")):
+        for batch_i, (_, imgs, bb_targets, mask_targets) in enumerate(tqdm.tqdm(dataloader, desc=f"Training Epoch {epoch}")):
             batches_done = len(dataloader) * epoch + batch_i
 
-            imgs = imgs.to(device, non_blocking=True)
-            targets = targets.to(device)
+            imgs = Variable(imgs.to(device, non_blocking=True))
+            bb_targets = Variable(bb_targets.to(device), requires_grad=False)
+            mask_targets = Variable(mask_targets.to(device=device), requires_grad=False)
 
             outputs = model(imgs)
 
-            loss, loss_components = compute_loss(outputs, targets, model)
+            loss, loss_components = compute_loss(outputs, (bb_targets, mask_targets), model)
 
             loss.backward()
 
@@ -195,7 +197,8 @@ def run():
                         ["IoU loss", float(loss_components[0])],
                         ["Object loss", float(loss_components[1])],
                         ["Class loss", float(loss_components[2])],
-                        ["Loss", float(loss_components[3])],
+                        ["Segmentation loss", float(loss_components[3])],
+                        ["Loss", float(loss_components[4])],
                         ["Batch loss", to_cpu(loss).item()],
                     ]).table)
 
@@ -215,7 +218,7 @@ def run():
 
         # Save model to checkpoint file
         if epoch % args.checkpoint_interval == 0:
-            checkpoint_path = f"checkpoints/yolov3_ckpt_{epoch}.pth"
+            checkpoint_path = f"checkpoints/yoeo_checkpoint_{epoch}.pth"
             print(f"---- Saving checkpoint to: '{checkpoint_path}' ----")
             torch.save(model.state_dict(), checkpoint_path)
 
@@ -238,12 +241,14 @@ def run():
             )
 
             if metrics_output is not None:
-                precision, recall, AP, f1, ap_class = metrics_output
+                precision, recall, AP, f1, ap_class = metrics_output[0]
+                seg_class_ious = metrics_output[1]
                 evaluation_metrics = [
                     ("validation/precision", precision.mean()),
                     ("validation/recall", recall.mean()),
                     ("validation/mAP", AP.mean()),
-                    ("validation/f1", f1.mean())]
+                    ("validation/f1", f1.mean()),
+                    ("validation/seg_iou", np.array(seg_class_ious).mean())]
                 logger.list_of_scalars_summary(evaluation_metrics, epoch)
 
 

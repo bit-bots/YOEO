@@ -133,10 +133,15 @@ class QFocalLoss(nn.Module):
             return loss
 
 
-def compute_loss(predictions, targets, model):  # predictions, targets, model
-    device = targets.device
+def compute_loss(combined_predictions, combined_targets, model):
+    yolo_targets, seg_targets = combined_targets
+    yolo_predictions, seg_predictions = combined_predictions
+
+    seg_loss = nn.CrossEntropyLoss()(seg_predictions[0], seg_targets.squeeze(1)).unsqueeze(0)
+
+    device = yolo_targets.device
     lcls, lbox, lobj = torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device)
-    tcls, tbox, indices, anchors = build_targets(predictions, targets, model)  # targets
+    tcls, tbox, indices, anchors = build_targets(yolo_predictions, yolo_targets, model)  # targets
 
     # Define criteria
     BCEcls = nn.BCEWithLogitsLoss(
@@ -154,7 +159,7 @@ def compute_loss(predictions, targets, model):  # predictions, targets, model
 
     # Losses
     # layer index, layer predictions
-    for layer_index, layer_predictions in enumerate(predictions):
+    for layer_index, layer_predictions in enumerate(yolo_predictions):
         # image, anchor, gridy, gridx
         b, anchor, grid_j, grid_i = indices[layer_index]
         tobj = torch.zeros_like(layer_predictions[..., 0], device=device)  # target obj
@@ -191,9 +196,9 @@ def compute_loss(predictions, targets, model):  # predictions, targets, model
     lcls *= 0.31
     batch_size = tobj.shape[0]  # batch size
 
-    loss = lbox + lobj + lcls
+    loss = lbox + lobj + lcls + seg_loss
 
-    return loss * batch_size, to_cpu(torch.cat((lbox, lobj, lcls, loss)))
+    return loss * batch_size, to_cpu(torch.cat((lbox, lobj, lcls, seg_loss, loss)))
 
 
 def build_targets(p, targets, model):

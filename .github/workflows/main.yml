@@ -48,4 +48,4 @@ jobs:
         with:
           only_warn: 1
           max_line_length: 150
-          path: pytorchyolo
+          path: yoeo

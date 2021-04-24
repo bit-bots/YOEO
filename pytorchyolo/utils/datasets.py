@@ -137,8 +137,9 @@ class ListDataset(Dataset):
                 img, bb_targets, mask_targets = self.transform(
                     (img, boxes, mask)
                 )
-            except Exception:
+            except Exception as e:
                 print(f"Could not apply transform.")
+                raise e
                 return
 
         return img_path, img, bb_targets, mask_targets

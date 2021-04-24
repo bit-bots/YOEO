@@ -12,11 +12,11 @@ import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
-from pytorchyolo.models import load_model
-from pytorchyolo.utils.utils import load_classes, ap_per_class, get_batch_statistics, non_max_suppression, to_cpu, xywh2xyxy, print_environment_info
-from pytorchyolo.utils.datasets import ListDataset
-from pytorchyolo.utils.transforms import DEFAULT_TRANSFORMS
-from pytorchyolo.utils.parse_config import parse_data_config
+from yoeo.models import load_model
+from yoeo.utils.utils import load_classes, ap_per_class, get_batch_statistics, non_max_suppression, to_cpu, xywh2xyxy, print_environment_info, seg_iou
+from yoeo.utils.datasets import ListDataset
+from yoeo.utils.transforms import DEFAULT_TRANSFORMS
+from yoeo.utils.parse_config import parse_data_config
 
 
 def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_size=8, img_size=416,
@@ -50,7 +50,7 @@ def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_s
     dataloader = _create_validation_data_loader(
         img_path, batch_size, img_size, n_cpu)
     model = load_model(model_path, weights_path)
-    metrics_output = _evaluate(
+    metrics_output, seg_class_ious = _evaluate(
         model,
         dataloader,
         class_names,
@@ -59,10 +59,10 @@ def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_s
         conf_thres,
         nms_thres,
         verbose)
-    return metrics_output
+    return metrics_output, seg_class_ious
 
 
-def print_eval_stats(metrics_output, class_names, verbose):
+def print_eval_stats(metrics_output, seg_class_ious, class_names, verbose):
     if metrics_output is not None:
         precision, recall, AP, f1, ap_class = metrics_output
         if verbose:
@@ -74,6 +74,8 @@ def print_eval_stats(metrics_output, class_names, verbose):
         print(f"---- mAP {AP.mean():.5f} ----")
     else:
         print("---- mAP not measured (no detections found by model) ----")
+    
+    print(f"IoUs for each of the classes: {seg_class_ious}")
 
 
 def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, nms_thres, verbose):
@@ -103,20 +105,22 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
 
     labels = []
     sample_metrics = []  # List of tuples (TP, confs, pred)
-    for _, imgs, targets in tqdm.tqdm(dataloader, desc="Validating"):
+    seg_ious = []
+    for _, imgs, bb_targets, mask_targets in tqdm.tqdm(dataloader, desc="Validating"):
         # Extract labels
-        labels += targets[:, 1].tolist()
+        labels += bb_targets[:, 1].tolist()
         # Rescale target
-        targets[:, 2:] = xywh2xyxy(targets[:, 2:])
-        targets[:, 2:] *= img_size
+        bb_targets[:, 2:] = xywh2xyxy(bb_targets[:, 2:])
+        bb_targets[:, 2:] *= img_size
 
         imgs = Variable(imgs.type(Tensor), requires_grad=False)
 
         with torch.no_grad():
-            outputs = to_cpu(model(imgs))
-            outputs = non_max_suppression(outputs, conf_thres=conf_thres, iou_thres=nms_thres)
+            yolo_outputs, segmentation_outputs = model(imgs)
+            yolo_outputs = non_max_suppression(to_cpu(yolo_outputs), conf_thres=conf_thres, iou_thres=nms_thres)
 
-        sample_metrics += get_batch_statistics(outputs, targets, iou_threshold=iou_thres)
+        sample_metrics += get_batch_statistics(yolo_outputs, bb_targets, iou_threshold=iou_thres)
+        seg_ious.append(seg_iou(to_cpu(segmentation_outputs), mask_targets, model.num_seg_classes))
 
     if len(sample_metrics) == 0:  # No detections over whole validation set.
         print("---- No detections over whole validation set ----")
@@ -125,12 +129,14 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
     # Concatenate sample statistics
     true_positives, pred_scores, pred_labels = [
         np.concatenate(x, 0) for x in list(zip(*sample_metrics))]
-    metrics_output = ap_per_class(
+    yolo_metrics_output = ap_per_class(
         true_positives, pred_scores, pred_labels, labels)
 
-    print_eval_stats(metrics_output, class_names, verbose)
+    seg_class_ious = [np.array(class_ious).mean() for class_ious in list(zip(*seg_ious))]
 
-    return metrics_output
+    print_eval_stats(yolo_metrics_output, seg_class_ious, class_names, verbose)
+
+    return yolo_metrics_output, seg_class_ious
 
 
 def _create_validation_data_loader(img_path, batch_size, img_size, n_cpu):
@@ -181,7 +187,7 @@ def run():
     valid_path = data_config["valid"]
     class_names = load_classes(data_config["names"])  # List of class names
 
-    precision, recall, AP, f1, ap_class = evaluate_model_file(
+    evaluate_model_file(
         args.model,
         args.weights,
         valid_path,
