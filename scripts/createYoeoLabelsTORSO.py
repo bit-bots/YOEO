@@ -185,20 +185,20 @@ for yamlfile in imagetagger_annotation_files:
                 elif annotation['type'] in CLASSES['segmentation_classes']:  # Handle segmentations
                     continue
                     #     if annotation['type'] == 'field edge':
-                    #         mask = np.zeros((imgheight, imgwidth, 3), dtype=np.uint8)  # Init black mask
+                    #     mask = np.zeros((imgheight, imgwidth, 3), dtype=np.uint8)  # Init black mask
 
-                    #         if not annotation['vector'][0] == 'notinimage':  # Only draw polygon if annotation is known
-                    #             vector = [list(pts) for pts in list(annotation['vector'])]
-                    #             # Extending the points with corners to fill the space below the horizon
-                    #             vector.append([imgwidth - 1, imgheight - 0])
-                    #             vector.append([0, imgheight - 1])
+                    #     if not annotation['vector'][0] == 'notinimage':  # Only draw polygon if annotation is known
+                    #         vector = [list(pts) for pts in list(annotation['vector'])]
+                    #         # Extending the points with corners to fill the space below the horizon
+                    #         vector.append([imgwidth - 1, imgheight - 0])
+                    #         vector.append([0, imgheight - 1])
 
-                    #             # Generate polygon from vector points
-                    #             points = np.array(vector, dtype=np.int32)
-                    #             points = points.reshape((1, -1, 2))
-                    #             cv2.fillPoly(mask, points, (1, 1, 1))  # Fill mask with not so black polygon
+                    #         # Generate polygon from vector points
+                    #         points = np.array(vector, dtype=np.int32)
+                    #         points = points.reshape((1, -1, 2))
+                    #         cv2.fillPoly(mask, points, (1, 1, 1))  # Fill mask with not so black polygon
 
-                    #         cv2.imwrite(os.path.join(masks_dir, name + ".png"), mask)  # Store mask on disk
+                    #     cv2.imwrite(os.path.join(masks_dir, name + ".png"), mask)  # Store mask on disk
                     # else:
                     #     print(f"The annotation type '{annotation['type']}' is not supported or should be ignored. Image: '{img_name}'")
                 else:
@@ -207,6 +207,13 @@ for yamlfile in imagetagger_annotation_files:
         # Store BB annotations in .txt file
         with open(os.path.join(labels_dir, name + ".txt"), "w") as output:
             output.writelines([annotation + "\n" for annotation in annotations])
+
+        # Generate segmentations in correct format
+        seg_path = os.path.join(os.path.basename(os.path.dirname(yamlfile)), "segmentations", os.path.splitext(img_name)[0], ".png")
+        print(seg_path)
+        seg = cv2.imread(seg_path)
+        seg = (seg + 1) // 128  # Convert values: Lines (128 -> 1), Field (255 -> 2)
+        cv2.imwrite(os.path.join(masks_dir, os.path.splitext(img_name)[0], ".png"), seg)
 
 # Seed is used for train/test split
 random.seed(args.seed)
