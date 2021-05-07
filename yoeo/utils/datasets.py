@@ -74,7 +74,7 @@ class ListDataset(Dataset):
         self.mask_files = []
         for path in self.img_files:
             image_dir = os.path.dirname(path)
-            mask_dir = "masks".join(image_dir.rsplit("images", 1))
+            mask_dir = "yoeo_masks".join(image_dir.rsplit("images", 1))
             assert mask_dir != image_dir, \
                 f"Image path must contain a folder named 'images'! \n'{image_dir}'"
             mask_file = os.path.join(mask_dir, os.path.basename(path))
@@ -125,8 +125,8 @@ class ListDataset(Dataset):
 
             # Extract image as PyTorch tensor
             mask = np.array(Image.open(mask_path).convert('RGB'), dtype=np.uint8) * 255
-        except Exception as e:
-            print(f"Could not mask '{mask_path}'.")
+        except FileNotFoundError as e:
+            print(f"Could not load mask '{mask_path}'.")
             return
 
         # -----------

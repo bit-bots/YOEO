@@ -136,7 +136,8 @@ class QFocalLoss(nn.Module):
 def compute_loss(combined_predictions, combined_targets, model):
     yolo_targets, seg_targets = combined_targets
     yolo_predictions, seg_predictions = combined_predictions
-
+    
+    # print(f"seg_targets: {seg_targets}")
     seg_loss = nn.CrossEntropyLoss()(seg_predictions[0], seg_targets.squeeze(1)).unsqueeze(0)
 
     device = yolo_targets.device
