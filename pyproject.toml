@@ -19,6 +19,7 @@ torchsummary = "^1.5.1"
 onnxruntime = "^1.7.0"
 onnx = "^1.9.0"
 onnxruntime-gpu = "^1.7.0"
+PyYAML = "^5.4.1"
 
 [tool.poetry.dev-dependencies]
 
