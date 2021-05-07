@@ -134,7 +134,7 @@ def detect(model, dataloader, output_path, img_size, conf_thres, nms_thres):
 
         # Get detections
         with torch.no_grad():
-            detections = model(input_imgs)
+            detections, _ = model(input_imgs)
             detections = non_max_suppression(detections, conf_thres, nms_thres)
 
         # Store image and detections

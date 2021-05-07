@@ -18,7 +18,7 @@ from yoeo.utils.logger import Logger
 from yoeo.utils.utils import to_cpu, load_classes, print_environment_info
 from yoeo.utils.datasets import ListDataset
 from yoeo.utils.augmentations import AUGMENTATION_TRANSFORMS
-# from yoeo.utils.transforms import DEFAULT_TRANSFORMS
+from yoeo.utils.transforms import DEFAULT_TRANSFORMS
 from yoeo.utils.parse_config import parse_data_config
 from yoeo.utils.loss import compute_loss
 from yoeo.test import _evaluate, _create_validation_data_loader
@@ -48,7 +48,7 @@ def _create_data_loader(img_path, batch_size, img_size, n_cpu, multiscale_traini
         img_path,
         img_size=img_size,
         multiscale=multiscale_training,
-        transform=AUGMENTATION_TRANSFORMS)
+        transform=DEFAULT_TRANSFORMS)
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,

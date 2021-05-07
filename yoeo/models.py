@@ -306,6 +306,7 @@ def load_model(model_path, weights_path=None):
     """
     device = torch.device("cuda" if torch.cuda.is_available()
                           else "cpu")  # Select device for inference
+
     model = Darknet(model_path).to(device)
 
     model.apply(weights_init_normal)
@@ -314,7 +315,7 @@ def load_model(model_path, weights_path=None):
     if weights_path:
         if weights_path.endswith(".pth"):
             # Load checkpoint weights
-            model.load_state_dict(torch.load(weights_path))
+            model.load_state_dict(torch.load(weights_path, map_location=device))
         else:
             # Load darknet weights
             model.load_darknet_weights(weights_path)
