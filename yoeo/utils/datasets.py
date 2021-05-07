@@ -151,7 +151,7 @@ class ListDataset(Dataset):
         batch = [data for data in batch if data is not None]
 
         paths, imgs, bb_targets, mask_targets = list(zip(*batch))
-        
+
         # Selects new image size every tenth batch
         if self.multiscale and self.batch_count % 10 == 0:
             self.img_size = random.choice(
@@ -165,10 +165,10 @@ class ListDataset(Dataset):
             boxes[:, 0] = i
         bb_targets = torch.cat(bb_targets, 0)
 
-        # Stack masks and drop the 2 duplicated channels 
+        # Stack masks and drop the 2 duplicated channels
         mask_targets = torch.stack([resize(mask, self.img_size)[0] for mask in mask_targets])
         # Reshape mask and convert to long
-        mask_targets = mask_targets.reshape(-1, 1, self.img_size, self.img_size).long()
+        mask_targets = mask_targets.reshape(-1, 2, self.img_size, self.img_size).long()
 
         return paths, imgs, bb_targets, mask_targets
 

@@ -21,6 +21,7 @@ import numpy as np
 CLASSES = {
     'bb_classes': ['ball', 'goalpost', 'robot'],
     'segmentation_classes': ['field edge', 'lines'],
+    'ignored_classes': ['obstacle', 'L-Intersection', 'X-Intersection', 'T-Intersection']
     }
 
 
@@ -113,7 +114,7 @@ def range_limited_float_type_0_to_1(arg):
 
 parser = argparse.ArgumentParser(description="Create YOEO labels from yaml files.")
 parser.add_argument("superset", type=str, help="The directory that contains the datasets as subdirectories")
-#parser.add_argument("testsplit", type=range_limited_float_type_0_to_1, help="Amount of test images from total images: train/test split (between 0.0 and 1.0)")
+parser.add_argument("testsplit", type=range_limited_float_type_0_to_1, help="Amount of test images from total images: train/test split (between 0.0 and 1.0)")
 parser.add_argument("-s", "--seed", type=int, default=random.randint(0, (2**64)-1), help="Seed that controlles the train/test split (integer)")
 parser.add_argument("--ignore-blurred", action="store_true", help="Ignore blurred labels")
 parser.add_argument("--ignore-conceiled", action="store_true", help="Ignore conceiled labels")
@@ -127,14 +128,14 @@ for ignore_class in args.ignore_classes:
             CLASSES[category].remove(ignore_class)
             print(f"Ignoring class '{ignore_class}'")
 
-imagetagger_annotation_files = glob.glob(f"{args.superset}/*/*.yaml")
+imagetagger_annotation_files = glob.glob(f"{args.superset}/*.yaml")
 datasets = list(map(lambda x: os.path.basename(os.path.dirname(x)), imagetagger_annotation_files))
 
 datasets_serialized = '\n'.join(datasets)
 print(f"The following datasets will be considered: \n{datasets_serialized}")
 
 # Collect image paths for train/test split
-# images = []
+images = []
 
 # Iterate over all datasets
 for yamlfile in imagetagger_annotation_files:
@@ -154,34 +155,54 @@ for yamlfile in imagetagger_annotation_files:
         export = yaml.safe_load(f)
 
     for img_name, frame in export['images'].items():
-        # images.append(os.path.join(d, "images", img_name))
+        # Generate segmentations in correct format
+        seg_path = os.path.join(os.path.dirname(yamlfile), "segmentations", os.path.splitext(img_name)[0] + ".png")
+        seg_in = cv2.imread(seg_path)
+        if seg_in is not None:
+            mask = np.zeros(seg_in.shape[:2], dtype=np.uint8)
+            mask += ((seg_in == (127, 127, 127)).all(axis=2)).astype(np.uint8)  # Lines
+            mask += (((seg_in == (254, 254, 254)).all(axis=2)).astype(np.uint8) * 2)  # Field
+            seg_out = np.zeros(seg_in.shape, dtype=np.uint8)
+            seg_out[..., 0] = mask
+            seg_out[..., 1] = mask
+            seg_out[..., 2] = mask
+            cv2.imwrite(os.path.join(masks_dir, os.path.splitext(img_name)[0] + ".png"), seg_out)
+        else:
+            print(f"No segmentation found: '{seg_path}'")
+            continue
+
+        images.append(os.path.join(d, "images", img_name))
         name = os.path.splitext(img_name)[0]  # Remove file extension
         imgwidth = frame['width']
         imgheight = frame['height']
         annotations = []
+
         for annotation in frame['annotations']:
             # Ignore if blurred or conceiled and should be ignored
             if not ((args.ignore_blurred and annotation['blurred']) or
                 (args.ignore_conceiled and annotation['conceiled'])):
 
-                if annotation['type'] in CLASSES['bb_classes'] and annotation['in_image']:  # Handle bounding boxes
-                    min_x = min(map(lambda x: x[0], annotation['vector']))
-                    max_x = max(map(lambda x: x[0], annotation['vector']))
-                    min_y = min(map(lambda x: x[1], annotation['vector']))
-                    max_y = max(map(lambda x: x[1], annotation['vector']))
+                if annotation['type'] in CLASSES['bb_classes']:  # Handle bounding boxes
+                    if annotation['in_image']:
+                        min_x = min(map(lambda x: x[0], annotation['vector']))
+                        max_x = max(map(lambda x: x[0], annotation['vector']))
+                        min_y = min(map(lambda x: x[1], annotation['vector']))
+                        max_y = max(map(lambda x: x[1], annotation['vector']))
 
-                    annowidth = max_x - min_x
-                    annoheight = max_y - min_y
-                    relannowidth = annowidth / imgwidth
-                    relannoheight = annoheight / imgheight
+                        annowidth = max_x - min_x
+                        annoheight = max_y - min_y
+                        relannowidth = annowidth / imgwidth
+                        relannoheight = annoheight / imgheight
 
-                    center_x = min_x + (annowidth / 2)
-                    center_y = min_y + (annoheight / 2)
-                    relcenter_x = center_x / imgwidth
-                    relcenter_y = center_y / imgheight
+                        center_x = min_x + (annowidth / 2)
+                        center_y = min_y + (annoheight / 2)
+                        relcenter_x = center_x / imgwidth
+                        relcenter_y = center_y / imgheight
 
-                    classID = CLASSES['bb_classes'].index(annotation['type'])  # Derive classID from index in predefined classes
-                    annotations.append(f"{classID} {relcenter_x} {relcenter_y} {relannowidth} {relannoheight}")  # Append to store it later
+                        classID = CLASSES['bb_classes'].index(annotation['type'])  # Derive classID from index in predefined classes
+                        annotations.append(f"{classID} {relcenter_x} {relcenter_y} {relannowidth} {relannoheight}")  # Append to store it later
+                    else:  # Annotation is not in image
+                        continue
                 elif annotation['type'] in CLASSES['segmentation_classes']:  # Handle segmentations
                     continue
                     #     if annotation['type'] == 'field edge':
@@ -201,6 +222,8 @@ for yamlfile in imagetagger_annotation_files:
                     #     cv2.imwrite(os.path.join(masks_dir, name + ".png"), mask)  # Store mask on disk
                     # else:
                     #     print(f"The annotation type '{annotation['type']}' is not supported or should be ignored. Image: '{img_name}'")
+                elif annotation['type'] in CLASSES['ignored_classes']:  # Ignore this annotation
+                    continue
                 else:
                     print(f"The annotation type '{annotation['type']}' is not supported or should be ignored. Image: '{img_name}'")
 
@@ -208,40 +231,32 @@ for yamlfile in imagetagger_annotation_files:
         with open(os.path.join(labels_dir, name + ".txt"), "w") as output:
             output.writelines([annotation + "\n" for annotation in annotations])
 
-        # Generate segmentations in correct format
-        seg_path = os.path.join(os.path.basename(os.path.dirname(yamlfile)), "segmentations", os.path.splitext(img_name)[0], ".png")
-        print(seg_path)
-        seg = cv2.imread(seg_path)
-        seg = (seg + 1) // 128  # Convert values: Lines (128 -> 1), Field (255 -> 2)
-        cv2.imwrite(os.path.join(masks_dir, os.path.splitext(img_name)[0], ".png"), seg)
-
 # Seed is used for train/test split
 random.seed(args.seed)
 print(f"Using seed: {args.seed}")
 
-# # Generate train/testsplit of images
-# random.shuffle(sorted(images))  # Sort for consistant order then shuffle with seed
-# train_images = images[0:round(len(images) * (1 - args.testsplit))]  # Split first range
-# test_images = images[round(len(images) * (1 - args.testsplit)) + 1:-1]  # Split last range
-#
-# # Generate meta files
-# train_images = set(train_images)  # Prevent images from showing up twice
-# train_path = os.path.join(args.superset, "train.txt")
-# with open(train_path, "w") as train_file:
-#     train_file.writelines([image_path + "\n" for image_path in train_images])
-#
-# test_images = set(test_images)  # Prevent images from showing up twice
-# test_path = os.path.join(args.superset, "test.txt")
-# with open(test_path, "w") as test_file:
-#     test_file.writelines([image_path + "\n" for image_path in test_images])
+# Generate train/testsplit of images
+random.shuffle(sorted(images))  # Sort for consistant order then shuffle with seed
+train_images = images[0:round(len(images) * (1 - args.testsplit))]  # Split first range
+test_images = images[round(len(images) * (1 - args.testsplit)) + 1:-1]  # Split last range
+
+# Generate meta files
+train_images = set(train_images)  # Prevent images from showing up twice
+train_path = os.path.join(args.superset, "train.txt")
+with open(train_path, "w") as train_file:
+    train_file.writelines([image_path + "\n" for image_path in train_images])
+
+test_images = set(test_images)  # Prevent images from showing up twice
+test_path = os.path.join(args.superset, "test.txt")
+with open(test_path, "w") as test_file:
+    test_file.writelines([image_path + "\n" for image_path in test_images])
 
 names_path = os.path.join(args.superset, "yoeo.names")
 with open(names_path, "w") as names_file:
     names_file.writelines([class_name + "\n" for class_name in CLASSES['bb_classes']])
 
-# data_path = os.path.join(args.superset, "yoeo.data")
-# with open(data_path, "w") as data_file:
-#     data_file.write(f"classes={len(CLASSES['bb_classes'])}\n")
-#     data_file.write(f"train={train_path}\n")
-#     data_file.write(f"valid={test_path}\n")
-#     data_file.write(f"names={names_path}\n")
+data_path = os.path.join(args.superset, "yoeo.data")
+with open(data_path, "w") as data_file:
+    data_file.write(f"train={train_path}\n")
+    data_file.write(f"valid={test_path}\n")
+    data_file.write(f"names={names_path}\n")
