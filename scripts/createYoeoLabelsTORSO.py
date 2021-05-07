@@ -199,8 +199,8 @@ for yamlfile in imagetagger_annotation_files:
                     #             cv2.fillPoly(mask, points, (1, 1, 1))  # Fill mask with not so black polygon
 
                     #         cv2.imwrite(os.path.join(masks_dir, name + ".png"), mask)  # Store mask on disk
-                    else:
-                        print(f"The annotation type '{annotation['type']}' is not supported or should be ignored. Image: '{img_name}'")
+                    # else:
+                    #     print(f"The annotation type '{annotation['type']}' is not supported or should be ignored. Image: '{img_name}'")
                 else:
                     print(f"The annotation type '{annotation['type']}' is not supported or should be ignored. Image: '{img_name}'")
 
