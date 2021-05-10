@@ -15,6 +15,8 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
+from imgaug.augmentables.segmaps import SegmentationMapsOnImage
+
 from yoeo.models import load_model
 from yoeo.utils.utils import load_classes, rescale_boxes, non_max_suppression, to_cpu, print_environment_info
 from yoeo.utils.datasets import ImageFolder
@@ -186,21 +188,10 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     img = np.array(Image.open(image_path))
     plt.figure()
     fig, ax = plt.subplots(1)
-    ax.imshow(img)
     # Get segmentation
     seg = seg.cpu().detach().numpy()
-    # Convert class idx to color
-    r = np.zeros_like(seg).astype(np.uint8)
-    g = np.zeros_like(seg).astype(np.uint8)
-    b = np.zeros_like(seg).astype(np.uint8)
-    label_colors = np.array([(0, 0, 0),(128, 0, 0), (0, 128, 0)])
-    for l in range(3):
-        idx = seg == l
-        r[idx] = label_colors[l, 0]
-        g[idx] = label_colors[l, 1]
-        b[idx] = label_colors[l, 2]
-    seg = np.stack([r, g, b], axis=2)
-    ax.imshow(seg, alpha=.5)
+    # Draw all of it
+    ax.imshow(SegmentationMapsOnImage(seg, shape=img.shape).draw_on_image(img))
     # Rescale boxes to original image
     detections = rescale_boxes(detections, img_size, img.shape[:2])
     unique_labels = detections[:, -1].cpu().unique()
