@@ -193,8 +193,8 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     # Draw all of it
 
     # The amount of padding that was added
-    pad_x = max(orig_h - orig_w, 0) * (current_dim / max(original_shape))
-    pad_y = max(orig_w - orig_h, 0) * (current_dim / max(original_shape))
+    pad_x = max(img.shape[0] - img.shape[1], 0) * (img_size / max(img.shape[:2]))
+    pad_y = max(img.shape[1] - img.shape[0], 0) * (img_size / max(img.shape[:2]))
 
     ax.imshow(
         SegmentationMapsOnImage(
