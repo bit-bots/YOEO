@@ -74,7 +74,7 @@ class ListDataset(Dataset):
         self.mask_files = []
         for path in self.img_files:
             image_dir = os.path.dirname(path)
-            mask_dir = "masks".join(image_dir.rsplit("images", 1))
+            mask_dir = "yoeo_masks".join(image_dir.rsplit("images", 1))
             assert mask_dir != image_dir, \
                 f"Image path must contain a folder named 'images'! \n'{image_dir}'"
             mask_file = os.path.join(mask_dir, os.path.basename(path))
@@ -125,8 +125,8 @@ class ListDataset(Dataset):
 
             # Extract image as PyTorch tensor
             mask = np.array(Image.open(mask_path).convert('RGB'), dtype=np.uint8) * 255
-        except Exception as e:
-            print(f"Could not mask '{mask_path}'.")
+        except FileNotFoundError as e:
+            print(f"Could not load mask '{mask_path}'.")
             return
 
         # -----------
@@ -151,7 +151,7 @@ class ListDataset(Dataset):
         batch = [data for data in batch if data is not None]
 
         paths, imgs, bb_targets, mask_targets = list(zip(*batch))
-        
+
         # Selects new image size every tenth batch
         if self.multiscale and self.batch_count % 10 == 0:
             self.img_size = random.choice(
@@ -165,10 +165,10 @@ class ListDataset(Dataset):
             boxes[:, 0] = i
         bb_targets = torch.cat(bb_targets, 0)
 
-        # Stack masks and drop the 2 duplicated channels 
+        # Stack masks and drop the 2 duplicated channels
         mask_targets = torch.stack([resize(mask, self.img_size)[0] for mask in mask_targets])
         # Reshape mask and convert to long
-        mask_targets = mask_targets.reshape(-1, 1, self.img_size, self.img_size).long()
+        mask_targets = mask_targets.reshape(-1, 2, self.img_size, self.img_size).long()
 
         return paths, imgs, bb_targets, mask_targets
 
