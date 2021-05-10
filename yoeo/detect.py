@@ -191,7 +191,17 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     # Get segmentation
     seg = seg.cpu().detach().numpy().astype(np.uint8)
     # Draw all of it
-    ax.imshow(SegmentationMapsOnImage(seg, shape=img.shape).draw_on_image(img)[0])
+
+    # The amount of padding that was added
+    pad_x = max(orig_h - orig_w, 0) * (current_dim / max(original_shape))
+    pad_y = max(orig_w - orig_h, 0) * (current_dim / max(original_shape))
+
+    ax.imshow(
+        SegmentationMapsOnImage(
+            seg[
+                img_size // 2 - pad_x : img_size // 2 + pad_x,
+                img_size // 2 - pad_y: img_size // 2 + pad_y,
+                ], shape=img.shape).draw_on_image(img)[0])
     # Rescale boxes to original image
     detections = rescale_boxes(detections, img_size, img.shape[:2])
     unique_labels = detections[:, -1].cpu().unique()
