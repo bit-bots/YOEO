@@ -189,9 +189,9 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     plt.figure()
     fig, ax = plt.subplots(1)
     # Get segmentation
-    seg = seg.cpu().detach().numpy()
+    seg = seg.cpu().detach().numpy().astype(np.uint8)
     # Draw all of it
-    ax.imshow(SegmentationMapsOnImage(seg, shape=img.shape).draw_on_image(img))
+    ax.imshow(SegmentationMapsOnImage(seg, shape=img.shape).draw_on_image(img)[0])
     # Rescale boxes to original image
     detections = rescale_boxes(detections, img_size, img.shape[:2])
     unique_labels = detections[:, -1].cpu().unique()
@@ -226,8 +226,8 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     plt.gca().xaxis.set_major_locator(NullLocator())
     plt.gca().yaxis.set_major_locator(NullLocator())
     filename = os.path.basename(image_path).split(".")[0]
-    output_path = os.path.join(output_path, f"{filename}.png")
-    plt.savefig(output_path, bbox_inches="tight", pad_inches=0.0)
+    output_path_1 = os.path.join(output_path, f"{filename}.png")
+    plt.savefig(output_path_1, bbox_inches="tight", pad_inches=0.0)
     plt.close()
 
 
