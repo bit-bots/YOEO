@@ -52,7 +52,8 @@ def detect_directory(model_path, weights_path, img_path, classes, output_path,
     """
     dataloader = _create_data_loader(img_path, batch_size, img_size, n_cpu)
     model = load_model(model_path, weights_path)
-    img_detections, imgs = detect(
+    
+    img_detections, segmentations, imgs = detect(
         model,
         dataloader,
         output_path,
@@ -60,7 +61,7 @@ def detect_directory(model_path, weights_path, img_path, classes, output_path,
         conf_thres,
         nms_thres)
     _draw_and_save_output_images(
-        img_detections, imgs, img_size, output_path, classes)
+        img_detections, segmentations, imgs, img_size, output_path, classes)
 
 
 def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5):
@@ -126,6 +127,7 @@ def detect(model, dataloader, output_path, img_size, conf_thres, nms_thres):
     Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 
     img_detections = []  # Stores detections for each image index
+    seg_detections = []
     imgs = []  # Stores image paths
 
     for (img_paths, input_imgs) in tqdm.tqdm(dataloader, desc="Detecting"):
@@ -134,16 +136,17 @@ def detect(model, dataloader, output_path, img_size, conf_thres, nms_thres):
 
         # Get detections
         with torch.no_grad():
-            detections, _ = model(input_imgs)
+            detections, segmentations = model(input_imgs)
             detections = non_max_suppression(detections, conf_thres, nms_thres)
 
         # Store image and detections
         img_detections.extend(detections)
+        seg_detections.extend(segmentations)
         imgs.extend(img_paths)
-    return img_detections, imgs
+    return img_detections, seg_detections, imgs
 
 
-def _draw_and_save_output_images(img_detections, imgs, img_size, output_path, classes):
+def _draw_and_save_output_images(img_detections, segmentations, imgs, img_size, output_path, classes):
     """Draws detections in output images and stores them.
 
     :param img_detections: List of detections
@@ -159,13 +162,13 @@ def _draw_and_save_output_images(img_detections, imgs, img_size, output_path, cl
     """
 
     # Iterate through images and save plot of detections
-    for (image_path, detections) in zip(imgs, img_detections):
+    for (image_path, detections, seg) in zip(imgs, img_detections, segmentations):
         print(f"Image {image_path}:")
         _draw_and_save_output_image(
-            image_path, detections, img_size, output_path, classes)
+            image_path, detections, seg, img_size, output_path, classes)
 
 
-def _draw_and_save_output_image(image_path, detections, img_size, output_path, classes):
+def _draw_and_save_output_image(image_path, detections, seg, img_size, output_path, classes):
     """Draws detections in output image and stores this.
 
     :param image_path: Path to input image
@@ -184,6 +187,20 @@ def _draw_and_save_output_image(image_path, detections, img_size, output_path, c
     plt.figure()
     fig, ax = plt.subplots(1)
     ax.imshow(img)
+    # Get segmentation
+    seg = seg.cpu().detach().numpy()
+    # Convert class idx to color
+    r = np.zeros_like(seg).astype(np.uint8)
+    g = np.zeros_like(seg).astype(np.uint8)
+    b = np.zeros_like(seg).astype(np.uint8)
+    label_colors = np.array([(0, 0, 0),(128, 0, 0), (0, 128, 0)])
+    for l in range(3):
+        idx = seg == l
+        r[idx] = label_colors[l, 0]
+        g[idx] = label_colors[l, 1]
+        b[idx] = label_colors[l, 2]
+    seg = np.stack([r, g, b], axis=2)
+    ax.imshow(seg, alpha=.5)
     # Rescale boxes to original image
     detections = rescale_boxes(detections, img_size, img.shape[:2])
     unique_labels = detections[:, -1].cpu().unique()
