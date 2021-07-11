@@ -1,5 +1,6 @@
 from __future__ import division
 from itertools import chain
+import os
 
 import torch
 import torch.nn as nn
@@ -56,9 +57,11 @@ def create_modules(module_defs):
             )
             if bn:
                 modules.add_module(f"batch_norm_{module_i}",
-                                   nn.BatchNorm2d(filters, momentum=0.9, eps=1e-5))
+                                   nn.BatchNorm2d(filters, momentum=0.1, eps=1e-5))
             if module_def["activation"] == "leaky":
                 modules.add_module(f"leaky_{module_i}", nn.LeakyReLU(0.1))
+            if module_def["activation"] == "mish":
+                modules.add_module(f"mish_{module_i}", Mish())
 
         elif module_def["type"] == "maxpool":
             kernel_size = int(module_def["size"])
@@ -75,7 +78,7 @@ def create_modules(module_defs):
 
         elif module_def["type"] == "route":
             layers = [int(x) for x in module_def["layers"].split(",")]
-            filters = sum([output_filters[1:][i] for i in layers])
+            filters = sum([output_filters[1:][i] for i in layers]) // int(module_def.get("groups", 1))
             modules.add_module(f"route_{module_i}", nn.Sequential())
 
         elif module_def["type"] == "shortcut":
@@ -114,6 +117,14 @@ class Upsample(nn.Module):
         x = F.interpolate(x, scale_factor=self.scale_factor, mode=self.mode)
         return x
 
+class Mish(nn.Module):
+    """ The MISH activation function (https://github.com/digantamisra98/Mish) """
+
+    def __init__(self):
+        super(Mish, self).__init__()
+
+    def forward(self, x):
+        return x * torch.tanh(F.softplus(x))
 
 class YOLOLayer(nn.Module):
     """Detection layer"""
@@ -192,8 +203,10 @@ class Darknet(nn.Module):
             if module_def["type"] in ["convolutional", "upsample", "maxpool"]:
                 x = module(x)
             elif module_def["type"] == "route":
-                x = torch.cat([layer_outputs[int(layer_i)]
-                              for layer_i in module_def["layers"].split(",")], 1)
+                combined_outputs = torch.cat([layer_outputs[int(layer_i)] for layer_i in module_def["layers"].split(",")], 1)
+                group_size = combined_outputs.shape[1] // int(module_def.get("groups", 1))
+                group_id = int(module_def.get("group_id", 0))
+                x = combined_outputs[:, group_size * group_id : group_size * (group_id + 1)] # Slice groupings used by yolo v4
             elif module_def["type"] == "shortcut":
                 layer_i = int(module_def["from"])
                 x = layer_outputs[-1] + layer_outputs[layer_i]
@@ -219,8 +232,14 @@ class Darknet(nn.Module):
 
         # Establish cutoff for loading backbone weights
         cutoff = None
-        if "darknet53.conv.74" in weights_path:
-            cutoff = 75
+        # If the weights file has a cutoff, we can find out about it by looking at the filename
+        # examples: darknet53.conv.74 -> cutoff is 74
+        filename = os.path.basename(weights_path)
+        if ".conv." in filename:
+            try:
+                cutoff = int(filename.split(".")[-1])  # use last part of filename
+            except ValueError:
+                pass
 
         ptr = 0
         for i, (module_def, module) in enumerate(zip(self.module_defs, self.module_list)):

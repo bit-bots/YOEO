@@ -74,7 +74,7 @@ def print_eval_stats(metrics_output, seg_class_ious, class_names, verbose):
         print(f"---- mAP {AP.mean():.5f} ----")
     else:
         print("---- mAP not measured (no detections found by model) ----")
-    
+
     print(f"IoUs for each of the classes: {seg_class_ious}")
 
 
@@ -117,7 +117,7 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
 
         with torch.no_grad():
             yolo_outputs, segmentation_outputs = model(imgs)
-            yolo_outputs = non_max_suppression(to_cpu(yolo_outputs), conf_thres=conf_thres, iou_thres=nms_thres)
+            yolo_outputs = non_max_suppression(yolo_outputs, conf_thres=conf_thres, iou_thres=nms_thres)
 
         sample_metrics += get_batch_statistics(yolo_outputs, bb_targets, iou_threshold=iou_thres)
         seg_ious.append(seg_iou(to_cpu(segmentation_outputs), mask_targets, model.num_seg_classes))

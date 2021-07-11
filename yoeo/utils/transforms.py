@@ -32,7 +32,7 @@ class ImgAug(object):
 
         # Apply augmentations
         img, bounding_boxes, segmentation_mask = self.augmentations(
-            image=img, 
+            image=img,
             bounding_boxes=bounding_boxes,
             segmentation_maps=segmentation_mask)
 
@@ -67,9 +67,9 @@ class RelativeLabels(object):
 
     def __call__(self, data):
         img, boxes, seg = data
-        w, h, _ = img.shape 
-        boxes[:,[1, 3]] /= h
-        boxes[:,[2, 4]] /= w
+        h, w, _ = img.shape
+        boxes[:,[1, 3]] /= w
+        boxes[:,[2, 4]] /= h
         return img, boxes, seg
 
 
@@ -79,9 +79,9 @@ class AbsoluteLabels(object):
 
     def __call__(self, data):
         img, boxes, seg = data
-        w, h, _ = img.shape 
-        boxes[:,[1, 3]] *= h
-        boxes[:,[2, 4]] *= w
+        h, w, _ = img.shape
+        boxes[:,[1, 3]] *= w
+        boxes[:,[2, 4]] *= h
         return img, boxes, seg
 
 

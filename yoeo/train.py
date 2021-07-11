@@ -15,7 +15,7 @@ from torch.autograd import Variable
 
 from yoeo.models import load_model
 from yoeo.utils.logger import Logger
-from yoeo.utils.utils import to_cpu, load_classes, print_environment_info
+from yoeo.utils.utils import to_cpu, load_classes, print_environment_info, provide_determinism, worker_seed_set
 from yoeo.utils.datasets import ListDataset
 from yoeo.utils.augmentations import AUGMENTATION_TRANSFORMS
 from yoeo.utils.transforms import DEFAULT_TRANSFORMS
@@ -55,7 +55,8 @@ def _create_data_loader(img_path, batch_size, img_size, n_cpu, multiscale_traini
         shuffle=True,
         num_workers=n_cpu,
         pin_memory=True,
-        collate_fn=dataset.collate_fn)
+        collate_fn=dataset.collate_fn,
+        worker_init_fn=worker_seed_set)
     return dataloader
 
 
@@ -70,13 +71,17 @@ def run():
     parser.add_argument("--pretrained_weights", type=str, help="Path to checkpoint file (.weights or .pth). Starts training from checkpoint model")
     parser.add_argument("--checkpoint_interval", type=int, default=1, help="Interval of epochs between saving model weights")
     parser.add_argument("--evaluation_interval", type=int, default=1, help="Interval of epochs between evaluations on validation set")
-    parser.add_argument("--multiscale_training", action="store_false", help="Allow for multi-scale training")
+    parser.add_argument("--multiscale_training", action="store_true", help="Allow multi-scale training")
     parser.add_argument("--iou_thres", type=float, default=0.5, help="Evaluation: IOU threshold required to qualify as detected")
     parser.add_argument("--conf_thres", type=float, default=0.1, help="Evaluation: Object confidence threshold")
     parser.add_argument("--nms_thres", type=float, default=0.5, help="Evaluation: IOU threshold for non-maximum suppression")
     parser.add_argument("--logdir", type=str, default="logs", help="Directory for training log files (e.g. for TensorBoard)")
+    parser.add_argument("--seed", type=int, default=-1, help="Makes results reproducable. Set -1 to disable.")
     args = parser.parse_args()
     print(f"Command line arguments: {args}")
+
+    if args.seed != -1:
+        provide_determinism(args.seed)
 
     logger = Logger(args.logdir)  # Tensorboard logger
 

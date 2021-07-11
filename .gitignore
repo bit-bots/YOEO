@@ -9,6 +9,7 @@ output
 data/*
 backup
 weights/*.weights
+weights/*.conv.*
 __pycache__
 checkpoints
 

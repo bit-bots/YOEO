@@ -9,6 +9,32 @@ import torch.nn as nn
 import torchvision
 import numpy as np
 import subprocess
+import random
+
+
+def provide_determinism(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+
+def worker_seed_set(worker_id):
+    # See for details of numpy:
+    # https://github.com/pytorch/pytorch/issues/5059#issuecomment-817392562
+    # See for details of random:
+    # https://pytorch.org/docs/stable/notes/randomness.html#dataloader
+
+    # NumPy
+    uint64_seed = torch.initial_seed()
+    ss = np.random.SeedSequence([uint64_seed])
+    np.random.seed(ss.generate_state(4))
+
+    # random
+    worker_seed = torch.initial_seed() % 2**32
+    random.seed(worker_seed)
 
 
 def to_cpu(tensor):
@@ -283,7 +309,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
 
     t = time.time()
-    output = [torch.zeros((0, 6), device=prediction.device)] * prediction.shape[0]
+    output = [torch.zeros((0, 6), device="cpu")] * prediction.shape[0]
 
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
@@ -328,7 +354,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
         if i.shape[0] > max_det:  # limit detections
             i = i[:max_det]
 
-        output[xi] = x[i]
+        output[xi] = to_cpu(x[i])
 
         if (time.time() - t) > time_limit:
             print(f'WARNING: NMS time limit {time_limit}s exceeded')

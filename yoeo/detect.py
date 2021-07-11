@@ -18,7 +18,7 @@ from torch.autograd import Variable
 from imgaug.augmentables.segmaps import SegmentationMapsOnImage
 
 from yoeo.models import load_model
-from yoeo.utils.utils import load_classes, rescale_boxes, non_max_suppression, to_cpu, print_environment_info
+from yoeo.utils.utils import load_classes, rescale_boxes, non_max_suppression, print_environment_info
 from yoeo.utils.datasets import ImageFolder
 from yoeo.utils.transforms import Resize, DEFAULT_TRANSFORMS
 
@@ -54,7 +54,7 @@ def detect_directory(model_path, weights_path, img_path, classes, output_path,
     """
     dataloader = _create_data_loader(img_path, batch_size, img_size, n_cpu)
     model = load_model(model_path, weights_path)
-    
+
     img_detections, segmentations, imgs = detect(
         model,
         dataloader,
@@ -98,7 +98,7 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5):
         detections = model(input_img)
         detections = non_max_suppression(detections, conf_thres, nms_thres)
         detections = rescale_boxes(detections[0], img_size, image.shape[:2])
-    return to_cpu(detections).numpy()
+    return detections.numpy()
 
 
 def detect(model, dataloader, output_path, img_size, conf_thres, nms_thres):
