@@ -18,6 +18,7 @@ from yoeo.utils.datasets import ListDataset
 from yoeo.utils.transforms import DEFAULT_TRANSFORMS
 from yoeo.utils.parse_config import parse_data_config
 
+import cv2
 
 def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_size=8, img_size=416,
                         n_cpu=8, iou_thres=0.5, conf_thres=0.5, nms_thres=0.5, verbose=True):
@@ -120,6 +121,14 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
             yolo_outputs = non_max_suppression(yolo_outputs, conf_thres=conf_thres, iou_thres=nms_thres)
 
         sample_metrics += get_batch_statistics(yolo_outputs, bb_targets, iou_threshold=iou_thres)
+        
+        """
+        print("Targets", np.unique(to_cpu(mask_targets), return_counts=True))
+        mask = to_cpu(mask_targets[0].squeeze(0)) * 127
+        cv2.imshow("Seg", np.array(mask.numpy(), dtype=np.uint8))
+        cv2.waitKey(0)
+        """
+
         seg_ious.append(seg_iou(to_cpu(segmentation_outputs), mask_targets, model.num_seg_classes))
 
     if len(sample_metrics) == 0:  # No detections over whole validation set.

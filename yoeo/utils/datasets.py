@@ -74,7 +74,7 @@ class ListDataset(Dataset):
         self.mask_files = []
         for path in self.img_files:
             image_dir = os.path.dirname(path)
-            mask_dir = "yoeo_masks".join(image_dir.rsplit("images", 1))
+            mask_dir = "segmentations".join(image_dir.rsplit("images", 1))
             assert mask_dir != image_dir, \
                 f"Image path must contain a folder named 'images'! \n'{image_dir}'"
             mask_file = os.path.join(mask_dir, os.path.basename(path))
@@ -95,7 +95,6 @@ class ListDataset(Dataset):
         #  Image
         # ---------
         try:
-
             img_path = self.img_files[index % len(self.img_files)].rstrip()
 
             img = np.array(Image.open(img_path).convert('RGB'), dtype=np.uint8)
@@ -122,9 +121,8 @@ class ListDataset(Dataset):
         # ---------
         try:
             mask_path = self.mask_files[index % len(self.img_files)].rstrip()
-
-            # Extract image as PyTorch tensor
-            mask = np.array(Image.open(mask_path).convert('RGB'), dtype=np.uint8) * 255
+            # Load segmentation mask as numpy array
+            mask = np.array(Image.open(mask_path).convert('RGB')) // 127
         except FileNotFoundError as e:
             print(f"Could not load mask '{mask_path}'.")
             return
@@ -166,9 +164,7 @@ class ListDataset(Dataset):
         bb_targets = torch.cat(bb_targets, 0)
 
         # Stack masks and drop the 2 duplicated channels
-        mask_targets = torch.stack([resize(mask, self.img_size)[0] for mask in mask_targets])
-        # Reshape mask and convert to long
-        mask_targets = mask_targets.reshape(-1, 2, self.img_size, self.img_size).long()
+        mask_targets = torch.stack([resize(mask, self.img_size)[0] for mask in mask_targets]).long()
 
         return paths, imgs, bb_targets, mask_targets
 

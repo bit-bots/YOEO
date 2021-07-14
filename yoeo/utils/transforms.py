@@ -102,7 +102,7 @@ class ToTensor(object):
         img, boxes, seg = data
         # Extract image as PyTorch tensor
         img = transforms.ToTensor()(img)
-        seg = transforms.ToTensor()(seg)
+        seg = transforms.ToTensor()(seg) * 255 # Because troch maps this to 0-1 instead of 0-255
 
         bb_targets = torch.zeros((len(boxes), 6))
         bb_targets[:, 1:] = transforms.ToTensor()(boxes)

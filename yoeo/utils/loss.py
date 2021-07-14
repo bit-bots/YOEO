@@ -137,7 +137,7 @@ def compute_loss(combined_predictions, combined_targets, model):
     yolo_targets, seg_targets = combined_targets
     yolo_predictions, seg_predictions = combined_predictions
 
-    seg_loss = nn.CrossEntropyLoss()(seg_predictions[0], seg_targets.squeeze(1)).unsqueeze(0)
+    seg_loss = nn.CrossEntropyLoss()(seg_predictions[0], seg_targets).unsqueeze(0)
 
     device = yolo_targets.device
     lcls, lbox, lobj = torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device)
@@ -188,9 +188,9 @@ def compute_loss(combined_predictions, combined_targets, model):
 
         lobj += BCEobj(layer_predictions[..., 4], tobj) # obj loss
 
-    lbox *= 0.05
+    lbox *= 0.2
     lobj *= 1.0
-    lcls *= 0.5
+    lcls *= 0.05
 
     loss = lbox + lobj + lcls + seg_loss
 

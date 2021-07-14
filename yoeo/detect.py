@@ -7,6 +7,7 @@ import argparse
 import tqdm
 import random
 import numpy as np
+import cv2
 
 from PIL import Image
 
@@ -197,7 +198,12 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     pad_y = max(img.shape[1] - img.shape[0], 0) * (img_size / max(img.shape[:2])) // 2
 
 
-    print(img.shape, pad_x, pad_y)
+    seg_map = seg[
+                int(pad_y) : int(img_size - pad_y),
+                int(pad_x) : int(img_size - pad_x),
+                ] * 255
+
+
     ax.imshow(
         SegmentationMapsOnImage(
             seg[
@@ -263,7 +269,7 @@ def _create_data_loader(img_path, batch_size, img_size, n_cpu):
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,
-        shuffle=False,
+        shuffle=True,
         num_workers=n_cpu,
         pin_memory=True)
     return dataloader
