@@ -6,7 +6,14 @@ from yoeo import models
 
 def convert_to_onnx(model, image_size, batch_size, output_path="yoeo.onnx"):
     dummy_input = torch.randn(batch_size,3,image_size,image_size, device="cuda")
-    torch.onnx.export(model.cuda(), dummy_input, output_path, verbose=True, input_names=["InputLayer"], output_names=["YOLODetections", "Segmentations"])
+    torch.onnx.export(
+        model.cuda(),
+        dummy_input,
+        output_path,
+        verbose=True,
+        input_names=["InputLayer"],
+        output_names=["YOLODetections", "Segmentations"],
+        opset_version=11)
 
 def check_onnx(path):
     model = onnx.load(path)
