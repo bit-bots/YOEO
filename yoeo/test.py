@@ -107,6 +107,8 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
     labels = []
     sample_metrics = []  # List of tuples (TP, confs, pred)
     seg_ious = []
+    import time
+    times=[]
     for _, imgs, bb_targets, mask_targets in tqdm.tqdm(dataloader, desc="Validating"):
         # Extract labels
         labels += bb_targets[:, 1].tolist()
@@ -117,7 +119,9 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
         imgs = Variable(imgs.type(Tensor), requires_grad=False)
 
         with torch.no_grad():
+            t1 = time.time()
             yolo_outputs, segmentation_outputs = model(imgs)
+            times.append(time.time() - t1)
             yolo_outputs = non_max_suppression(yolo_outputs, conf_thres=conf_thres, iou_thres=nms_thres)
 
         sample_metrics += get_batch_statistics(yolo_outputs, bb_targets, iou_threshold=iou_thres)
@@ -134,6 +138,8 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
     if len(sample_metrics) == 0:  # No detections over whole validation set.
         print("---- No detections over whole validation set ----")
         return None
+
+    print(f"Times: Mean {1/np.array(times).mean()}fps | Std: {np.array(times).std()} ms")
 
     # Concatenate sample statistics
     true_positives, pred_scores, pred_labels = [

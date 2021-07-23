@@ -1,5 +1,5 @@
 import onnx
-import onnxruntime
+#import onnxruntime
 import torch
 
 from yoeo import models
@@ -11,6 +11,7 @@ def convert_to_onnx(model, image_size, batch_size, output_path="yoeo.onnx"):
         dummy_input,
         output_path,
         verbose=True,
+        export_params=True,
         input_names=["InputLayer"],
         output_names=["YOLODetections", "Segmentations"],
         opset_version=11)
