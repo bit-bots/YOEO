@@ -127,9 +127,12 @@ class ListDataset(Dataset):
             mask_path = self.mask_files[index % len(self.img_files)].rstrip()
             # Load segmentation mask as numpy array
             mask = np.array(Image.open(mask_path).convert('RGB'))
+            # Group classes together
+            mask[1 < mask <=  5] = 1
+            mask[5 < mask <=  9] = 2
             print(np.unique(mask, return_counts=True))
         except FileNotFoundError as e:
-            print(f"Could not load mask '{mask_path}' {e}.")
+            print(f"Could not load mask '{mask_path}'.")
             return
 
         exit(0)
