@@ -76,8 +76,8 @@ class ListDataset(Dataset):
 
         self.mask_files = []
         for path in self.img_files:
-            image_dir = os.path.dirname(path)
-            mask_dir = image_dir.replace("leftImg8bit", "gtFine")
+            path = path.replace("leftImg8bit", "gtFine")
+            mask_dir = os.path.dirname(path)
             mask_file = os.path.join(mask_dir, os.path.basename(path))
             mask_file = os.path.splitext(mask_file)[0] + '_labelIds.png'
             self.mask_files.append(mask_file)
