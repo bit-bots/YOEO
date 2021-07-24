@@ -6,6 +6,7 @@ import random
 import os
 import warnings
 import numpy as np
+from pathlib import Path
 from PIL import Image
 from PIL import ImageFile
 
@@ -57,9 +58,12 @@ class ImageFolder(Dataset):
 
 
 class ListDataset(Dataset):
-    def __init__(self, list_path, img_size=416, multiscale=True, transform=None):
-        with open(list_path, "r") as file:
-            self.img_files = file.readlines()
+    def __init__(self, data_path, img_size=416, multiscale=True, transform=None):
+
+        # Get all color images for e.g. the test set
+        result = list(Path(data_path).rglob("*.png"))
+
+        print(result)
 
         self.label_files = []
         for path in self.img_files:
