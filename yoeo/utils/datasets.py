@@ -61,7 +61,7 @@ class ListDataset(Dataset):
     def __init__(self, data_path, img_size=416, multiscale=True, transform=None):
 
         # Get all color images for e.g. the test set
-        self.img_files = list(Path(data_path).rglob("*.png"))
+        self.img_files = [str(path) in Path(data_path).rglob("*.png")]
 
         """
         self.label_files = []
