@@ -82,10 +82,6 @@ class ListDataset(Dataset):
             mask_file = os.path.splitext(mask_file)[0] + '_labelIds.png'
             self.mask_files.append(mask_file)
 
-        print(self.mask_files)
-
-        exit(0)
-
         self.img_size = img_size
         self.max_objects = 100
         self.multiscale = multiscale
@@ -107,6 +103,8 @@ class ListDataset(Dataset):
             print(f"Could not read image '{img_path}'.")
             return
 
+        """
+
         # ---------
         #  Label
         # ---------
@@ -120,6 +118,7 @@ class ListDataset(Dataset):
         except Exception:
             print(f"Could not read label '{label_path}'.")
             return
+        """
 
         # ---------
         #  Segmentation Mask
@@ -127,10 +126,13 @@ class ListDataset(Dataset):
         try:
             mask_path = self.mask_files[index % len(self.img_files)].rstrip()
             # Load segmentation mask as numpy array
-            mask = np.array(Image.open(mask_path).convert('RGB')) // 127
+            mask = np.array(Image.open(mask_path).convert('RGB'))
+            print(np.unique(mask, return_counts=True))
         except FileNotFoundError as e:
-            print(f"Could not load mask '{mask_path}'.")
+            print(f"Could not load mask '{mask_path}' {e}.")
             return
+
+        exit(0)
 
         # -----------
         #  Transform
