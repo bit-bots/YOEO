@@ -61,29 +61,30 @@ class ListDataset(Dataset):
     def __init__(self, data_path, img_size=416, multiscale=True, transform=None):
 
         # Get all color images for e.g. the test set
-        result = list(Path(data_path).rglob("*.png"))
+        self.img_files = list(Path(data_path).rglob("*.png"))
 
-        print(result)
+        """
+        self.label_files = []
+        for path in self.img_files:
+            image_dir = os.path.dirname(path)
+            label_dir = image_dir.replace("leftImg8bit", "gtFine")
+            # TODO bbox stuff
+            label_file = os.path.join(label_dir, os.path.basename(path))
+            label_file = os.path.splitext(label_file)[0] + '.txt'
+            self.label_files.append(label_file)
+        """
 
         self.label_files = []
         for path in self.img_files:
             image_dir = os.path.dirname(path)
-            label_dir = "labels".join(image_dir.rsplit("images", 1))
-            assert label_dir != image_dir, \
-                f"Image path must contain a folder named 'images'! \n'{image_dir}'"
-            label_file = os.path.join(label_dir, os.path.basename(path))
-            label_file = os.path.splitext(label_file)[0] + '.txt'
-            self.label_files.append(label_file)
-
-        self.mask_files = []
-        for path in self.img_files:
-            image_dir = os.path.dirname(path)
-            mask_dir = "segmentations".join(image_dir.rsplit("images", 1))
-            assert mask_dir != image_dir, \
-                f"Image path must contain a folder named 'images'! \n'{image_dir}'"
+            mask_dir = image_dir.replace("leftImg8bit", "gtFine")
             mask_file = os.path.join(mask_dir, os.path.basename(path))
-            mask_file = os.path.splitext(mask_file)[0] + '.png'
+            mask_file = os.path.splitext(mask_file)[0] + '_labelIds.png'
             self.mask_files.append(mask_file)
+
+        print(self.mask_files)
+
+        exit(0)
 
         self.img_size = img_size
         self.max_objects = 100
