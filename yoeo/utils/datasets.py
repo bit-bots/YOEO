@@ -128,8 +128,8 @@ class ListDataset(Dataset):
             # Load segmentation mask as numpy array
             mask = np.array(Image.open(mask_path).convert('RGB'))
             # Group classes together
-            mask[1 < mask <=  5] = 1
-            mask[5 < mask <=  9] = 2
+            mask[np.logical_and(mask <=  5, mask > 0)] = 1
+            mask[np.logical_and(mask <=  10, mask > 5)] = 2
             print(np.unique(mask, return_counts=True))
         except FileNotFoundError as e:
             print(f"Could not load mask '{mask_path}'.")
