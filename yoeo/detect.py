@@ -205,19 +205,14 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
 
 
     ax.imshow(
-        SegmentationMapsOnImage(
-            seg[
-                int(pad_y) : int(img_size - pad_y),
-                int(pad_x) : int(img_size - pad_x),
-                ], shape=img.shape).draw_on_image(img)[0])
+        SegmentationMapsOnImage(seg, shape=img.shape).draw_on_image(img, alpha=0.5)[0])
     # Rescale boxes to original image
     detections = rescale_boxes(detections, img_size, img.shape[:2])
     unique_labels = detections[:, -1].cpu().unique()
     n_cls_preds = len(unique_labels)
     # Bounding-box colors
     cmap = plt.get_cmap("tab20b")
-    colors = [cmap(i) for i in np.linspace(0, 1, n_cls_preds)]
-    bbox_colors = random.sample(colors, n_cls_preds)
+    colors = [cmap(i) for i in np.linspace(0, 1, len(classes))]
     for x1, y1, x2, y2, conf, cls_pred in detections:
 
         print(f"\t+ Label: {classes[int(cls_pred)]} | Confidence: {conf.item():0.4f}")
@@ -225,9 +220,8 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
         box_w = x2 - x1
         box_h = y2 - y1
 
-        color = bbox_colors[int(np.where(unique_labels == int(cls_pred))[0])]
         # Create a Rectangle patch
-        bbox = patches.Rectangle((x1, y1), box_w, box_h, linewidth=2, edgecolor=color, facecolor="none")
+        bbox = patches.Rectangle((x1, y1), box_w, box_h, linewidth=1, edgecolor=colors[int(cls_pred)], facecolor="none")
         # Add the bbox to the plot
         ax.add_patch(bbox)
         # Add label
@@ -237,7 +231,7 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
             s=classes[int(cls_pred)],
             color="white",
             verticalalignment="top",
-            bbox={"color": color, "pad": 0})
+            bbox={"color": colors[int(cls_pred)], "pad": 0})
 
     # Save generated image with detections
     plt.axis("off")
