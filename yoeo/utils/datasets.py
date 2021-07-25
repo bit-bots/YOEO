@@ -135,8 +135,6 @@ class ListDataset(Dataset):
             print(f"Could not load mask '{mask_path}'.")
             return
 
-        exit(0)
-
         # -----------
         #  Transform
         # -----------
