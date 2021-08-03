@@ -144,7 +144,7 @@ def build_targets(p, targets, model):
 
     for i, yolo_layer in enumerate(model.yolo_layers):
         # Scale anchors by the yolo grid cell size so that an anchor with the size of the cell would result in 1
-        anchors = yolo_layer.anchors / yolo_layer
+        anchors = yolo_layer.anchors / yolo_layer.stride
         # Add the number of yolo cells in this layer the gain tensor
         # The gain tensor matches the collums of our targets (img id, class, x, y, w, h, anchor id)
         gain[2:6] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
