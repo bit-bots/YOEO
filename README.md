@@ -8,6 +8,8 @@ This project is based upon [PyTorch-YOLOv3](https://github.com/eriklindernoren/P
 
 <img src="https://user-images.githubusercontent.com/15075613/131497149-c35f315c-4bf8-44d2-a2a9-ce4012b946e7.png" alt="example_image" height="150"/><img src="https://user-images.githubusercontent.com/15075613/131497225-ce03abb5-52b0-4ee5-aeae-27816ba78996.png" alt="example_image" height="150"/><img src="https://user-images.githubusercontent.com/15075613/131495441-457d1290-c411-4e91-b1f6-3308cb89180d.jpg" alt="example_image" height="150"/><img src="https://user-images.githubusercontent.com/15075613/131499468-8ba66af0-e497-4a4f-a7f3-8db5efc47ce8.png" alt="example_image" height="150"/>
 
+<p align="center"><img src="https://user-images.githubusercontent.com/15075613/131499899-ce8c68b8-54a7-428b-abe9-0c1c49f7482d.png" alt="example_image" height="200"/></p>
+
 ## Installation
 ### Installing from source
 
@@ -44,7 +46,7 @@ Uses pretrained weights to make predictions on images.
 poetry run yoeo-detect --images data/samples/
 ```
 
-<p align="center"><img src="https://github.com/eriklindernoren/PyTorch-YOLOv3/raw/master/assets/giraffe.png" width="480"\></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/15075613/131500212-9c75a784-a286-43c5-a733-d162a887ebfa.png" width="480"\></p>
 
 ## Train
 For argument descriptions have a look at `poetry run yoeo-train --h`
