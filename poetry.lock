@@ -471,14 +471,14 @@ rsa = ["oauthlib[signedtoken] (>=3.0.0)"]
 
 [[package]]
 name = "rope"
-version = "0.19.0"
+version = "0.20.1"
 description = "a python refactoring library..."
 category = "dev"
 optional = false
 python-versions = "*"
 
 [package.extras]
-dev = ["pytest"]
+dev = ["pytest", "pytest-timeout"]
 
 [[package]]
 name = "rsa"
@@ -707,7 +707,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.2"
-content-hash = "cb4aab217981afae23a546e3a0ab4da2946039f5afcc58e6c90a6031b1ed042d"
+content-hash = "1a0a15fb5ed26e18d400b1dc96b8e5972edffe93b3b67b3502d5c2e374b569ea"
 
 [metadata.files]
 absl-py = [
@@ -1212,7 +1212,7 @@ requests-oauthlib = [
     {file = "requests_oauthlib-1.3.0-py3.7.egg", hash = "sha256:fa6c47b933f01060936d87ae9327fead68768b69c6c9ea2109c48be30f2d4dbc"},
 ]
 rope = [
-    {file = "rope-0.19.0.tar.gz", hash = "sha256:64e6d747532e1f5c8009ec5aae3e5523a5bcedf516f39a750d57d8ed749d90da"},
+    {file = "rope-0.20.1.tar.gz", hash = "sha256:505a2f6b4ac7b18e0429be179f4d8712243a194da5c866b0731f9d91ce7590bb"},
 ]
 rsa = [
     {file = "rsa-4.4-py2.py3-none-any.whl", hash = "sha256:4afbaaecc3e9550c7351fdf0ab3fea1857ff616b85bab59215f00fb42e0e9582"},
