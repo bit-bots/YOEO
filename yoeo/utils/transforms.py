@@ -94,6 +94,13 @@ class PadSquare(ImgAug):
         ])
 
 
+class ResizeToSquare(ImgAug):
+    def __init__(self, ):
+        self.augmentations = iaa.Sequential([
+            iaa.Resize(416).to_deterministic() # TODO dynamic resolution
+        ])
+
+
 class ToTensor(object):
     def __init__(self, ):
         pass
@@ -102,7 +109,7 @@ class ToTensor(object):
         img, boxes, seg = data
         # Extract image as PyTorch tensor
         img = transforms.ToTensor()(img)
-        seg = transforms.ToTensor()(seg) * 255 # Because troch maps this to 0-1 instead of 0-255
+        seg = transforms.ToTensor()(seg) * 255 # Because torch maps this to 0-1 instead of 0-255
 
         bb_targets = torch.zeros((len(boxes), 6))
         bb_targets[:, 1:] = transforms.ToTensor()(boxes)
@@ -123,7 +130,7 @@ class Resize(object):
 
 DEFAULT_TRANSFORMS = transforms.Compose([
     AbsoluteLabels(),
-    PadSquare(),
+    ResizeToSquare(),
     RelativeLabels(),
     ToTensor(),
 ])

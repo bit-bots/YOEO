@@ -106,7 +106,7 @@ def compute_loss(combined_predictions, combined_targets, model):
 
             # Classification of the objectness
             # Fill our empty object target tensor with the IoU we just calculated for each target at the targets position
-            tobj[b, anchor, grid_j, grid_i] = iou.detach().clamp(0).type(tobj.dtype)  # Use cells with iou > 0 as object targets
+            tobj[b, anchor, grid_j, grid_i] = 1#iou.detach().clamp(0).type(tobj.dtype)  # Use cells with iou > 0 as object targets
 
             # Classification of the class
             # Check if we need to do a classification (number of classes > 1)

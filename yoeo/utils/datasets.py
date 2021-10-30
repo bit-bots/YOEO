@@ -6,6 +6,10 @@ import random
 import os
 import warnings
 import numpy as np
+import json
+from tqdm import tqdm
+from collections import defaultdict
+from pathlib import Path
 from PIL import Image
 from PIL import ImageFile
 
@@ -57,28 +61,32 @@ class ImageFolder(Dataset):
 
 
 class ListDataset(Dataset):
-    def __init__(self, list_path, img_size=416, multiscale=True, transform=None):
-        with open(list_path, "r") as file:
-            self.img_files = file.readlines()
+    def __init__(self, data_path, img_size=416, multiscale=True, transform=None):
 
-        self.label_files = []
-        for path in self.img_files:
-            image_dir = os.path.dirname(path)
-            label_dir = "labels".join(image_dir.rsplit("images", 1))
-            assert label_dir != image_dir, \
-                f"Image path must contain a folder named 'images'! \n'{image_dir}'"
-            label_file = os.path.join(label_dir, os.path.basename(path))
-            label_file = os.path.splitext(label_file)[0] + '.txt'
-            self.label_files.append(label_file)
+        # Get all color images for e.g. the test set
+        self.img_files = [str(path) for path in Path(data_path).rglob("*.png")]
+
+        self.annotations = defaultdict(list) 
+        for dset in ['train', 'val']:
+            with open(os.path.abspath(os.path.join(data_path, "../../", f"annotations/instancesonly_filtered_gtFine_{dset}.json")), "r") as f:
+                annotation_file = json.load(f)
+            for annotation in tqdm(annotation_file["annotations"]):
+                img_id = annotation["image_id"]
+                category_id = annotation["category_id"]
+                bbox = annotation["bbox"]
+                self.annotations[
+                        os.path.basename(
+                            list(filter(
+                                lambda x:x["id"]==img_id,
+                                annotation_file["images"]))[0]["file_name"])
+                            ].append((img_id, category_id, bbox))
 
         self.mask_files = []
         for path in self.img_files:
-            image_dir = os.path.dirname(path)
-            mask_dir = "segmentations".join(image_dir.rsplit("images", 1))
-            assert mask_dir != image_dir, \
-                f"Image path must contain a folder named 'images'! \n'{image_dir}'"
+            path = str(path).replace("leftImg8bit", "gtFine")
+            mask_dir = os.path.dirname(path)
             mask_file = os.path.join(mask_dir, os.path.basename(path))
-            mask_file = os.path.splitext(mask_file)[0] + '.png'
+            mask_file = os.path.splitext(mask_file)[0] + '_labelIds.png'
             self.mask_files.append(mask_file)
 
         self.img_size = img_size
@@ -106,12 +114,19 @@ class ListDataset(Dataset):
         #  Label
         # ---------
         try:
-            label_path = self.label_files[index % len(self.img_files)].rstrip()
+            labels = self.annotations[os.path.basename(img_path)]
 
-            # Ignore warning if file is empty
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                boxes = np.loadtxt(label_path).reshape(-1, 5)
+            boxes = np.zeros((len(labels), 5))
+
+            for idx, label in enumerate(labels):
+                # label_idx x_center y_center width height
+                boxes[idx] = np.array([
+                        label[1] - 1, 
+                        label[2][0] / img.shape[1] + label[2][2] / img.shape[1] / 2, 
+                        label[2][1] / img.shape[0] + label[2][3] / img.shape[0] / 2,
+                        label[2][2] / img.shape[1],
+                        label[2][3] / img.shape[0]
+                    ])
         except Exception:
             print(f"Could not read label '{label_path}'.")
             return
@@ -122,7 +137,15 @@ class ListDataset(Dataset):
         try:
             mask_path = self.mask_files[index % len(self.img_files)].rstrip()
             # Load segmentation mask as numpy array
-            mask = np.array(Image.open(mask_path).convert('RGB')) // 127
+            mask = np.array(Image.open(mask_path).convert('RGB'))
+            # Group classes together
+            mask[mask <= 6] = 0
+            mask[np.logical_and(mask > 6, mask <= 10)] = 1
+            mask[np.logical_and(mask > 10, mask <= 16)] = 2
+            mask[np.logical_and(mask > 16, mask <= 20)] = 3
+            mask[np.logical_and(mask > 20, mask <= 22)] = 4
+            mask[mask == 23] = 5
+            mask[mask > 23] = 0
         except FileNotFoundError as e:
             print(f"Could not load mask '{mask_path}'.")
             return

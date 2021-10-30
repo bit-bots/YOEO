@@ -1,6 +1,6 @@
 import imgaug.augmenters as iaa
 from torchvision import transforms
-from yoeo.utils.transforms import ToTensor, PadSquare, RelativeLabels, AbsoluteLabels, ImgAug
+from yoeo.utils.transforms import ToTensor, PadSquare, RelativeLabels, AbsoluteLabels, ImgAug, ResizeToSquare
 
 
 class DefaultAug(ImgAug):
@@ -29,7 +29,7 @@ class StrongAug(ImgAug):
 AUGMENTATION_TRANSFORMS = transforms.Compose([
     AbsoluteLabels(),
     DefaultAug(),
-    PadSquare(),
+    ResizeToSquare(),
     RelativeLabels(),
     ToTensor(),
 ])
