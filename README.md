@@ -25,7 +25,7 @@ poetry install
 You need to join the virtual environment by running `poetry shell` in this directory before running any of the following commands without the `poetry run` prefix.
 Also have a look at the other installing method, if you want to use the commands everywhere without opening a poetry-shell.
 
-#### Download pretrained YOLO weights
+#### Download pretrained weights
 
 ```bash
 ./weights/download_weights.sh
