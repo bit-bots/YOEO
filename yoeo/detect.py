@@ -216,8 +216,7 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     n_cls_preds = len(unique_labels)
     # Bounding-box colors
     cmap = plt.get_cmap("tab20b")
-    colors = [cmap(i) for i in np.linspace(0, 1, n_cls_preds)]
-    bbox_colors = random.sample(colors, n_cls_preds)
+    colors = [cmap(i) for i in np.linspace(0, 1, len(classes))]
     for x1, y1, x2, y2, conf, cls_pred in detections:
 
         print(f"\t+ Label: {classes[int(cls_pred)]} | Confidence: {conf.item():0.4f}")
@@ -225,19 +224,20 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
         box_w = x2 - x1
         box_h = y2 - y1
 
-        color = bbox_colors[int(np.where(unique_labels == int(cls_pred))[0])]
         # Create a Rectangle patch
-        bbox = patches.Rectangle((x1, y1), box_w, box_h, linewidth=2, edgecolor=color, facecolor="none")
+        bbox = patches.Rectangle((x1, y1), box_w, box_h, linewidth=2, edgecolor=colors[int(cls_pred)], facecolor="none")
         # Add the bbox to the plot
         ax.add_patch(bbox)
         # Add label
+        """ 
         plt.text(
             x1,
             y1,
             s=classes[int(cls_pred)],
             color="white",
             verticalalignment="top",
-            bbox={"color": color, "pad": 0})
+            bbox={"color": colors[int(cls_pred)], "pad": 0})
+        """
 
     # Save generated image with detections
     plt.axis("off")
@@ -269,7 +269,7 @@ def _create_data_loader(img_path, batch_size, img_size, n_cpu):
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=False,
         num_workers=n_cpu,
         pin_memory=True)
     return dataloader
