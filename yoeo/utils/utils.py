@@ -10,6 +10,8 @@ import torchvision
 import numpy as np
 import subprocess
 import random
+from typing import List
+import yaml
 
 
 def provide_determinism(seed=42):
@@ -41,12 +43,30 @@ def to_cpu(tensor):
     return tensor.detach().cpu()
 
 
-def load_classes(path):
+def load_classes(path: str) -> List[str]:
     """
     Loads class labels at 'path'
     """
+    if _is_yaml_file(path):
+        return _load_classes_from_yaml_file(path)
+    else:
+        return _load_classes_from_non_yaml_file(path)
+    
+def _is_yaml_file(path: str) -> bool:
+    return path.endswith(".yaml") or path.endswith(".yml")
+    
+def _load_classes_from_yaml_file(path: str) -> List[str]:
+    with open(path, 'r', encoding="utf-8") as fp:
+        names = yaml.load(fp, Loader=yaml.FullLoader)
+        
+    assert "detection" in names.keys(), f"Missing key 'detection' in {path}"
+    
+    return names['detection']
+
+def _load_classes_from_non_yaml_file(path: str) -> List[str]:
     with open(path, "r") as fp:
         names = fp.read().splitlines()
+        
     return names
 
 
