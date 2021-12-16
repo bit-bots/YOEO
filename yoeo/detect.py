@@ -88,8 +88,10 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5):
     # Configure input
     input_img = transforms.Compose([
         DEFAULT_TRANSFORMS,
-        Resize(img_size)])(
-            (image, np.zeros((1, 5))))[0].unsqueeze(0)
+        Resize(img_size)])((
+            image,
+            np.empty((1, 5)),
+            np.empty((img_size, img_size), dtype=np.uint8)))[0].unsqueeze(0)
 
     if torch.cuda.is_available():
         input_img = input_img.to("cuda")
@@ -229,7 +231,7 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
         # Add the bbox to the plot
         ax.add_patch(bbox)
         # Add label
-        """ 
+        """
         plt.text(
             x1,
             y1,
