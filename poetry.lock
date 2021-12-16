@@ -585,11 +585,11 @@ python-versions = "*"
 
 [[package]]
 name = "terminaltables"
-version = "3.1.0"
+version = "3.1.10"
 description = "Generate simple tables in terminals from a nested list of strings."
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=2.6"
 
 [[package]]
 name = "tifffile"
@@ -707,7 +707,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.2"
-content-hash = "b1e546d99a6c6269d74f02bb48a384f2c812288d244a586c468376d48abca29f"
+content-hash = "5715ebb8d2b03e9ff256e363e67a5cea88e6b6703833dd87aeb593767a8159fa"
 
 [metadata.files]
 absl-py = [
@@ -1311,7 +1311,8 @@ tensorboard-plugin-wit = [
     {file = "tensorboard_plugin_wit-1.8.0-py3-none-any.whl", hash = "sha256:2a80d1c551d741e99b2f197bb915d8a133e24adb8da1732b840041860f91183a"},
 ]
 terminaltables = [
-    {file = "terminaltables-3.1.0.tar.gz", hash = "sha256:f3eb0eb92e3833972ac36796293ca0906e998dc3be91fbe1f8615b331b853b81"},
+    {file = "terminaltables-3.1.10-py2.py3-none-any.whl", hash = "sha256:e4fdc4179c9e4aab5f674d80f09d76fa436b96fdc698a8505e0a36bf0804a874"},
+    {file = "terminaltables-3.1.10.tar.gz", hash = "sha256:ba6eca5cb5ba02bba4c9f4f985af80c54ec3dccf94cfcd190154386255e47543"},
 ]
 tifffile = [
     {file = "tifffile-2020.9.3-py3-none-any.whl", hash = "sha256:e7c03c5827def91bec6e353e728f4bd02f35f08b142cd520f66b21f31ff4402b"},
