@@ -101,7 +101,7 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5):
         detections, segmentations = model(input_img)
         detections = non_max_suppression(detections, conf_thres, nms_thres)
         detections = rescale_boxes(detections[0], img_size, image.shape[:2])
-    return detections.cpu().detach().numpy(), segmentations.cpu().detach().numpy()
+    return detections.numpy(), segmentations.cpu().detach().numpy()
 
 
 def detect(model, dataloader, output_path, img_size, conf_thres, nms_thres):
