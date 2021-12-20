@@ -23,6 +23,7 @@ def provide_determinism(seed=42):
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
 
+
 def worker_seed_set(worker_id):
     # See for details of numpy:
     # https://github.com/pytorch/pytorch/issues/5059#issuecomment-817392562
@@ -35,7 +36,7 @@ def worker_seed_set(worker_id):
     np.random.seed(ss.generate_state(4))
 
     # random
-    worker_seed = torch.initial_seed() % 2**32
+    worker_seed = torch.initial_seed() % 2 ** 32
     random.seed(worker_seed)
 
 
@@ -43,30 +44,13 @@ def to_cpu(tensor):
     return tensor.detach().cpu()
 
 
-def load_classes(path: str) -> List[str]:
-    """
-    Loads class labels at 'path'
-    """
-    if _is_yaml_file(path):
-        return _load_classes_from_yaml_file(path)
-    else:
-        return _load_classes_from_non_yaml_file(path)
-    
-def _is_yaml_file(path: str) -> bool:
-    return path.endswith(".yaml") or path.endswith(".yml")
-    
-def _load_classes_from_yaml_file(path: str) -> List[str]:
+def load_classes(path: str) -> dict:
     with open(path, 'r', encoding="utf-8") as fp:
         names = yaml.load(fp, Loader=yaml.FullLoader)
-        
-    assert "detection" in names.keys(), f"Missing key 'detection' in {path}"
-    
-    return names['detection']
 
-def _load_classes_from_non_yaml_file(path: str) -> List[str]:
-    with open(path, "r") as fp:
-        names = fp.read().splitlines()
-        
+    assert "detection" in names.keys(), f"Missing key 'detection' in {path}"
+    assert "segmentation" in names.keys(), f"Missing key 'segmentation in {path}"
+
     return names
 
 
@@ -382,6 +366,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
     return output
 
+
 def seg_iou(pred, target, classes):
     ious = []
     pred = pred.view(-1)
@@ -399,6 +384,7 @@ def seg_iou(pred, target, classes):
             ious.append(float(intersection) / float(max(union, 1)))
     return ious
 
+
 def print_environment_info():
     """
     Prints infos about the environment and the system.
@@ -412,12 +398,14 @@ def print_environment_info():
 
     # Print poetry package version
     try:
-        print(f"Current Version: {subprocess.check_output(['poetry', 'version'], stderr=subprocess.DEVNULL).decode('ascii').strip()}")
+        print(
+            f"Current Version: {subprocess.check_output(['poetry', 'version'], stderr=subprocess.DEVNULL).decode('ascii').strip()}")
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("Not using the poetry package")
 
     # Print commit hash if possible
     try:
-        print(f"Current Commit Hash: {subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL).decode('ascii').strip()}")
+        print(
+            f"Current Commit Hash: {subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL).decode('ascii').strip()}")
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("No git or repo found")

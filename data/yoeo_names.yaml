@@ -1,0 +1,9 @@
+detection:
+    - ball
+    - goalpost
+    - robot
+segmentation:
+    - background
+    - lines
+    - field
+    

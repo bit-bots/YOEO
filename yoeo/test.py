@@ -201,6 +201,7 @@ def run():
     # Path to file containing all images for validation
     valid_path = data_config["valid"]
     class_names = load_classes(data_config["names"])  # List of class names
+    class_names = class_names['detection']
 
     evaluate_model_file(
         args.model,
