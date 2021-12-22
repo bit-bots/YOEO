@@ -46,10 +46,10 @@ def to_cpu(tensor):
 
 def load_classes(path: str) -> dict:
     with open(path, 'r', encoding="utf-8") as fp:
-        names = yaml.load(fp, Loader=yaml.FullLoader)
+        names = yaml.load(fp, Loader=yaml.SafeLoader)
 
     assert "detection" in names.keys(), f"Missing key 'detection' in {path}"
-    assert "segmentation" in names.keys(), f"Missing key 'segmentation in {path}"
+    assert "segmentation" in names.keys(), f"Missing key 'segmentation' in {path}"
 
     return names
 
