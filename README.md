@@ -101,8 +101,8 @@ from yoeo import detect, models
 
 # Load the YOLO model
 model = models.load_model(
-  "<PATH_TO_YOUR_CONFIG_FOLDER>/yolov3.cfg", 
-  "<PATH_TO_YOUR_WEIGHTS_FOLDER>/yolov3.weights")
+  "<PATH_TO_YOUR_CONFIG_FOLDER>/yoeo-rev-7.cfg", 
+  "<PATH_TO_YOUR_WEIGHTS_FOLDER>/yoeo.pth")
 
 # Load the image as a numpy array
 img = cv2.imread("<PATH_TO_YOUR_IMAGE>")
