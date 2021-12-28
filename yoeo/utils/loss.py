@@ -58,7 +58,7 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
 def compute_loss(combined_predictions, combined_targets, model):
     # Split seg and yolo stuff
     yolo_targets, seg_targets = combined_targets
-    yolo_predictions, seg_predictions = combined_predictions
+    yolo_predictions, seg_predictions = combined_predictions    # Check which device was used
     # Check which device was used
     device = yolo_targets.device
 
@@ -122,9 +122,9 @@ def compute_loss(combined_predictions, combined_targets, model):
         lobj += BCEobj(layer_predictions[..., 4], tobj) # obj loss
 
     # Scalaing of losses
-    lbox *= 0.2
+    lbox *= 0.05
     lobj *= 1.0
-    lcls *= 0.05
+    lcls *= 0.5
 
     # Merge losses
     loss = lbox + lobj + lcls + seg_loss
