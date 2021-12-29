@@ -283,7 +283,7 @@ def run():
     parser.add_argument("-m", "--model", type=str, default="config/yoeo-rev-7.cfg", help="Path to model definition file (.cfg)")
     parser.add_argument("-w", "--weights", type=str, default="weights/yoeo.pth", help="Path to weights or checkpoint file (.weights or .pth)")
     parser.add_argument("-i", "--images", type=str, default="data/samples", help="Path to directory with images to inference")
-    parser.add_argument("-c", "--classes", type=str, default="data/TORSO.names", help="Path to classes label file (.names)")
+    parser.add_argument("-c", "--classes", type=str, default="data/yoeo_names.yaml", help="Path to .yaml file containing the classes' names")
     parser.add_argument("-o", "--output", type=str, default="output", help="Path to output directory")
     parser.add_argument("-b", "--batch_size", type=int, default=1, help="Size of each image batch")
     parser.add_argument("--img_size", type=int, default=416, help="Size of each image dimension for yolo")
@@ -294,7 +294,7 @@ def run():
     print(f"Command line arguments: {args}")
 
     # Extract class names from file
-    classes = load_classes(args.classes)  # List of class names
+    classes = load_classes(args.classes)['detection']  # List of class names
 
     detect_directory(
         args.model,
