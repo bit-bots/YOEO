@@ -94,7 +94,7 @@ def run():
     data_config = parse_data_config(args.data)
     train_path = data_config["train"]
     valid_path = data_config["valid"]
-    class_names = load_classes(data_config["names"])['detection']
+    class_names = load_classes(data_config["names"])
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # ############
