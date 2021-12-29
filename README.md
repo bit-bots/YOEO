@@ -101,7 +101,7 @@ from yoeo import detect, models
 
 # Load the YOLO model
 model = models.load_model(
-  "<PATH_TO_YOUR_CONFIG_FOLDER>/yoeo-rev-7.cfg", 
+  "<PATH_TO_YOUR_CONFIG_FOLDER>/yoeo.cfg",
   "<PATH_TO_YOUR_WEIGHTS_FOLDER>/yoeo.pth")
 
 # Load the image as a numpy array
@@ -110,7 +110,7 @@ img = cv2.imread("<PATH_TO_YOUR_IMAGE>")
 # Convert OpenCV bgr to rgb
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-# Runs the YOEO model on the image 
+# Runs the YOEO model on the image
 boxes, segmentation = detect.detect_image(model, img)
 
 print(boxes)
@@ -128,8 +128,8 @@ For more advanced usage look at the method's doc strings.
 ### YOEO — You Only Encode Once: A CNN for Embedded Object Detection and Semantic Segmentation
 
 **Abstract** <br>
-Fast and accurate visual perception utilizing a robot’s limited hardware resources is necessary for many mobile robot applications. 
-We are presenting YOEO, a novel hybrid CNN which unifies previous object detection and semantic segmentation approaches using one shared encoder backbone to increase performance and accuracy. 
+Fast and accurate visual perception utilizing a robot’s limited hardware resources is necessary for many mobile robot applications.
+We are presenting YOEO, a novel hybrid CNN which unifies previous object detection and semantic segmentation approaches using one shared encoder backbone to increase performance and accuracy.
 We show that it outperforms previous approaches on the TORSO-21 and Cityscapes datasets.
 
 [[ResearchGate]](https://www.researchgate.net/publication/356873226_YOEO_-_You_Only_Encode_Once_A_CNN_for_Embedded_Object_Detection_and_Semantic_Segmentation)

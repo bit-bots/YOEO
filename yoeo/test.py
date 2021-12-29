@@ -77,7 +77,7 @@ def print_eval_stats(metrics_output, seg_class_ious, class_names, verbose):
     else:
         print("---- mAP not measured (no detections found by model) ----")
 
-    
+
     # Print segmentation statistics
     if verbose:
         # Print IoU per segmentation class
@@ -194,7 +194,7 @@ def _create_validation_data_loader(img_path, batch_size, img_size, n_cpu):
 def run():
     print_environment_info()
     parser = argparse.ArgumentParser(description="Evaluate validation data.")
-    parser.add_argument("-m", "--model", type=str, default="config/yoeo-rev-7.cfg", help="Path to model definition file (.cfg)")
+    parser.add_argument("-m", "--model", type=str, default="config/yoeo.cfg", help="Path to model definition file (.cfg)")
     parser.add_argument("-w", "--weights", type=str, default="weights/yoeo.pth", help="Path to weights or checkpoint file (.weights or .pth)")
     parser.add_argument("-d", "--data", type=str, default="config/torso.data", help="Path to data config file (.data)")
     parser.add_argument("-b", "--batch_size", type=int, default=8, help="Size of each image batch")
