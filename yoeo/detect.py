@@ -5,9 +5,7 @@ from __future__ import division
 import os
 import argparse
 import tqdm
-import random
 import numpy as np
-import cv2
 
 from PIL import Image
 
@@ -60,11 +58,12 @@ def detect_directory(model_path, weights_path, img_path, classes, output_path,
         model,
         dataloader,
         output_path,
-        img_size,
         conf_thres,
         nms_thres)
     _draw_and_save_output_images(
         img_detections, segmentations, imgs, img_size, output_path, classes)
+
+    print(f"---- Detections were saved to: '{output_path}' ----")
 
 
 def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5):
@@ -104,7 +103,7 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5):
     return detections.numpy(), segmentations.cpu().detach().numpy()
 
 
-def detect(model, dataloader, output_path, img_size, conf_thres, nms_thres):
+def detect(model, dataloader, output_path, conf_thres, nms_thres):
     """Inferences images with model.
 
     :param model: Model for inference
@@ -113,8 +112,6 @@ def detect(model, dataloader, output_path, img_size, conf_thres, nms_thres):
     :type dataloader: DataLoader
     :param output_path: Path to output directory
     :type output_path: str
-    :param img_size: Size of each image dimension for yolo, defaults to 416
-    :type img_size: int, optional
     :param conf_thres: Object confidence threshold, defaults to 0.5
     :type conf_thres: float, optional
     :param nms_thres: IOU threshold for non-maximum suppression, defaults to 0.5
@@ -156,6 +153,8 @@ def _draw_and_save_output_images(img_detections, segmentations, imgs, img_size, 
 
     :param img_detections: List of detections
     :type img_detections: [Tensor]
+    :param segmentations: List of segmentations images
+    :type segmentations: [Tensor]
     :param imgs: List of paths to image files
     :type imgs: [str]
     :param img_size: Size of each image dimension for yolo
@@ -165,7 +164,6 @@ def _draw_and_save_output_images(img_detections, segmentations, imgs, img_size, 
     :param classes: List of class names
     :type classes: [str]
     """
-
     # Iterate through images and save plot of detections
     for (image_path, detections, seg) in zip(imgs, img_detections, segmentations):
         print(f"Image {image_path}:")
@@ -180,6 +178,8 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     :type image_path: str
     :param detections: List of detections on image
     :type detections: [Tensor]
+    :param seg: Segmentation image
+    :type seg: Tensor
     :param img_size: Size of each image dimension for yolo
     :type img_size: int
     :param output_path: Path of output directory

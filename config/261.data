@@ -1,4 +1,0 @@
-classes=2
-train=data/Superset 1/train.txt
-valid=data/Superset 1/test.txt
-names=data/261.names

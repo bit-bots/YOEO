@@ -13,8 +13,7 @@ assignees: ''
 <!--- Get the current commit hash either from the first printout of the program or by executing the following command: 'git rev-parse --short HEAD' -->
 - [ ] I have installed this repo via `PIP` and the issue occurred on version: <!--- Get the current version number by executing the following command: 'pip show yoeo' -->
 - [ ] The issue occurred when using the following .cfg model:
-    - [ ] `yolov3`
-    - [ ] `yolov3-tiny`
+    - [ ] `yoeo.cfg`
     - [ ] `CUSTOM`
 
 ## Necessary Checks
