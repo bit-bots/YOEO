@@ -30,8 +30,8 @@ def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_s
     :type weights_path: str
     :param img_path: Path to file containing all paths to validation images.
     :type img_path: str
-    :param class_names: List of class names
-    :type class_names: [str]
+    :param class_names: Dict containing detection and segmentation class names
+    :type class_names: Dict
     :param batch_size: Size of each image batch, defaults to 8
     :type batch_size: int, optional
     :param img_size: Size of each image dimension for yolo, defaults to 416
@@ -64,19 +64,29 @@ def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_s
 
 
 def print_eval_stats(metrics_output, seg_class_ious, class_names, verbose):
+    # Print detection statistics
     if metrics_output is not None:
         precision, recall, AP, f1, ap_class = metrics_output
         if verbose:
             # Prints class AP and mean AP
             ap_table = [["Index", "Class", "AP"]]
             for i, c in enumerate(ap_class):
-                ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
+                ap_table += [[c, class_names['detection'][c], "%.5f" % AP[i]]]
             print(AsciiTable(ap_table).table)
         print(f"---- mAP {AP.mean():.5f} ----")
     else:
         print("---- mAP not measured (no detections found by model) ----")
 
-    print(f"IoUs for each of the classes: {seg_class_ious}")
+    # Print segmentation statistics
+    if verbose:
+        # Print IoU per segmentation class
+        seg_table = [["Index", "Class", "IoU"]]
+        for i, iou in enumerate(seg_class_ious):
+            seg_table += [[i, class_names['segmentation'][i], "%.5f" % iou]]
+        print(AsciiTable(seg_table).table)
+    # Print mean IoU
+    mean_seg_class_ious = np.array(seg_class_ious).mean()
+    print(f"---- IoUs for each of the classes: {mean_seg_class_ious:.5f} ----")
 
 
 def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, nms_thres, verbose):
@@ -125,7 +135,7 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
             yolo_outputs = non_max_suppression(yolo_outputs, conf_thres=conf_thres, iou_thres=nms_thres)
 
         sample_metrics += get_batch_statistics(yolo_outputs, bb_targets, iou_threshold=iou_thres)
-        
+
         """
         print("Targets", np.unique(to_cpu(mask_targets), return_counts=True))
         mask = to_cpu(mask_targets[0].squeeze(0)) * 127
@@ -200,7 +210,7 @@ def run():
     data_config = parse_data_config(args.data)
     # Path to file containing all images for validation
     valid_path = data_config["valid"]
-    class_names = load_classes(data_config["names"])['detection']  # List of class names
+    class_names = load_classes(data_config["names"])  # Detection and segmentation class names
 
     evaluate_model_file(
         args.model,
