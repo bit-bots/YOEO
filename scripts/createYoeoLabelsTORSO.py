@@ -2,7 +2,6 @@
 
 import os
 import glob
-import sys
 import yaml
 import cv2
 import random
@@ -82,12 +81,12 @@ Produces the following file tree:
     - <dataset1>/
         - images/<image_files>
         - labels/<yolo_txt_files>
-        - yoeo_masks/<segmentation_mask_files>
+        - segmentations/<segmentation_mask_files>
         - <dataset1_annotation_file>.yaml
     - <dataset2>/
         - images/<image_files>
         - labels/<yolo_txt_files>
-        - yoeo_masks/<segmentation_mask_files>
+        - segmentations/<segmentation_mask_files>
         - <dataset2_annotation_file>.yaml
 ...
 
