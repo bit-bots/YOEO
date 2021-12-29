@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "YOEO"
-version = "0.0.1"
+version = "1.0.0"
 description = "A hybrid CNN for object detection and semantic segmentation"
 authors = ["Florian Vahl <git@flova.de>", "Jan Gutsche <git@jagut.de>"]
 
@@ -24,6 +24,7 @@ PyYAML = "^6.0"
 
 [tool.poetry.dev-dependencies]
 profilehooks = "^1.12.0"
+opencv-python = "^4.5.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
