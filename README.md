@@ -132,6 +132,8 @@ Fast and accurate visual perception utilizing a robot’s limited hardware resou
 We are presenting YOEO, a novel hybrid CNN which unifies previous object detection and semantic segmentation approaches using one shared encoder backbone to increase performance and accuracy. 
 We show that it outperforms previous approaches on the TORSO-21 and Cityscapes datasets.
 
+[[ResearchGate]](https://www.researchgate.net/publication/356873226_YOEO_-_You_Only_Encode_Once_A_CNN_for_Embedded_Object_Detection_and_Semantic_Segmentation)
+
 [[Download]](https://www.researchgate.net/profile/Marc-Bestmann/publication/356873226_YOEO_-_You_Only_Encode_Once_A_CNN_for_Embedded_Object_Detection_and_Semantic_Segmentation/links/61b0c82d1a5f480388c36100/YOEO-You-Only-Encode-Once-A-CNN-for-Embedded-Object-Detection-and-Semantic-Segmentation.pdf)
 
 ```
