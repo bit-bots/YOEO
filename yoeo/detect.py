@@ -280,7 +280,7 @@ def _create_data_loader(img_path, batch_size, img_size, n_cpu):
 def run():
     print_environment_info()
     parser = argparse.ArgumentParser(description="Detect objects on images.")
-    parser.add_argument("-m", "--model", type=str, default="config/yoeo-rev-7.cfg", help="Path to model definition file (.cfg)")
+    parser.add_argument("-m", "--model", type=str, default="config/yoeo.cfg", help="Path to model definition file (.cfg)")
     parser.add_argument("-w", "--weights", type=str, default="weights/yoeo.pth", help="Path to weights or checkpoint file (.weights or .pth)")
     parser.add_argument("-i", "--images", type=str, default="data/samples", help="Path to directory with images to inference")
     parser.add_argument("-c", "--classes", type=str, default="data/yoeo_names.yaml", help="Path to .yaml file containing the classes' names")
