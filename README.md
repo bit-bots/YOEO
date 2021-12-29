@@ -1,4 +1,4 @@
-# YOEO -- You Only Encode Once
+# YOEO — You Only Encode Once
 A CNN for Embedded Object Detection and Semantic Segmentation
 
 This project is based upon [PyTorch-YOLOv3](https://github.com/eriklindernoren/PyTorch-YOLOv3) and will continuously be modified to our needs.
@@ -125,4 +125,22 @@ For more advanced usage look at the method's doc strings.
 
 ## Paper
 
-The paper is currently in review.
+
+### YOEO — You Only Encode Once: A CNN for Embedded Object Detection and Semantic Segmentation
+
+**Abstract** <br>
+Fast and accurate visual perception utilizing a robot’s limited hardware resources is necessary for many mobile robot applications. 
+We are presenting YOEO, a novel hybrid CNN which unifies previous object detection and semantic segmentation approaches using one shared encoder backbone to increase performance and accuracy. 
+We show that it outperforms previous approaches on the TORSO-21 and Cityscapes datasets.
+
+[[Download]](https://www.researchgate.net/profile/Marc-Bestmann/publication/356873226_YOEO_-_You_Only_Encode_Once_A_CNN_for_Embedded_Object_Detection_and_Semantic_Segmentation/links/61b0c82d1a5f480388c36100/YOEO-You-Only-Encode-Once-A-CNN-for-Embedded-Object-Detection-and-Semantic-Segmentation.pdf)
+
+```
+@inproceedings{vahlyoeo,
+  title={YOEO — You Only Encode Once: A CNN for Embedded Object Detection and Semantic Segmentation},
+  author={Vahl, Florian and Gutsche, Jan and Bestmann, Marc and Zhang, Jianwei},
+  year={2021},
+  organization={IEEE},
+  booktitle={2021 IEEE International Conference on Robotics and Biomimetics (ROBIO)},
+}
+```
