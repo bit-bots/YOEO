@@ -123,8 +123,7 @@ print(segmentation)
 
 For more advanced usage look at the method's doc strings.
 
-## Paper
-
+## Publication
 
 ### YOEO — You Only Encode Once: A CNN for Embedded Object Detection and Semantic Segmentation
 
@@ -141,6 +140,6 @@ We show that it outperforms previous approaches on the TORSO-21 and Cityscapes d
   author={Vahl, Florian and Gutsche, Jan and Bestmann, Marc and Zhang, Jianwei},
   year={2021},
   organization={IEEE},
-  booktitle={2021 IEEE International Conference on Robotics and Biomimetics (ROBIO)},
+  booktitle={2021 IEEE International Conference on Robotics and Biomimetics (ROBIO)}
 }
 ```
