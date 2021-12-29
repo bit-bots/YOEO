@@ -9,6 +9,8 @@ import torchvision
 import numpy as np
 import subprocess
 import random
+from typing import List
+import yaml
 
 
 def provide_determinism(seed=42):
@@ -19,6 +21,7 @@ def provide_determinism(seed=42):
 
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
+
 
 def worker_seed_set(worker_id):
     # See for details of numpy:
@@ -32,7 +35,7 @@ def worker_seed_set(worker_id):
     np.random.seed(ss.generate_state(4))
 
     # random
-    worker_seed = torch.initial_seed() % 2**32
+    worker_seed = torch.initial_seed() % 2 ** 32
     random.seed(worker_seed)
 
 
@@ -40,12 +43,13 @@ def to_cpu(tensor):
     return tensor.detach().cpu()
 
 
-def load_classes(path):
-    """
-    Loads class labels at 'path'
-    """
-    with open(path, "r") as fp:
-        names = fp.read().splitlines()
+def load_classes(path: str) -> dict:
+    with open(path, 'r', encoding="utf-8") as fp:
+        names = yaml.load(fp, Loader=yaml.SafeLoader)
+
+    assert "detection" in names.keys(), f"Missing key 'detection' in {path}"
+    assert "segmentation" in names.keys(), f"Missing key 'segmentation' in {path}"
+
     return names
 
 
@@ -370,13 +374,13 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
     return output
 
+
 def seg_iou(pred, target, classes):
     ious = []
     pred = pred.view(-1)
     target = target.view(-1)
 
-    # Ignore IoU for background class ("0")
-    for cls in range(1, classes + 1):  # This goes from 1:n_classes-1 -> class "0" is ignored
+    for cls in range(classes): 
         pred_inds = pred == cls
         target_inds = target == cls
         intersection = (pred_inds[target_inds]).long().sum().data.cpu().item()  # Cast to long to prevent overflows
@@ -386,6 +390,7 @@ def seg_iou(pred, target, classes):
         else:
             ious.append(float(intersection) / float(max(union, 1)))
     return ious
+
 
 def print_environment_info():
     """
@@ -400,12 +405,14 @@ def print_environment_info():
 
     # Print poetry package version
     try:
-        print(f"Current Version: {subprocess.check_output(['poetry', 'version'], stderr=subprocess.DEVNULL).decode('ascii').strip()}")
+        print(
+            f"Current Version: {subprocess.check_output(['poetry', 'version'], stderr=subprocess.DEVNULL).decode('ascii').strip()}")
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("Not using the poetry package")
 
     # Print commit hash if possible
     try:
-        print(f"Current Commit Hash: {subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL).decode('ascii').strip()}")
+        print(
+            f"Current Commit Hash: {subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL).decode('ascii').strip()}")
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("No git or repo found")
