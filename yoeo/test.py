@@ -77,6 +77,7 @@ def print_eval_stats(metrics_output, seg_class_ious, class_names, verbose):
     else:
         print("---- mAP not measured (no detections found by model) ----")
 
+    
     # Print segmentation statistics
     if verbose:
         # Print IoU per segmentation class
@@ -86,7 +87,7 @@ def print_eval_stats(metrics_output, seg_class_ious, class_names, verbose):
         print(AsciiTable(seg_table).table)
     # Print mean IoU
     mean_seg_class_ious = np.array(seg_class_ious).mean()
-    print(f"---- IoUs for each of the classes: {mean_seg_class_ious:.5f} ----")
+    print(f"----Average IoU {mean_seg_class_ious:.5f} ----")
 
 
 def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, nms_thres, verbose):

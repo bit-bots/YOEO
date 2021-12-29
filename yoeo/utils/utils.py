@@ -372,8 +372,7 @@ def seg_iou(pred, target, classes):
     pred = pred.view(-1)
     target = target.view(-1)
 
-    # Ignore IoU for background class ("0")
-    for cls in range(1, classes + 1):  # This goes from 1:n_classes-1 -> class "0" is ignored
+    for cls in range(classes): 
         pred_inds = pred == cls
         target_inds = target == cls
         intersection = (pred_inds[target_inds]).long().sum().data.cpu().item()  # Cast to long to prevent overflows
