@@ -116,16 +116,20 @@ def remove_applied_padding(segmentations, current_dim: int, padding: Tuple[int, 
     """
     :param segmentations: YOEO segmentation output
     :type segmentations: torch.Tensor with shape (1, current_dim, current_dim)
+    :return: unpadded YOEO yegmentation output
+    :rtype: torch.Tensor
     """
     
     pad_h, pad_w = padding
     return segmentations[..., pad_h:current_dim-pad_h, pad_w:current_dim-pad_w]
     
     
-def interpolate_to_original_shape(segmentations, original_shape: int):
+def interpolate_to_original_shape(segmentations, original_shape: Tuple[int, int]):
     """
     :param segmentations: YOEO segmentation output
     :type segmentations: torch.Tensor with shape (1, current_dim, current_dim)
+    :return: interpolated YOEO yegmentation output with original image shape
+    :rtype: torch.Tensor with shape (1, *original_shape)
     """
     
     return nn.functional.interpolate(segmentations.unsqueeze(0).type(torch.ByteTensor), size=original_shape, mode="nearest").squeeze(0)
