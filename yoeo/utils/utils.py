@@ -1,5 +1,7 @@
 from __future__ import division
 
+from typing import Tuple
+
 import time
 import platform
 import tqdm
@@ -67,15 +69,12 @@ def rescale_boxes(boxes, current_dim, original_shape):
     Rescales bounding boxes to the original shape
     """
     orig_h, orig_w = original_shape
-
-    # The amount of padding that was added
-    pad_x = max(orig_h - orig_w, 0) * (current_dim / max(original_shape))
-    pad_y = max(orig_w - orig_h, 0) * (current_dim / max(original_shape))
-
+    pad_y, pad_x = calculate_applied_padding_per_dimension(current_dim, original_shape)
+    
     # Image height and width after padding is removed
     unpad_h = current_dim - pad_y
     unpad_w = current_dim - pad_x
-
+    
     # Rescale bounding boxes to dimension of original image
     boxes[:, 0] = ((boxes[:, 0] - pad_x // 2) / unpad_w) * orig_w
     boxes[:, 1] = ((boxes[:, 1] - pad_y // 2) / unpad_h) * orig_h
@@ -83,6 +82,81 @@ def rescale_boxes(boxes, current_dim, original_shape):
     boxes[:, 3] = ((boxes[:, 3] - pad_y // 2) / unpad_h) * orig_h
     return boxes
 
+
+def calculate_applied_padding_per_dimension(current_dim: int, original_shape: Tuple[int, int]) -> Tuple[int, int]:
+    """
+    Calculate the total amount of padding that was added to each image dimension, i. e. 
+    current_dim = original_shape[0] + padding_in_1st_dim = original_shape[1] + padding_in_2nd_dim
+    
+    :param current_dim: segmentation output dimension (1D)
+    :type current_dim: int
+    :param orginal_shape: orginal image shape (2D)
+    :type orgiginal_shape: Tuple[int, int] (height, width)
+    :return: Tuple containing paddings (height, width)
+    :rtype: Tuple[int, int]
+    """
+    orig_h, orig_w = original_shape
+    pad_w = max(orig_h - orig_w, 0) * (current_dim / max(original_shape))
+    pad_h = max(orig_w - orig_h, 0) * (current_dim / max(original_shape))
+    return int(pad_h), int(pad_w)
+
+
+def rescale_segmentations(segmentations, current_dim: int, original_shape: Tuple[int, int]):
+    """
+    Removes padding and interpolates segmentations to orginal image shape.
+    
+    :param segmentations: YOEO segmentation output
+    :type segmentations: torch.Tensor with shape (1, current_dim, current_dim)
+    :param current_dim: segmentation output dimension (1D)
+    :type current_dim: int
+    :param orginal_shape: orginal image shape (2D)
+    :type orgiginal_shape: Tuple[int, int] (height, width)
+    """
+    
+    padding = calculate_applied_padding_per_side(current_dim, original_shape)
+    unpadded_segmentations = remove_applied_padding(segmentations, current_dim, padding)
+    return interpolate_to_original_shape(unpadded_segmentations, original_shape)
+
+
+def calculate_applied_padding_per_side(current_dim: int, original_shape: Tuple[int, int]) -> Tuple[int, int]:
+    """
+    Calculate the amount of padding that was added to each side of each image dimension, i. e. 
+    current_dim = padding_in_1st_dim + original_shape[0] + padding_in_1st_dim
+    current_dim = padding_in_2nd_dim + original_shape[1] + padding_in_2nd_dim
+    
+    :param current_dim: segmentation output dimension (1D)
+    :type current_dim: int
+    :param orginal_shape: orginal image shape (2D)
+    :type orgiginal_shape: Tuple[int, int] (height, width)
+    :return: Tuple containing paddings (height, width)
+    :rtype: Tuple[int, int]
+    """
+    pad_h, pad_w = calculate_applied_padding_per_dimension(current_dim, original_shape)
+    return int(pad_h // 2), int(pad_w // 2)
+    
+        
+def remove_applied_padding(segmentations, current_dim: int, padding: Tuple[int, int]):
+    """
+    :param segmentations: YOEO segmentation output
+    :type segmentations: torch.Tensor with shape (1, current_dim, current_dim)
+    :return: unpadded YOEO segmentation output
+    :rtype: torch.Tensor
+    """
+    
+    pad_h, pad_w = padding
+    return segmentations[..., pad_h:current_dim-pad_h, pad_w:current_dim-pad_w]
+    
+    
+def interpolate_to_original_shape(segmentations, original_shape: Tuple[int, int]):
+    """
+    :param segmentations: YOEO segmentation output
+    :type segmentations: torch.Tensor with shape (1, current_dim, current_dim)
+    :return: interpolated YOEO yegmentation output with original image shape
+    :rtype: torch.Tensor with shape (1, *original_shape)
+    """
+    
+    return nn.functional.interpolate(segmentations.unsqueeze(0).type(torch.ByteTensor), size=original_shape, mode="nearest").squeeze(0)
+    
 
 def xywh2xyxy(x):
     y = x.new(x.shape)
