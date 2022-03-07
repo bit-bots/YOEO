@@ -84,6 +84,17 @@ def rescale_boxes(boxes, current_dim, original_shape):
 
 
 def calculate_applied_padding_per_dimension(current_dim: int, original_shape: Tuple[int, int]) -> Tuple[int, int]:
+    """
+    Calculate the total amount of padding that was added to each image dimension, i. e. 
+    current_dim = original_shape[0] + padding_in_1st_dim = original_shape[1] + padding_in_2nd_dim
+    
+    :param current_dim: segmentation output dimension (1D)
+    :type current_dim: int
+    :param orginal_shape: orginal image shape (2D)
+    :type orgiginal_shape: Tuple[int, int] (height, width)
+    :return: Tuple containing paddings (height, width)
+    :rtype: Tuple[int, int]
+    """
     orig_h, orig_w = original_shape
     pad_w = max(orig_h - orig_w, 0) * (current_dim / max(original_shape))
     pad_h = max(orig_w - orig_h, 0) * (current_dim / max(original_shape))
@@ -108,6 +119,18 @@ def rescale_segmentations(segmentations, current_dim: int, original_shape: Tuple
 
 
 def calculate_applied_padding_per_side(current_dim: int, original_shape: Tuple[int, int]) -> Tuple[int, int]:
+    """
+    Calculate the amount of padding that was added to each side of each image dimension, i. e. 
+    current_dim = padding_in_1st_dim + original_shape[0] + padding_in_1st_dim
+    current_dim = padding_in_2nd_dim + original_shape[1] + padding_in_2nd_dim
+    
+    :param current_dim: segmentation output dimension (1D)
+    :type current_dim: int
+    :param orginal_shape: orginal image shape (2D)
+    :type orgiginal_shape: Tuple[int, int] (height, width)
+    :return: Tuple containing paddings (height, width)
+    :rtype: Tuple[int, int]
+    """
     pad_h, pad_w = calculate_applied_padding_per_dimension(current_dim, original_shape)
     return int(pad_h // 2), int(pad_w // 2)
     
@@ -116,7 +139,7 @@ def remove_applied_padding(segmentations, current_dim: int, padding: Tuple[int, 
     """
     :param segmentations: YOEO segmentation output
     :type segmentations: torch.Tensor with shape (1, current_dim, current_dim)
-    :return: unpadded YOEO yegmentation output
+    :return: unpadded YOEO segmentation output
     :rtype: torch.Tensor
     """
     
