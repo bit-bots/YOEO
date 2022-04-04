@@ -310,11 +310,11 @@ mypy = ["mypy (==0.600)"]
 
 [[package]]
 name = "onnx-simplifier"
-version = "0.3.6"
+version = "0.3.7"
 description = "Simplify your ONNX model"
 category = "main"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.6"
 
 [package.dependencies]
 onnx = "*"
@@ -718,7 +718,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.2"
-content-hash = "10309153533ac1998b3cea71f7d35e5a3c7c4a77ad68f00da8a04cf590248463"
+content-hash = "ccf63d2d5b3565d30e8ce026eb876d6d21113020c430220b33b9798351b2005a"
 
 [metadata.files]
 absl-py = [
@@ -973,7 +973,7 @@ onnx = [
     {file = "onnx-1.10.2.tar.gz", hash = "sha256:24d73ca7dfd7e6c7339944f89554b4010719899337924fca1447d8f1b5db50d6"},
 ]
 onnx-simplifier = [
-    {file = "onnx-simplifier-0.3.6.tar.gz", hash = "sha256:dec3c90af505f6e838048b566a8a57f37ca70be709a1dd0732301607e8e36b1a"},
+    {file = "onnx-simplifier-0.3.7.tar.gz", hash = "sha256:1cf1a1b88af318df60db021b0203c930b0321211b6ef2ea46cb5c9601b9103a1"},
 ]
 onnxoptimizer = [
     {file = "onnxoptimizer-0.2.6-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:b12a06ce647d9827553bf07070327de236b1f8b547fe6896755ae775ddc11f94"},
