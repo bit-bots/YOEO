@@ -12,7 +12,7 @@ def convert_model(model_cfg: str, weights_pth: str, output_path: str) -> None:
     convert_to_onnx(model=pytorch_model, output_path=output_path)
 
 
-def convert_to_onnx(model, output_path, image_size=416, batch_size=1) -> None:
+def convert_to_onnx(model: yoeo.models.Darknet, output_path: str, image_size: int = 416, batch_size: int = 1) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model.to(device)
@@ -22,7 +22,7 @@ def convert_to_onnx(model, output_path, image_size=416, batch_size=1) -> None:
         model,
         dummy_input,
         output_path,
-        verbose=True,
+        verbose=False,
         export_params=True,
         input_names=["InputLayer"],
         output_names=["Detections", "Segmentations"],
@@ -39,8 +39,9 @@ def load_onnx(path: str) -> onnx.onnx_ml_pb2.ModelProto:
     return onnx.load(path)
 
 
-def check_onnx(model) -> None:
+def check_onnx(model: onnx.onnx_ml_pb2.ModelProto) -> None:
     # https://github.com/onnx/onnx/blob/main/docs/PythonAPIOverview.md (April 7, 2022)
+    print("="*30)
     try:
         onnx.checker.check_model(model)
     except onnx.checker.ValidationError as e:
