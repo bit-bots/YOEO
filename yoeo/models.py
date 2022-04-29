@@ -179,7 +179,7 @@ class SegLayer(nn.Module):
         if self.training:
             return x
         else:
-            return torch.argmax(x, dim=1)
+            return torch.argmax(x, dim=1).to(torch.uint8)
 
 
 class Darknet(nn.Module):
