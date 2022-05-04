@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "YOEO"
-version = "1.1.0"
+version = "1.1.1"
 description = "A hybrid CNN for object detection and semantic segmentation"
 authors = ["Florian Vahl <git@flova.de>", "Jan Gutsche <git@jagut.de>"]
 
