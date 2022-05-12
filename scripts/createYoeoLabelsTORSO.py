@@ -18,9 +18,9 @@ import numpy as np
 
 # Available classes for YOEO
 CLASSES = {
-    'bb_classes': ['ball', 'goalpost', 'robot'],
+    'bb_classes': ['ball', 'robot'],
     'segmentation_classes': ['field edge', 'lines'],
-    'ignored_classes': ['obstacle', 'L-Intersection', 'X-Intersection', 'T-Intersection']
+    'ignored_classes': ['goalpost', 'obstacle', 'L-Intersection', 'X-Intersection', 'T-Intersection']
     }
 
 
