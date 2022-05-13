@@ -64,89 +64,138 @@ def weights_init_normal(m):
         nn.init.constant_(m.bias.data, 0.0)
 
 
-def rescale_boxes(boxes, current_dim, original_shape):
+def rescale_boxes(boxes, output_img_size, original_img_size):
     """
-    Rescales bounding boxes to the original shape
+    Rescale bounding boxes as if they were calculated on the original, non-padded image.
+    1. bounding boxes are scaled as if they were calculated on the (square) padded original image.
+    2. padding is subtracted, thereby shifting the boxes as if they were calculated on the original,
+       non-padded image.
+
+    :param boxes: detection output
+    :type boxes: torch.Tensor with shape(#boxes, 6)
+    :param output_img_size: size of the image for which the network calculates the bounding boxes (1D)
+    :type output_img_size: int
+    :param original_img_size: size of the original image (height, width)
+    :type original_img_size: Tuple[int, int] (height, width)
+    :return: rescaled detection output
+    :rtype: torch.Tensor with shape(#boxes, 6)
     """
-    orig_h, orig_w = original_shape
-    pad_y, pad_x = calculate_applied_padding_per_dimension(current_dim, original_shape)
-    
-    # Image height and width after padding is removed
-    unpad_h = current_dim - pad_y
-    unpad_w = current_dim - pad_x
-    
-    # Rescale bounding boxes to dimension of original image
-    boxes[:, 0] = ((boxes[:, 0] - pad_x // 2) / unpad_w) * orig_w
-    boxes[:, 1] = ((boxes[:, 1] - pad_y // 2) / unpad_h) * orig_h
-    boxes[:, 2] = ((boxes[:, 2] - pad_x // 2) / unpad_w) * orig_w
-    boxes[:, 3] = ((boxes[:, 3] - pad_y // 2) / unpad_h) * orig_h
+
+    rescaled_boxes = rescale_boxes_to_original_padded_img_size(boxes, output_img_size, max(original_img_size))
+    rescaled_boxes = unpad_box_coordinates(rescaled_boxes, original_img_size)
+
+    return rescaled_boxes
+
+
+def rescale_boxes_to_original_padded_img_size(boxes, output_img_size: int, original_max_size: int):
+    """
+    Rescale bounding boxes as if they were calculated on the (square) padded original image.
+
+    :param boxes: detection output
+    :type boxes: torch.Tensor with shape(#boxes, 6)
+    :param output_img_size: size of the image for which the network calculates the bounding boxes (1D)
+    :type output_img_size: int
+    :param original_max_size: maximum size of the original image (1)
+    :type original_max_size: int
+    :return: rescaled detection output
+    :rtype: torch.Tensor with shape(#boxes, 6)
+    """
+
+    scale_factor = original_max_size / output_img_size
+    boxes[:, 0:4] = boxes[:, 0:4] * scale_factor
+
     return boxes
 
 
-def calculate_applied_padding_per_dimension(current_dim: int, original_shape: Tuple[int, int]) -> Tuple[int, int]:
+def unpad_box_coordinates(boxes, original_img_size: Tuple[int, int]):
     """
-    Calculate the total amount of padding that was added to each image dimension, i. e. 
-    current_dim = original_shape[0] + padding_in_1st_dim = original_shape[1] + padding_in_2nd_dim
-    
-    :param current_dim: segmentation output dimension (1D)
-    :type current_dim: int
-    :param orginal_shape: orginal image shape (2D)
-    :type orgiginal_shape: Tuple[int, int] (height, width)
-    :return: Tuple containing paddings (height, width)
-    :rtype: Tuple[int, int]
+    Subtract padding, thereby shifting the boxes as if they were calculated on the original,
+    non-padded image.
+
+    :param boxes: detection output
+    :type boxes: torch.Tensor with shape(#boxes, 6)
+    :param original_img_size: size of the original image (height, width)
+    :type original_img_size: Tuple[int, int] (height, width)
+    :return: rescaled detection output
+    :rtype: torch.Tensor with shape(#boxes, 6)
     """
-    orig_h, orig_w = original_shape
-    pad_w = max(orig_h - orig_w, 0) * (current_dim / max(original_shape))
-    pad_h = max(orig_w - orig_h, 0) * (current_dim / max(original_shape))
-    return int(pad_h), int(pad_w)
+
+    padding_left = max(original_img_size[0] - original_img_size[1], 0) // 2
+    padding_top = max(original_img_size[1] - original_img_size[0], 0) // 2
+
+    boxes[:, 0] = boxes[:, 0] - padding_left
+    boxes[:, 1] = boxes[:, 1] - padding_top
+    boxes[:, 2] = boxes[:, 2] - padding_left
+    boxes[:, 3] = boxes[:, 3] - padding_top
+
+    return boxes
 
 
-def rescale_segmentations(segmentation, original_shape: Tuple[int, int]):
+def rescale_segmentation(segmentation, original_img_size: Tuple[int, int]):
     """
-    Interpolate segmentation back to orginal image size and remove paddings.
-    
-    :param segmentation: YOEO segmentation output
+    Interpolate segmentation back to original image size and remove paddings.
+    1. segmentation is rescaled as if it was calculated on the original, padded image size
+    2. paddings are removed, thereby restoring the original image size
+
+    :param segmentation: segmentation output
     :type segmentation: torch.Tensor with shape (1, height, width) and height == width
-    :param orginal_shape: orginal image shape (2D)
-    :type orgiginal_shape: Tuple[int, int] (height, width)
+    :param original_img_size: size of the original image (height, width)
+    :type original_img_size: Tuple[int, int] (height, width)
+    :return: rescaled segmentation
+    :rtype: torch.Tensor with shape (1, original_img_size[0], original_img_size[1])
     """
-    rescaled_img = rescale_to_original_size(segmentation, max(original_shape))
-    return remove_applied_padding(rescaled_img, original_shape)
+
+    rescaled_seg = rescale_segmentation_to_original_padded_img_size(segmentation, max(original_img_size))
+    rescaled_seg = remove_applied_padding(rescaled_seg, original_img_size)
+
+    return rescaled_seg
 
 
-def rescale_to_original_size(segmentation, original_max_dim: int):
+def rescale_segmentation_to_original_padded_img_size(segmentation, original_max_size: int):
     """
-    :param segmentation: YOEO segmentation output
+    Rescale the segmentation as if it was calculated on the original, padded image size using
+    "nearest-exact" interpolation.
+
+    :param segmentation: segmentation output
     :type segmentation: torch.Tensor with shape (1, height, width) and height == width
-    :return: YOEO segmentation output with original image size
-    :rtype: torch.Tensor with shape (1, original_max_dim, original_max_dim)
+    :param original_max_size: maximum size of the original image (1)
+    :type original_max_size: int
+    :return: segmentation output with original, padded image size
+    :rtype: torch.Tensor with shape (1, original_max_size, original_max_size)
     """
-        
+
     return nn.functional.interpolate(
-        segmentation.unsqueeze(0).to(torch.uint8),  # to(torch.uint8) will be unneccessary as soon as segmentations are output as uint8
-        size=(original_max_dim, original_max_dim), 
+        segmentation.unsqueeze(0),
+        size=(original_max_size, original_max_size),
         mode="nearest-exact"
     ).squeeze(0)
-       
-        
-def remove_applied_padding(segmentation, original_shape: Tuple[int, int]):
-    """
-    Remove any applied padding.
-    
-    :param segmentation: YOEO segmentation output
-    :type segmentation: torch.Tensor with shape (1, height, width) and height == width
-    :return: unpadded YOEO segmentation output
-    :rtype: torch.Tensor (1, *original_shape)
-    """
-    
-    current_shape = segmentation.size(dim=1)
-    original_height, original_width = original_shape
-    
-    padding_h = int(max(0, original_width - original_height) // 2)
-    padding_w = int(max(0, original_height - original_width) // 2)
 
-    return segmentation[..., padding_h:current_shape-padding_h, padding_w:current_shape-padding_w]
+
+def remove_applied_padding(segmentation, original_img_size: Tuple[int, int]):
+    """
+    Remove paddings, thereby restoring the original image size
     
+    :param segmentation: segmentation output
+    :type segmentation: torch.Tensor with shape (1, height, width) and height == width
+    :param original_img_size: original image size (height, width)
+    :type original_img_size: Tuple[int, int]
+    :return: unpadded segmentation output
+    :rtype: torch.Tensor with shape (1, original_img_size[0], original_img_size[1])
+    """
+
+    current_size = segmentation.size(dim=1)
+    original_height, original_width = original_img_size
+
+    total_vertical_padding = max(0, original_width - original_height)
+    total_horizontal_padding = max(0, original_height - original_width)
+
+    padding_top = total_vertical_padding // 2
+    padding_bottom = total_vertical_padding - padding_top
+    padding_left = total_horizontal_padding // 2
+    padding_right = total_horizontal_padding - padding_left
+
+    return segmentation[..., padding_top:current_size - padding_bottom, padding_left:current_size - padding_right]
+
 
 def xywh2xyxy(x):
     y = x.new(x.shape)
@@ -281,7 +330,8 @@ def get_batch_statistics(outputs, targets, iou_threshold):
                     continue
 
                 # Filter target_boxes by pred_label so that we only match against boxes of our own label
-                filtered_target_position, filtered_targets = zip(*filter(lambda x: target_labels[x[0]] == pred_label, enumerate(target_boxes)))
+                filtered_target_position, filtered_targets = zip(
+                    *filter(lambda x: target_labels[x[0]] == pred_label, enumerate(target_boxes)))
 
                 # Find the best matching target for our predicted box
                 iou, box_filtered_index = bbox_iou(pred_box.unsqueeze(0), torch.stack(filtered_targets)).max(0)
@@ -444,7 +494,7 @@ def seg_iou(pred, target, classes):
     pred = pred.view(-1)
     target = target.view(-1)
 
-    for cls in range(classes): 
+    for cls in range(classes):
         pred_inds = pred == cls
         target_inds = target == cls
         intersection = (pred_inds[target_inds]).long().sum().data.cpu().item()  # Cast to long to prevent overflows
