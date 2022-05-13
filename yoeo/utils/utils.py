@@ -146,7 +146,7 @@ def rescale_segmentation(segmentation, original_img_size: Tuple[int, int]):
     """
 
     rescaled_seg = rescale_segmentation_to_original_padded_img_size(segmentation, max(original_img_size))
-    rescaled_seg = remove_applied_padding(rescaled_seg, original_img_size)
+    rescaled_seg = unpad_segmentation(rescaled_seg, original_img_size)
 
     return rescaled_seg
 
@@ -171,7 +171,7 @@ def rescale_segmentation_to_original_padded_img_size(segmentation, original_max_
     ).squeeze(0)
 
 
-def remove_applied_padding(segmentation, original_img_size: Tuple[int, int]):
+def unpad_segmentation(segmentation, original_img_size: Tuple[int, int]):
     """
     Remove paddings, thereby restoring the original image size
     
