@@ -19,17 +19,17 @@ jobs:
       id: setup_python
       uses: actions/setup-python@v3
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.9"  # ${{ matrix.python-version }}
         cache: 'poetry'
     - name: Install dependencies
       run: poetry install
 
       # Prints the help pages of all scripts to see if the imports etc. work
-      - name: Test the help pages
-        run: |
-          poetry run yoeo-train -h
-          poetry run yoeo-test -h
-          poetry run yoeo-detect -h
+    - name: Test the help pages
+      run: |
+        poetry run yoeo-train -h
+        poetry run yoeo-test -h
+        poetry run yoeo-detect -h
 
       # - name: Demo Training
       #   run: poetry run yoeo-train --data config/custom.data  --model config/yolov3.cfg --epochs 30
