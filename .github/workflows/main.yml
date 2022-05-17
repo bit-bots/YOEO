@@ -1,6 +1,6 @@
 name: Ubuntu CI
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   main:
@@ -56,7 +56,7 @@ jobs:
   linter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Flake8
         uses: TrueBrain/actions-flake8@master
