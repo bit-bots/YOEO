@@ -1,11 +1,11 @@
 name: Ubuntu CI
 
-on: [push, pull_request, workflow_dispatch]
+on: [push, pull_request]
 
 jobs:
   main:
     runs-on: ubuntu-latest
-    continue-on-error: ${{ matrix.experimental }}
+    continue-on-error: true
     strategy:
       fail-fast: true
       matrix:
