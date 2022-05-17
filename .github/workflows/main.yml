@@ -16,7 +16,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install poetry
-      run: pipx install poetry
+      run: |
+        pip install --upgrade pip
+        pip install poetry
     - name: Set up Python ${{ matrix.python-version }}
       id: setup_python
       uses: actions/setup-python@v3
@@ -25,6 +27,8 @@ jobs:
         cache: 'poetry'
     - name: Install dependencies
       run: poetry install
+    - name: Pin setup tools (remove for next torch release)
+      run: poetry run pip install setuptools==59.5.0
 
       # Prints the help pages of all scripts to see if the imports etc. work
     - name: Test the help pages
