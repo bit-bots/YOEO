@@ -32,15 +32,15 @@ jobs:
         poetry run yoeo-train -h
         poetry run yoeo-test -h
         poetry run yoeo-detect -h
+      
+    - name: Demo Training
+      run: poetry run yoeo-train --data config/custom.data  --model config/yoeo.cfg --epochs 5
 
-      # - name: Demo Training
-      #   run: poetry run yoeo-train --data config/custom.data  --model config/yolov3.cfg --epochs 30
+    - name: Demo Evaluate
+      run: poetry run yoeo-test --data config/custom.data  --model config/yolov3.cfg --weights checkpoints/yoeo_checkpoint_4.pth
 
-      # - name: Demo Evaluate
-      #   run: poetry run yoeo-test --data config/custom.data  --model config/yolov3.cfg --weights checkpoints/yolov3_ckpt_29.pth
-
-      # - name: Demo Detect
-      #   run: poetry run yoeo-detect --batch_size 2 --weights checkpoints/yolov3_ckpt_29.pth
+    - name: Demo Detect
+      run: poetry run yoeo-detect --batch_size 2 --weights checkpoints/yoeo_checkpoint_4.pth
 
 
   linter:
