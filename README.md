@@ -28,7 +28,7 @@ Also have a look at the other installing method, if you want to use the commands
 #### Download pretrained weights
 
 ```bash
-./weights/download_weights.sh
+poetry run yoeo-download-weights
 ```
 
 ## Test
