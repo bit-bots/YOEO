@@ -75,7 +75,7 @@ def get_filename_wout_extension(path: str) -> str:
     return filename
 
 
-if __name__ == "__main__":
+def run():
     parser = argparse.ArgumentParser(description='Convert PyTorch Model to ONNX')
     parser.add_argument(
         "model_cfg",
@@ -88,3 +88,7 @@ if __name__ == "__main__":
     weights_path, onnx_path = construct_paths(args.model_cfg)
     convert_model(args.model_cfg, weights_path, onnx_path)
     check_model(onnx_path)
+
+
+if __name__ == "__main__":
+    run()

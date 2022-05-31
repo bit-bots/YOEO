@@ -4,7 +4,7 @@ import os
 
 def convert_model(onnx_path: str, output_path: str) -> None:
     command = assemble_command(onnx_path, output_path)
-    run(command)
+    run_command(command)
 
 
 def assemble_command(onnx_path: str, output_path: str) -> str:
@@ -23,7 +23,7 @@ def assemble_command(onnx_path: str, output_path: str) -> str:
     return mo_command
 
 
-def run(command: str) -> None:
+def run_command(command: str) -> None:
     # https://docs.openvino.ai/latest/notebooks/102-pytorch-onnx-to-openvino-with-output.html (April 7, 2022)
     print("Exporting ONNX model to IR...")
 
@@ -47,7 +47,7 @@ def get_parent_dir(path: str) -> str:
     return parent_dir
 
 
-if __name__ == "__main__":
+def run():
     parser = argparse.ArgumentParser(description='Convert ONNX Model to OpenVino IR')
     parser.add_argument(
         "model_onnx",
@@ -59,3 +59,7 @@ if __name__ == "__main__":
 
     output_path = get_output_path(args.model_onnx)
     convert_model(args.model_onnx, output_path)
+
+
+if __name__ == "__main__":
+    run()
