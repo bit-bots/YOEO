@@ -14,7 +14,7 @@ def convert_to_onnx(model, image_size, batch_size, output_path="yoeo.onnx"):
         export_params=True,
         input_names=["InputLayer"],
         output_names=["YOLODetections", "Segmentations"],
-        opset_version=11)
+        opset_version=14)
 
 def check_onnx(path):
     model = onnx.load(path)
