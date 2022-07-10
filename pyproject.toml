@@ -5,7 +5,7 @@ description = "A hybrid CNN for object detection and semantic segmentation"
 authors = ["Florian Vahl <git@flova.de>", "Jan Gutsche <git@jagut.de>"]
 
 [tool.poetry.dependencies]
-python = ">=3.6.2"
+python = ">=3.8,<3.11"
 numpy = "^1.19.5"
 torch = ">=1.8.1"
 torchvision = ">=0.8.2"
@@ -16,9 +16,7 @@ Pillow = "^8.4.0"
 tqdm = "^4.64.0"
 imgaug = "^0.4.0"
 torchsummary = "^1.5.1"
-onnxruntime = "^1.9.0"
 onnx = "^1.9.0"
-onnxruntime-gpu = "^1.9.0"
 onnx-simplifier = "^0.3.5"
 PyYAML = "^6.0"
 
