@@ -21,6 +21,7 @@ from yoeo.utils.augmentations import AUGMENTATION_TRANSFORMS
 from yoeo.utils.transforms import DEFAULT_TRANSFORMS
 from yoeo.utils.parse_config import parse_data_config
 from yoeo.utils.loss import compute_loss
+from yoeo.utils.sheduler import CyclicCosineDecayLR
 from yoeo.test import _evaluate, _create_validation_data_loader
 
 from terminaltables import AsciiTable
@@ -145,15 +146,24 @@ def run():
             params,
             lr=model.hyperparams['learning_rate'],
             weight_decay=model.hyperparams['decay'],
-            momentum=model.hyperparams['momentum'])
+            momentum=model.hyperparams['momentum'],
+            nesterov=True)
     else:
         print("Unknown optimizer. Please choose between (adam, sgd).")
+
+    lr_sheduler = CyclicCosineDecayLR(
+	optimizer, 
+        warmup_start_lr=0.001,
+        warmup_epochs=5,
+        init_decay_epochs=40,
+        min_decay_lr=0.0001,
+        restart_interval = 15,
+        restart_lr=0.005)
 
     # skip epoch zero, because then the calculations for when to evaluate/checkpoint makes more intuitive sense
     # e.g. when you stop after 30 epochs and evaluate every 10 epochs then the evaluations happen after: 10,20,30
     # instead of: 0, 10, 20
     for epoch in range(1, args.epochs+1):
-
         print("\n---- Training Model ----")
 
         model.train()  # Set model to training mode
@@ -176,28 +186,13 @@ def run():
             ###############
 
             if batches_done % model.hyperparams['subdivisions'] == 0:
-                # Adapt learning rate
-                # Get learning rate defined in cfg
-                lr = model.hyperparams['learning_rate']
-                if batches_done < model.hyperparams['burn_in']:
-                    # Burn in
-                    lr *= (batches_done / model.hyperparams['burn_in'])
-                else:
-                    # Set and parse the learning rate to the steps defined in the cfg
-                    for threshold, value in model.hyperparams['lr_steps']:
-                        if batches_done > threshold:
-                            lr *= value
                 # Log the learning rate
-                logger.scalar_summary("train/learning_rate", lr, batches_done)
-                # Set learning rate
-                for g in optimizer.param_groups:
-                    g['lr'] = lr
-
+                logger.scalar_summary("train/learning_rate", optimizer.param_groups[0]['lr'], batches_done)
                 # Run optimizer
                 optimizer.step()
                 # Reset gradients
                 optimizer.zero_grad()
-
+                
             # ############
             # Log progress
             # ############
@@ -223,6 +218,9 @@ def run():
             logger.list_of_scalars_summary(tensorboard_log, batches_done)
 
             model.seen += imgs.size(0)
+
+        # Step lr
+        lr_sheduler.step()
 
         # #############
         # Save progress
