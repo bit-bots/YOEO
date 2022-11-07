@@ -8,8 +8,6 @@ import tqdm
 import numpy as np
 import cv2
 
-from PIL import Image
-
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
