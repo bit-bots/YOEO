@@ -31,7 +31,7 @@ optional = false
 python-versions = ">=3.6.0"
 
 [package.extras]
-unicode_backport = ["unicodedata2"]
+unicode-backport = ["unicodedata2"]
 
 [[package]]
 name = "colorama"
@@ -138,7 +138,7 @@ six = ">=1.9.0"
 
 [package.extras]
 aiohttp = ["aiohttp (>=3.6.2,<4.0.0dev)", "requests (>=2.20.0,<3.0.0dev)"]
-enterprise_cert = ["cryptography (==36.0.2)", "pyopenssl (==22.0.0)"]
+enterprise-cert = ["cryptography (==36.0.2)", "pyopenssl (==22.0.0)"]
 pyopenssl = ["pyopenssl (>=20.0.0)"]
 reauth = ["pyu2f (>=0.1.5)"]
 
@@ -370,7 +370,7 @@ lint = ["clang-format (==13.0.0)", "flake8", "mypy (==0.782)", "types-protobuf (
 
 [[package]]
 name = "onnx-simplifier"
-version = "0.3.10"
+version = "0.4.9"
 description = "Simplify your ONNX model"
 category = "main"
 optional = false
@@ -378,23 +378,7 @@ python-versions = ">=3.6"
 
 [package.dependencies]
 onnx = "*"
-onnxoptimizer = ">=0.2.6"
-protobuf = ">=3.7.0"
 rich = "*"
-
-[[package]]
-name = "onnxoptimizer"
-version = "0.3.1"
-description = "Open Neural Network Exchange"
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-onnx = "*"
-
-[package.extras]
-mypy = ["mypy (==0.600)"]
 
 [[package]]
 name = "onnxruntime"
@@ -578,7 +562,7 @@ urllib3 = ">=1.21.1,<1.27"
 
 [package.extras]
 socks = ["PySocks (>=1.5.6,!=1.5.7)"]
-use_chardet_on_py3 = ["chardet (>=3.0.2,<6)"]
+use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "requests-oauthlib"
@@ -909,7 +893,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<4.0"
-content-hash = "95cc58276ad947d6155f38c50e3503a52525f2fdaa64e6dbcd9a297a95b8da83"
+content-hash = "64b793d328e3a06e82afdf64d6a90fe1b5406039e3d1464caf5f5d0e8d3e95c0"
 
 [metadata.files]
 absl-py = [
@@ -1323,19 +1307,20 @@ onnx = [
     {file = "onnx-1.12.0.tar.gz", hash = "sha256:13b3e77d27523b9dbf4f30dfc9c959455859d5e34e921c44f712d69b8369eff9"},
 ]
 onnx-simplifier = [
-    {file = "onnx-simplifier-0.3.10.tar.gz", hash = "sha256:0d9fed12a7aecb391e5747ed1b6461f700ca360620d04c751557f79329af31f3"},
-]
-onnxoptimizer = [
-    {file = "onnxoptimizer-0.3.1-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:e73a5e2e3ca4db9bff54f7131768749c861677b97ee811a136fcf1a52783cf6e"},
-    {file = "onnxoptimizer-0.3.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c8bf2bfe0dc43f0776867688e1759122dec049ff4f45f7221931b687fe7e139e"},
-    {file = "onnxoptimizer-0.3.1-cp37-cp37m-win_amd64.whl", hash = "sha256:a9a815bba418abfb23f319838370cfd9450305a2da7d970a2261046889a70730"},
-    {file = "onnxoptimizer-0.3.1-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:60f1d3600f03466a451c05e3d12ce97565bae016e46f70396ba22208cfeae6f6"},
-    {file = "onnxoptimizer-0.3.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:056a765593d197b2b643bfb35520a66eacebfc682583d9ac0389a56c2a259e6f"},
-    {file = "onnxoptimizer-0.3.1-cp38-cp38-win_amd64.whl", hash = "sha256:15da6a036df388c3f08c3fc638b4d313ee6a1b96aaaa1c602fd1b424dd7bbc23"},
-    {file = "onnxoptimizer-0.3.1-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:5547203ee3392e3dabcea68a3a4d316ee0269ad3cf8a3504d1f68d467f60a06a"},
-    {file = "onnxoptimizer-0.3.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c773b03313e253a60c7d8fe56ea5bba38fb3442ab84a825468a35a739e8fb20b"},
-    {file = "onnxoptimizer-0.3.1-cp39-cp39-win_amd64.whl", hash = "sha256:aac4d5c4c5f4c471346dfb28356355b0c54c074a1f2fe1fe122b197f68c08a92"},
-    {file = "onnxoptimizer-0.3.1.tar.gz", hash = "sha256:0aa2e873a49f3762822e4400e1e8886236156f9d1dbf20319e2c18f7ebfb6a1d"},
+    {file = "onnx-simplifier-0.4.9.tar.gz", hash = "sha256:8476c1535d29e26bbe80419e227058e88e9b794cbf5fda879bcac928d808f2e6"},
+    {file = "onnx_simplifier-0.4.9-cp310-cp310-macosx_10_15_universal2.whl", hash = "sha256:c62d0c9a8a5f55c3c0f6d9b287c33605630779b12c099fde1553db3b2fa98ed6"},
+    {file = "onnx_simplifier-0.4.9-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5b331f3e0dc538b4e8ca8bfb2eab5d053db2fd2538602394f47015d037583b0b"},
+    {file = "onnx_simplifier-0.4.9-cp310-cp310-win_amd64.whl", hash = "sha256:f3ea825dc35d6779c60d77b7dfbb6b0a4a25487799fee709e43f43fc9845078c"},
+    {file = "onnx_simplifier-0.4.9-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ec92a1171544299745751156bad5d492a4609621bde9e89001d9abc1b01269a2"},
+    {file = "onnx_simplifier-0.4.9-cp36-cp36m-win_amd64.whl", hash = "sha256:f9ac75c9d47c6328fd3681889a42773b93d6f4cada416d870fd9153bfbad297b"},
+    {file = "onnx_simplifier-0.4.9-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:896c2267659b40f9c519f79be6ac2cbb589962fec33929f61744e7f0af98bdde"},
+    {file = "onnx_simplifier-0.4.9-cp37-cp37m-win_amd64.whl", hash = "sha256:ff0044067d97dc3c1a1ee5574e9d0b471bff9066b924729646a4dfeaac591aca"},
+    {file = "onnx_simplifier-0.4.9-cp38-cp38-macosx_10_15_universal2.whl", hash = "sha256:8727127795b51001a885fd0244743a65552e080a84abbecbf928510ef7b8dacb"},
+    {file = "onnx_simplifier-0.4.9-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:de859fc8725aa1a00f0e9e3d2b8939efd13e1bc21324840bf9105b16178192de"},
+    {file = "onnx_simplifier-0.4.9-cp38-cp38-win_amd64.whl", hash = "sha256:2c39a2884ce215d1f208aa0be3ffb78122d9b3d86d364cf84dbc01f9bd42de47"},
+    {file = "onnx_simplifier-0.4.9-cp39-cp39-macosx_10_15_universal2.whl", hash = "sha256:aebb26723186ce781d13014c5b05d0792e266671a6a2ea24c26fcf0095cbb27b"},
+    {file = "onnx_simplifier-0.4.9-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:aa1cb84961c3469a46f196608535cabebf19545e890f16689bff04ee77081164"},
+    {file = "onnx_simplifier-0.4.9-cp39-cp39-win_amd64.whl", hash = "sha256:ab122de3753c05fd3875c261320e74c193c67754d43f634c38d1bf11c06324e2"},
 ]
 onnxruntime = [
     {file = "onnxruntime-1.13.1-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:3b4e8f2b915fe505ffdc99c80324130ff9da2c52d8d1326c0bce19948523bb6c"},
@@ -1394,6 +1379,8 @@ packaging = [
     {file = "packaging-21.3.tar.gz", hash = "sha256:dd47c42927d89ab911e606518907cc2d3a1f38bbd026385970643f9c5b8ecfeb"},
 ]
 Pillow = [
+    {file = "Pillow-9.3.0-1-cp37-cp37m-win32.whl", hash = "sha256:e6ea6b856a74d560d9326c0f5895ef8050126acfdc7ca08ad703eb0081e82b74"},
+    {file = "Pillow-9.3.0-1-cp37-cp37m-win_amd64.whl", hash = "sha256:32a44128c4bdca7f31de5be641187367fe2a450ad83b833ef78910397db491aa"},
     {file = "Pillow-9.3.0-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:0b7257127d646ff8676ec8a15520013a698d1fdc48bc2a79ba4e53df792526f2"},
     {file = "Pillow-9.3.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:b90f7616ea170e92820775ed47e136208e04c967271c9ef615b6fbd08d9af0e3"},
     {file = "Pillow-9.3.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:68943d632f1f9e3dce98908e873b3a090f6cba1cbb1b892a9e8d97c938871fbe"},
