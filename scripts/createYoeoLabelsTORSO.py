@@ -21,68 +21,50 @@ This script reads annotations in the expected yaml format below
 to generate the corresponding yolo .txt files and the segmentation masks.
 
 
-Expected YAML format:
-=====================
+Expected YAML format (Example):
+===============================
 
-We use the ``Bit-Bots/YOEOyaml`` export format of the `Bit-Bots ImageTagger <https://imagetagger.bit-bots.de>`_.
-
-set: <imageset_name>
-images:
-    <image_name>:
-        width: <image_width>
-        height: <image_height>
-        annotations:
-          - {
-                type: <annotation_type>,
-                in_image: true,  # <bool, type is in image>,
-                blurred: <bool, is annotation blurred?>,
-                concealed: <bool, is annotation concealed?>,
-                vector:
-                    [
-                        [x1,y1],
-                        [x2,y2],
-                    ]}
-          - {
-                type: <annotation_type>,
-                in_image: false,  # <bool, type is in image>,
-    <next_image_name>:
-        ...
+Please refer to the TORSO-21 documentation for this: https://github.com/bit-bots/TORSO_21_dataset#structure
 
 
-Expects following file tree:
-============================
+Expects following file tree (Example):
+======================================
 
-<superset>/
-    - <dataset1>/
-        - images/<image_files>
-        - <dataset1_annotation_file>.yaml
-    - <dataset2>/
-        - images/<image_files>
-        - <dataset2_annotation_file>.yaml
-...
+We expect to be given a subdirectory of the structure documented here: https://github.com/bit-bots/TORSO_21_dataset#structure
 
+<dataset_dir>          # TORSO-21 -> reality|simulation -> train|test
+├── annotations.yaml
+├── images
+│   ├── image1.jpg
+│   ├── image2.png
+│   └── ...
+└── segmentations
+    ├── image1.png
+    ├── image2.png
+    └── ...
 
-Produces the following file tree:
-=================================
+Produces the following file tree (Example):
+===========================================
 
-<superset>/
-    - train.txt
-    - test.txt
-    - yoeo.names
-    - yoeo.data
-    - <dataset1>/
-        - images/<image_files>
-        - labels/<yolo_txt_files>
-        - segmentations/<segmentation_mask_files>
-        - <dataset1_annotation_file>.yaml
-    - <dataset2>/
-        - images/<image_files>
-        - labels/<yolo_txt_files>
-        - segmentations/<segmentation_mask_files>
-        - <dataset2_annotation_file>.yaml
-...
+<dataset_dir OR destination-dir>    # TORSO-21 -> reality|simulation -> train|test
+├── train.txt
+├── test.txt
+├── yoeo.names
+├── yoeo.data
+├── images                          # Images already exist in dataset; symlinks are created in destination-dir case
+│   ├── image1.jpg
+│   ├── image2.png
+│   └── ...
+├── labels
+│   ├── image1.txt
+│   ├── image2.txt
+│   └── ...
+└── segmentations
+    ├── image1.png
+    ├── image2.png
+    └── ...
 
-with train.txt and test.txt containing absolute imagepaths for training and evaluation respectively
+with train.txt and test.txt containing absolute image-paths for training and evaluation respectively
 with yoeo.names containing the class names of bounding boxes
 with yoeo.data: containing number of bounding box classes as well as absolute path to train.txt, test.txt and yoeo.names
 """
@@ -106,11 +88,11 @@ def range_limited_float_type_0_to_1(arg):
 parser = argparse.ArgumentParser(description="Create YOEO labels from yaml files.")
 parser.add_argument("dataset_dir", type=str, help="Directory to a dataset. Output will be written here, unless --destination-dir is given.")
 parser.add_argument("testsplit", type=range_limited_float_type_0_to_1, help="Amount of test images from total images: train/test split (between 0.0 and 1.0)")
-parser.add_argument("-s", "--seed", type=int, default=random.randint(0, (2**64)-1), help="Seed that controlles the train/test split (integer)")
+parser.add_argument("-s", "--seed", type=int, default=random.randint(0, (2**64)-1), help="Seed, that controls the train/test split (integer)")
 parser.add_argument("--destination-dir", type=str, default="", help="Writes output files to specified directory.")
 parser.add_argument("--create-symlinks", action="store_true", help="Create symlinks for image files to destination-dir. Useful, when using read-only datasets. Requires --destination-dir")
 parser.add_argument("--ignore-blurred", action="store_true", help="Ignore blurred labels")
-parser.add_argument("--ignore-conceiled", action="store_true", help="Ignore conceiled labels")
+parser.add_argument("--ignore-concealed", action="store_true", help="Ignore concealed labels")
 parser.add_argument("--ignore-classes", nargs="+", default=[], help="Append class names, to be ignored")
 args = parser.parse_args()
 
@@ -141,7 +123,7 @@ labels_dir = os.path.join(destination_dir, "labels")
 if not os.path.exists(labels_dir):
     os.makedirs(labels_dir)
 
-masks_dir = os.path.join(destination_dir, "yoeo_masks")
+masks_dir = os.path.join(destination_dir, "segmentations")
 if not os.path.exists(masks_dir):
     os.makedirs(masks_dir)
 
@@ -175,9 +157,9 @@ for img_name, frame in export['images'].items():
     annotations = []
 
     for annotation in frame['annotations']:
-        # Ignore if blurred or conceiled and should be ignored
+        # Ignore if blurred or concealed and should be ignored
         if not ((args.ignore_blurred and annotation['blurred']) or
-            (args.ignore_conceiled and annotation['conceiled'])):
+            (args.ignore_concealed and annotation['concealed'])):
 
             if annotation['type'] in CLASSES['bb_classes']:  # Handle bounding boxes
                 if annotation['in_image']:
