@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import glob
 import yaml
 import cv2
 import random
@@ -112,9 +111,10 @@ def range_limited_float_type_0_to_1(arg):
 
 
 parser = argparse.ArgumentParser(description="Create YOEO labels from yaml files.")
-parser.add_argument("superset", type=str, help="The directory that contains the datasets as subdirectories")
+parser.add_argument("dataset_dir", type=str, help="Directory to a dataset. Output will be written here, unless a destination-path is given.")
 parser.add_argument("testsplit", type=range_limited_float_type_0_to_1, help="Amount of test images from total images: train/test split (between 0.0 and 1.0)")
 parser.add_argument("-s", "--seed", type=int, default=random.randint(0, (2**64)-1), help="Seed that controlles the train/test split (integer)")
+parser.add_argument("--destination-dir", type=str, default="", help="Writes output files to specified directory AND creates symlinks to images under this path. Useful, when using read-only datasets")
 parser.add_argument("--ignore-blurred", action="store_true", help="Ignore blurred labels")
 parser.add_argument("--ignore-conceiled", action="store_true", help="Ignore conceiled labels")
 parser.add_argument("--ignore-classes", nargs="+", default=[], help="Append class names, to be ignored")
@@ -127,134 +127,129 @@ for ignore_class in args.ignore_classes:
             CLASSES[category].remove(ignore_class)
             print(f"Ignoring class '{ignore_class}'")
 
-imagetagger_annotation_files = glob.glob(f"{args.superset}/*.yaml")
-datasets = list(map(lambda x: os.path.basename(os.path.dirname(x)), imagetagger_annotation_files))
+# Defaults
+create_symlinks = False
+dataset_dir = args.dataset_dir
+destination_dir = args.dataset_dir
+image_names = []  # Collect image paths for train/test split
 
-datasets_serialized = '\n'.join(datasets)
-print(f"The following datasets will be considered: \n{datasets_serialized}")
+# Overwrite defaults, if destination path is given
+if args.destination_dir:
+    create_symlinks = True
+    destination_dir = args.destination_dir
 
-# Collect image paths for train/test split
-images = []
+# Create output directories if needed
+images_dir = os.path.join(destination_dir, "images")
+if not os.path.exists(images_dir):
+    os.makedirs(images_dir)
 
-# Iterate over all datasets
-for yamlfile in imagetagger_annotation_files:
-    d = os.path.dirname(yamlfile)
+labels_dir = os.path.join(destination_dir, "labels")
+if not os.path.exists(labels_dir):
+    os.makedirs(labels_dir)
 
-    print(f"Creating labels for {os.path.basename(d)}")
+masks_dir = os.path.join(destination_dir, "yoeo_masks")
+if not os.path.exists(masks_dir):
+    os.makedirs(masks_dir)
 
-    labels_dir = os.path.join(d, "labels")
-    if not os.path.exists(labels_dir):
-            os.makedirs(labels_dir)
+# Load annotation data from yaml file
+annotations_file = os.path.join(dataset_dir, "annotations.yaml")
+with open(annotations_file) as f:
+    export = yaml.safe_load(f)
 
-    masks_dir = os.path.join(d, "yoeo_masks")
-    if not os.path.exists(masks_dir):
-            os.makedirs(masks_dir)
+for img_name, frame in export['images'].items():
+    image_names.append(img_name)  # Collect image names
 
-    with open(yamlfile) as f:
-        export = yaml.safe_load(f)
+    # Generate segmentations in correct format
+    seg_path = os.path.join(dataset_dir, "segmentations", os.path.splitext(img_name)[0] + ".png")
+    seg_in = cv2.imread(seg_path)
+    if seg_in is not None:
+        mask = np.zeros(seg_in.shape[:2], dtype=np.uint8)
+        mask += ((seg_in == (127, 127, 127)).all(axis=2)).astype(np.uint8)  # Lines
+        mask += (((seg_in == (254, 254, 254)).all(axis=2)).astype(np.uint8) * 2)  # Field
+        seg_out = np.zeros(seg_in.shape, dtype=np.uint8)
+        seg_out[..., 0] = mask
+        seg_out[..., 1] = mask
+        seg_out[..., 2] = mask
+        cv2.imwrite(os.path.join(masks_dir, os.path.splitext(img_name)[0] + ".png"), seg_out)
+    else:
+        print(f"No segmentation found: '{seg_path}'")
+        continue
 
-    for img_name, frame in export['images'].items():
-        # Generate segmentations in correct format
-        seg_path = os.path.join(os.path.dirname(yamlfile), "segmentations", os.path.splitext(img_name)[0] + ".png")
-        seg_in = cv2.imread(seg_path)
-        if seg_in is not None:
-            mask = np.zeros(seg_in.shape[:2], dtype=np.uint8)
-            mask += ((seg_in == (127, 127, 127)).all(axis=2)).astype(np.uint8)  # Lines
-            mask += (((seg_in == (254, 254, 254)).all(axis=2)).astype(np.uint8) * 2)  # Field
-            seg_out = np.zeros(seg_in.shape, dtype=np.uint8)
-            seg_out[..., 0] = mask
-            seg_out[..., 1] = mask
-            seg_out[..., 2] = mask
-            cv2.imwrite(os.path.join(masks_dir, os.path.splitext(img_name)[0] + ".png"), seg_out)
-        else:
-            print(f"No segmentation found: '{seg_path}'")
-            continue
+    name = os.path.splitext(img_name)[0]  # Remove file extension
+    imgwidth = frame['width']
+    imgheight = frame['height']
+    annotations = []
 
-        images.append(os.path.join(d, "images", img_name))
-        name = os.path.splitext(img_name)[0]  # Remove file extension
-        imgwidth = frame['width']
-        imgheight = frame['height']
-        annotations = []
+    for annotation in frame['annotations']:
+        # Ignore if blurred or conceiled and should be ignored
+        if not ((args.ignore_blurred and annotation['blurred']) or
+            (args.ignore_conceiled and annotation['conceiled'])):
 
-        for annotation in frame['annotations']:
-            # Ignore if blurred or conceiled and should be ignored
-            if not ((args.ignore_blurred and annotation['blurred']) or
-                (args.ignore_conceiled and annotation['conceiled'])):
+            if annotation['type'] in CLASSES['bb_classes']:  # Handle bounding boxes
+                if annotation['in_image']:
+                    min_x = min(map(lambda x: x[0], annotation['vector']))
+                    max_x = max(map(lambda x: x[0], annotation['vector']))
+                    min_y = min(map(lambda x: x[1], annotation['vector']))
+                    max_y = max(map(lambda x: x[1], annotation['vector']))
 
-                if annotation['type'] in CLASSES['bb_classes']:  # Handle bounding boxes
-                    if annotation['in_image']:
-                        min_x = min(map(lambda x: x[0], annotation['vector']))
-                        max_x = max(map(lambda x: x[0], annotation['vector']))
-                        min_y = min(map(lambda x: x[1], annotation['vector']))
-                        max_y = max(map(lambda x: x[1], annotation['vector']))
+                    annowidth = max_x - min_x
+                    annoheight = max_y - min_y
+                    relannowidth = annowidth / imgwidth
+                    relannoheight = annoheight / imgheight
 
-                        annowidth = max_x - min_x
-                        annoheight = max_y - min_y
-                        relannowidth = annowidth / imgwidth
-                        relannoheight = annoheight / imgheight
+                    center_x = min_x + (annowidth / 2)
+                    center_y = min_y + (annoheight / 2)
+                    relcenter_x = center_x / imgwidth
+                    relcenter_y = center_y / imgheight
 
-                        center_x = min_x + (annowidth / 2)
-                        center_y = min_y + (annoheight / 2)
-                        relcenter_x = center_x / imgwidth
-                        relcenter_y = center_y / imgheight
-
-                        classID = CLASSES['bb_classes'].index(annotation['type'])  # Derive classID from index in predefined classes
-                        annotations.append(f"{classID} {relcenter_x} {relcenter_y} {relannowidth} {relannoheight}")  # Append to store it later
-                    else:  # Annotation is not in image
-                        continue
-                elif annotation['type'] in CLASSES['segmentation_classes']:  # Handle segmentations
+                    classID = CLASSES['bb_classes'].index(annotation['type'])  # Derive classID from index in predefined classes
+                    annotations.append(f"{classID} {relcenter_x} {relcenter_y} {relannowidth} {relannoheight}")  # Append to store it later
+                else:  # Annotation is not in image
                     continue
-                    #     if annotation['type'] == 'field edge':
-                    #     mask = np.zeros((imgheight, imgwidth, 3), dtype=np.uint8)  # Init black mask
+            elif annotation['type'] in CLASSES['segmentation_classes']:  # Handle segmentations
+                continue
+            elif annotation['type'] in CLASSES['ignored_classes']:  # Ignore this annotation
+                continue
+            else:
+                print(f"The annotation type '{annotation['type']}' is not supported or should be ignored. Image: '{img_name}'")
 
-                    #     if not annotation['vector'][0] == 'notinimage':  # Only draw polygon if annotation is known
-                    #         vector = [list(pts) for pts in list(annotation['vector'])]
-                    #         # Extending the points with corners to fill the space below the horizon
-                    #         vector.append([imgwidth - 1, imgheight - 0])
-                    #         vector.append([0, imgheight - 1])
+    # Store BB annotations in .txt file
+    with open(os.path.join(labels_dir, name + ".txt"), "w") as output:
+        output.writelines([annotation + "\n" for annotation in annotations])
 
-                    #         # Generate polygon from vector points
-                    #         points = np.array(vector, dtype=np.int32)
-                    #         points = points.reshape((1, -1, 2))
-                    #         cv2.fillPoly(mask, points, (1, 1, 1))  # Fill mask with not so black polygon
-
-                    #     cv2.imwrite(os.path.join(masks_dir, name + ".png"), mask)  # Store mask on disk
-                    # else:
-                    #     print(f"The annotation type '{annotation['type']}' is not supported or should be ignored. Image: '{img_name}'")
-                elif annotation['type'] in CLASSES['ignored_classes']:  # Ignore this annotation
-                    continue
-                else:
-                    print(f"The annotation type '{annotation['type']}' is not supported or should be ignored. Image: '{img_name}'")
-
-        # Store BB annotations in .txt file
-        with open(os.path.join(labels_dir, name + ".txt"), "w") as output:
-            output.writelines([annotation + "\n" for annotation in annotations])
+# Create symlinks for images to destination directory
+# This is helpful, if dataset directory is read-only
+if create_symlinks:
+    for image_name in image_names:
+        link_path = os.path.join(images_dir, image_name)
+        target_path = os.path.join(dataset_dir, "images", image_name)
+        os.symlink(target_path, link_path)
 
 # Seed is used for train/test split
 random.seed(args.seed)
 print(f"Using seed: {args.seed}")
 
 # Generate train/testsplit of images
-random.shuffle(sorted(images))  # Sort for consistant order then shuffle with seed
-train_images = images[0:round(len(images) * (1 - args.testsplit))]  # Split first range
-test_images = images[round(len(images) * (1 - args.testsplit)) + 1:-1]  # Split last range
+random.shuffle(sorted(image_names))  # Sort for consistent order then shuffle with seed
+train_images = image_names[0:round(len(image_names) * (1 - args.testsplit))]  # Split first range
+test_images = image_names[round(len(image_names) * (1 - args.testsplit)) + 1:-1]  # Split last range
 
 # Generate meta files
 train_images = set(train_images)  # Prevent images from showing up twice
-train_path = os.path.join(args.superset, "train.txt")
+train_path = os.path.join(destination_dir, "train.txt")
 with open(train_path, "w") as train_file:
-    train_file.writelines([image_path + "\n" for image_path in train_images])
+    train_file.writelines([str(os.path.join(destination_dir, image_name)) + "\n" for image_name in train_images])
 
 test_images = set(test_images)  # Prevent images from showing up twice
-test_path = os.path.join(args.superset, "test.txt")
+test_path = os.path.join(destination_dir, "test.txt")
 with open(test_path, "w") as test_file:
-    test_file.writelines([image_path + "\n" for image_path in test_images])
+    test_file.writelines([str(os.path.join(destination_dir, image_name)) + "\n" for image_name in test_images])
 
-names_path = os.path.join(args.superset, "yoeo.names")
+names_path = os.path.join(destination_dir, "yoeo.names")
 with open(names_path, "w") as names_file:
     names_file.writelines([class_name + "\n" for class_name in CLASSES['bb_classes']])
 
-data_path = os.path.join(args.superset, "yoeo.data")
+data_path = os.path.join(destination_dir, "yoeo.data")
 with open(data_path, "w") as data_file:
     data_file.write(f"train={train_path}\n")
     data_file.write(f"valid={test_path}\n")
