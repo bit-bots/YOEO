@@ -217,9 +217,14 @@ test_path = os.path.join(destination_dir, "test.txt")
 with open(test_path, "w") as test_file:
     test_file.writelines([str(os.path.join(destination_dir, image_name)) + "\n" for image_name in test_images])
 
-names_path = os.path.join(destination_dir, "yoeo.names")
+# The names file contains the class names of bb detections and segmentations
+names_path = os.path.join(destination_dir, "yoeo.names.yaml")
+names = {
+    'detection': CLASSES['bb_classes'],
+    'segmentation': ['background', 'lines', 'field']
+}
 with open(names_path, "w") as names_file:
-    names_file.writelines([class_name + "\n" for class_name in CLASSES['bb_classes']])
+    yaml.dump(names, names_file)
 
 data_path = os.path.join(destination_dir, "yoeo.data")
 with open(data_path, "w") as data_file:
