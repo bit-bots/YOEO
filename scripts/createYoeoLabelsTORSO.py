@@ -116,16 +116,13 @@ if args.destination_dir:
 
 # Create output directories if needed
 images_dir = os.path.join(destination_dir, "images")
-if not os.path.exists(images_dir):
-    os.makedirs(images_dir)
+os.makedirs(images_dir, exist_ok=True)
 
 labels_dir = os.path.join(destination_dir, "labels")
-if not os.path.exists(labels_dir):
-    os.makedirs(labels_dir)
+os.makedirs(labels_dir, exist_ok=True)
 
 masks_dir = os.path.join(destination_dir, "segmentations")
-if not os.path.exists(masks_dir):
-    os.makedirs(masks_dir)
+os.makedirs(masks_dir, exist_ok=True)
 
 # Load annotation data from yaml file
 annotations_file = os.path.join(dataset_dir, "annotations.yaml")
