@@ -12,7 +12,7 @@ import numpy as np
 CLASSES = {
     'bb_classes': ['ball', 'goalpost', 'robot'],
     'segmentation_classes': ['field edge', 'lines'],
-    'ignored_classes': ['obstacle', 'L-Intersection', 'X-Intersection', 'T-Intersection']
+    'skip_classes': ['obstacle', 'L-Intersection', 'X-Intersection', 'T-Intersection']
     }
 
 
@@ -90,17 +90,17 @@ parser.add_argument("dataset_dir", type=str, help="Directory to a dataset. Outpu
 parser.add_argument("testsplit", type=range_limited_float_type_0_to_1, help="Amount of test images from total images: train/test split (between 0.0 and 1.0)")
 parser.add_argument("-s", "--seed", type=int, default=random.randint(0, (2**64)-1), help="Seed, that controls the train/test split (integer)")
 parser.add_argument("--destination-dir", type=str, default="", help="Writes output files to specified directory. Also creates symlinks form image files to destination-dir. Useful, when using read-only datasets.")
-parser.add_argument("--ignore-blurred", action="store_true", help="Ignore blurred labels")
-parser.add_argument("--ignore-concealed", action="store_true", help="Ignore concealed labels")
-parser.add_argument("--ignore-classes", nargs="+", default=[], help="Append class names, to be ignored")
+parser.add_argument("--skip-blurred", action="store_true", help="Skip blurred labels")
+parser.add_argument("--skip-concealed", action="store_true", help="Skip concealed labels")
+parser.add_argument("--skip-classes", nargs="+", default=[], help="These bounding box classes will be skipped")
 args = parser.parse_args()
 
-# Remove ignored classes from CLASSES list
-for ignore_class in args.ignore_classes:
+# Remove skipped classes from CLASSES list
+for skip_class in args.skip_classes:
     for category in CLASSES.keys():
-        if ignore_class in CLASSES[category]:
-            CLASSES[category].remove(ignore_class)
-            print(f"Ignoring class '{ignore_class}'")
+        if skip_class in CLASSES[category]:
+            CLASSES[category].remove(skip_class)
+            print(f"Ignoring class '{skip_class}'")
 
 # Defaults
 create_symlinks = False
@@ -148,42 +148,38 @@ for img_name, frame in export['images'].items():
         continue
 
     name = os.path.splitext(img_name)[0]  # Remove file extension
-    imgwidth = frame['width']
-    imgheight = frame['height']
+    img_width = frame['width']
+    img_height = frame['height']
     annotations = []
 
     for annotation in frame['annotations']:
-        # Ignore if blurred or concealed and should be ignored
-        if not ((args.ignore_blurred and annotation['blurred']) or
-            (args.ignore_concealed and annotation['concealed'])):
+        # Skip annotations, if is not a bounding box or should be skipped or is blurred or concealed and user chooses to skip them
+        if (annotation['type'] in CLASSES['segmentation_classes'] or  # Handled by segmentations
+            annotation['type'] in CLASSES['skip_classes'] or  # Skip this annotation class
+            args.skip_blurred and annotation['blurred'] or
+            args.skip_concealed and annotation['concealed']):
+            continue
+        elif annotation['type'] in CLASSES['bb_classes']:  # Handle bounding boxes
+            if annotation['in_image']:  # If annotation is not in image, do nothing
+                min_x = min(map(lambda x: x[0], annotation['vector']))
+                max_x = max(map(lambda x: x[0], annotation['vector']))
+                min_y = min(map(lambda x: x[1], annotation['vector']))
+                max_y = max(map(lambda x: x[1], annotation['vector']))
 
-            if annotation['type'] in CLASSES['bb_classes']:  # Handle bounding boxes
-                if annotation['in_image']:
-                    min_x = min(map(lambda x: x[0], annotation['vector']))
-                    max_x = max(map(lambda x: x[0], annotation['vector']))
-                    min_y = min(map(lambda x: x[1], annotation['vector']))
-                    max_y = max(map(lambda x: x[1], annotation['vector']))
+                annotation_width = max_x - min_x
+                annotation_height = max_y - min_y
+                relative_annotation_width = annotation_width / img_width
+                relative_annotation_height = annotation_height / img_height
 
-                    annowidth = max_x - min_x
-                    annoheight = max_y - min_y
-                    relannowidth = annowidth / imgwidth
-                    relannoheight = annoheight / imgheight
+                center_x = min_x + (annotation_width / 2)
+                center_y = min_y + (annotation_height / 2)
+                relative_center_x = center_x / img_width
+                relative_center_y = center_y / img_height
 
-                    center_x = min_x + (annowidth / 2)
-                    center_y = min_y + (annoheight / 2)
-                    relcenter_x = center_x / imgwidth
-                    relcenter_y = center_y / imgheight
-
-                    classID = CLASSES['bb_classes'].index(annotation['type'])  # Derive classID from index in predefined classes
-                    annotations.append(f"{classID} {relcenter_x} {relcenter_y} {relannowidth} {relannoheight}")  # Append to store it later
-                else:  # Annotation is not in image
-                    continue
-            elif annotation['type'] in CLASSES['segmentation_classes']:  # Handle segmentations
-                continue
-            elif annotation['type'] in CLASSES['ignored_classes']:  # Ignore this annotation
-                continue
-            else:
-                print(f"The annotation type '{annotation['type']}' is not supported or should be ignored. Image: '{img_name}'")
+                classID = CLASSES['bb_classes'].index(annotation['type'])  # Derive classID from index in predefined classes
+                annotations.append(f"{classID} {relative_center_x} {relative_center_y} {relative_annotation_width} {relative_annotation_height}")
+        else:
+            print(f"The annotation type '{annotation['type']}' is not supported. Image: '{img_name}'")
 
     # Store BB annotations in .txt file
     with open(os.path.join(labels_dir, name + ".txt"), "w") as output:
