@@ -59,7 +59,7 @@ Produces the following file tree (Example):
 │   ├── image1.txt
 │   ├── image2.txt
 │   └── ...
-└── segmentations
+└── yoeo_segmentations
     ├── image1.png
     ├── image2.png
     └── ...
@@ -120,7 +120,7 @@ os.makedirs(images_dir, exist_ok=True)
 labels_dir = os.path.join(destination_dir, "labels")
 os.makedirs(labels_dir, exist_ok=True)
 
-masks_dir = os.path.join(destination_dir, "segmentations")
+masks_dir = os.path.join(destination_dir, "yoeo_segmentations")
 os.makedirs(masks_dir, exist_ok=True)
 
 # Load annotation data from yaml file
