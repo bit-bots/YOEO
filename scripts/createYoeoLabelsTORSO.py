@@ -89,8 +89,7 @@ parser = argparse.ArgumentParser(description="Create YOEO labels from yaml files
 parser.add_argument("dataset_dir", type=str, help="Directory to a dataset. Output will be written here, unless --destination-dir is given.")
 parser.add_argument("testsplit", type=range_limited_float_type_0_to_1, help="Amount of test images from total images: train/test split (between 0.0 and 1.0)")
 parser.add_argument("-s", "--seed", type=int, default=random.randint(0, (2**64)-1), help="Seed, that controls the train/test split (integer)")
-parser.add_argument("--destination-dir", type=str, default="", help="Writes output files to specified directory.")
-parser.add_argument("--create-symlinks", action="store_true", help="Create symlinks for image files to destination-dir. Useful, when using read-only datasets. Requires --destination-dir")
+parser.add_argument("--destination-dir", type=str, default="", help="Writes output files to specified directory. Also creates symlinks form image files to destination-dir. Useful, when using read-only datasets.")
 parser.add_argument("--ignore-blurred", action="store_true", help="Ignore blurred labels")
 parser.add_argument("--ignore-concealed", action="store_true", help="Ignore concealed labels")
 parser.add_argument("--ignore-classes", nargs="+", default=[], help="Append class names, to be ignored")
@@ -111,7 +110,7 @@ image_names = []  # Collect image paths for train/test split
 
 # Overwrite defaults, if destination path is given
 if args.destination_dir:
-    create_symlinks = args.create_symlinks
+    create_symlinks = True
     destination_dir = args.destination_dir
 
 # Create output directories if needed
