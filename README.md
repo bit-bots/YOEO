@@ -86,7 +86,7 @@ In `data/custom/train.txt` and `data/custom/valid.txt`, add paths to images that
 To train on the custom dataset run:
 
 ```bash
-poetry run yolo-train --model config/yoeo-custom.cfg --data config/custom.data
+poetry run yoeo-train --model config/yoeo-custom.cfg --data config/custom.data
 ```
 
 ## API
