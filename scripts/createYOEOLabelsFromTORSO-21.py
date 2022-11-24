@@ -5,6 +5,7 @@ import yaml
 import cv2
 import argparse
 import numpy as np
+from tqdm import tqdm
 
 
 # Available classes for YOEO
@@ -66,7 +67,7 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
     segmentation_dir = os.path.join(partition_dataset_dir, "segmentations")
 
     # Assert paths exist
-    assert os.path.exists(partition_destination_dir), f"Is the given path correct? File or directory does not exist: '{partition_destination_dir}'"
+    assert os.path.exists(partition_dataset_dir), f"Is the given path correct? File or directory does not exist: '{partition_dataset_dir}'"
     assert os.path.exists(partition_annotations_file), f"Is the given path correct? File or directory does not exist: '{partition_annotations_file}'"
     assert os.path.exists(segmentation_dir), f"Is the given path correct? File or directory does not exist: '{segmentation_dir}'"
 
@@ -88,7 +89,7 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
     with open(partition_annotations_file) as f:
         data = yaml.safe_load(f)
 
-    for img_name_with_extension, image_data in data['images'].items():
+    for img_name_with_extension, image_data in tqdm(data['images'].items()):
         image_names.append(img_name_with_extension)  # Collect image names
         img_name_without_extension = os.path.splitext(img_name_with_extension)[0]  # Remove file extension
 
@@ -156,7 +157,7 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
     if create_symlinks:
         for image_name in image_names:
             link_path = os.path.join(images_dir, image_name)
-            target_path = os.path.join(dataset_collection_dir, "images", image_name)
+            target_path = os.path.join(partition_destination_dir, "images", image_name)
             os.symlink(target_path, link_path)
 
     # Write train.txt or text.txt file containing full paths to each image
