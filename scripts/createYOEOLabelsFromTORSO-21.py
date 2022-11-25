@@ -86,9 +86,11 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
     image_names = []
 
     # Load annotation data from yaml file
+    print(f"Loading annotation file: '{partition_annotations_file}'...")
     with open(partition_annotations_file) as f:
         data = yaml.safe_load(f)
 
+    print("Writing outputs...")
     for img_name_with_extension, image_data in tqdm(data['images'].items()):
         image_names.append(img_name_with_extension)  # Collect image names
         img_name_without_extension = os.path.splitext(img_name_with_extension)[0]  # Remove file extension
@@ -157,7 +159,7 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
     if create_symlinks:
         for image_name in image_names:
             link_path = os.path.join(images_dir, image_name)
-            target_path = os.path.join(partition_destination_dir, "images", image_name)
+            target_path = os.path.join(partition_dataset_dir, "images", image_name)
             os.symlink(target_path, link_path)
 
     # Write train.txt or text.txt file containing full paths to each image
