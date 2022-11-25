@@ -2,8 +2,29 @@
 
 ## `createYOEOLabelsFromTORSO-21.py`
 
-This script reads annotations in the expected yaml format below.
-to generate the corresponding yolo .txt files and the segmentation masks.
+This script reads annotations in the expected yaml format (see down below) to generate the corresponding yolo `.txt` files and the segmentation masks.
+
+## Example usage
+
+*NOTE: Replace paths in the following examples for your needs!*
+
+- Create labels for TORSO-21 reality dataset:
+
+```bash
+./createYOEOLabelsFromTORSO-21.py <path-to-TORSO-21/reality>
+```
+
+- Create labels for TORSO-21 simulation dataset and write to custom output-path:
+
+```bash
+./createYOEOLabelsFromTORSO-21.py /path/to/TORSO-21/simulation --destination-dir /path/to/output-dir
+```
+
+- Get help and information about arguments:
+
+```bash
+./createYOEOLabelsFromTORSO-21.py --help
+```
 
 ### Expected YAML format (Example)
 
