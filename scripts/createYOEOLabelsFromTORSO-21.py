@@ -41,10 +41,10 @@ args = parser.parse_args()
 
 # Remove skipped classes from CLASSES list
 for skip_class in args.skip_classes:
-    for category in CLASSES.keys():
-        if skip_class in CLASSES[category]:
-            CLASSES[category].remove(skip_class)
-            print(f"Ignoring class '{skip_class}'")
+    if skip_class in CLASSES['bb_classes']:
+        CLASSES['bb_classes'].remove(skip_class)
+        CLASSES['skip_classes'].append(skip_class)
+        print(f"Ignoring class '{skip_class}'")
 
 # Defaults
 create_symlinks = False
@@ -87,7 +87,7 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
 
     # Load annotation data from yaml file
     print(f"Loading annotation file: '{partition_annotations_file}'...")
-    with open(partition_annotations_file) as f:
+    with open(partition_annotations_file, 'r') as f:
         data = yaml.safe_load(f)
 
     print("Writing outputs...")
@@ -125,8 +125,8 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
             # Skip annotations, if is not a bounding box or should be skipped or is blurred or concealed and user chooses to skip them
             if (annotation['type'] in CLASSES['segmentation_classes'] or  # Handled by segmentations
                 annotation['type'] in CLASSES['skip_classes'] or  # Skip this annotation class
-                (args.skip_blurred and annotation['blurred']) or
-                (args.skip_concealed and annotation['concealed'])):
+                (args.skip_blurred and hasattr(annotation, 'blurred') and annotation['blurred']) or
+                (args.skip_concealed and hasattr(annotation, 'concealed') and annotation['concealed'])):
                 continue
             elif annotation['type'] in CLASSES['bb_classes']:  # Handle bounding boxes
                 if annotation['in_image']:  # If annotation is not in image, do nothing
