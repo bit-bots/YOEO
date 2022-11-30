@@ -125,8 +125,8 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
             # Skip annotations, if is not a bounding box or should be skipped or is blurred or concealed and user chooses to skip them
             if (annotation['type'] in CLASSES['segmentation_classes'] or  # Handled by segmentations
                 annotation['type'] in CLASSES['skip_classes'] or  # Skip this annotation class
-                (args.skip_blurred and hasattr(annotation, 'blurred') and annotation['blurred']) or
-                (args.skip_concealed and hasattr(annotation, 'concealed') and annotation['concealed'])):
+                (args.skip_blurred and annotation.get('blurred', False)) or
+                (args.skip_concealed and annotation.get('concealed', False)):
                 continue
             elif annotation['type'] in CLASSES['bb_classes']:  # Handle bounding boxes
                 if annotation['in_image']:  # If annotation is not in image, do nothing
