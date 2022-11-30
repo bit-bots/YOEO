@@ -126,7 +126,7 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
             if (annotation['type'] in CLASSES['segmentation_classes'] or  # Handled by segmentations
                 annotation['type'] in CLASSES['skip_classes'] or  # Skip this annotation class
                 (args.skip_blurred and annotation.get('blurred', False)) or
-                (args.skip_concealed and annotation.get('concealed', False)):
+                (args.skip_concealed and annotation.get('concealed', False))):
                 continue
             elif annotation['type'] in CLASSES['bb_classes']:  # Handle bounding boxes
                 if annotation['in_image']:  # If annotation is not in image, do nothing
