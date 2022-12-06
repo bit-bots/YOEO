@@ -74,7 +74,7 @@ class ListDataset(Dataset):
         self.mask_files = []
         for path in self.img_files:
             image_dir = os.path.dirname(path)
-            mask_dir = "segmentations".join(image_dir.rsplit("images", 1))
+            mask_dir = "yoeo_segmentations".join(image_dir.rsplit("images", 1))
             assert mask_dir != image_dir, \
                 f"Image path must contain a folder named 'images'! \n'{image_dir}'"
             mask_file = os.path.join(mask_dir, os.path.basename(path))
@@ -122,7 +122,7 @@ class ListDataset(Dataset):
         try:
             mask_path = self.mask_files[index % len(self.img_files)].rstrip()
             # Load segmentation mask as numpy array
-            mask = np.array(Image.open(mask_path).convert('RGB')) // 127
+            mask = np.array(Image.open(mask_path).convert('RGB'))
         except FileNotFoundError as e:
             print(f"Could not load mask '{mask_path}'.")
             return

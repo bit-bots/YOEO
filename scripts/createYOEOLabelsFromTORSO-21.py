@@ -104,7 +104,7 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
         if seg_in is not None:
             mask = np.zeros(seg_in.shape[:2], dtype=np.uint8)
             mask += ((seg_in == (127, 127, 127)).all(axis=2)).astype(np.uint8)  # Lines
-            mask += (((seg_in == (254, 254, 254)).all(axis=2)).astype(np.uint8) * 2)  # Field
+            mask += (((seg_in >= (254, 254, 254)).all(axis=2)).astype(np.uint8) * 2)  # Field
             seg_out = np.zeros(seg_in.shape, dtype=np.uint8)
             seg_out[..., 0] = mask
             seg_out[..., 1] = mask
