@@ -136,7 +136,9 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
 
         sample_metrics += get_batch_statistics(yolo_outputs, bb_targets, iou_threshold=iou_thres)
 
-        seg_ious.append(seg_iou(to_cpu(segmentation_outputs), mask_targets, model.num_seg_classes))
+        s_iou = seg_iou(to_cpu(segmentation_outputs))
+        if not any([iou == float("nan") for iou in s_iou]):
+            seg_ious.append(seg_iou(to_cpu(segmentation_outputs), mask_targets, model.num_seg_classes))
 
     if len(sample_metrics) == 0:  # No detections over whole validation set.
         print("---- No detections over whole validation set ----")
