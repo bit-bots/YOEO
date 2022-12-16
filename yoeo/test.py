@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 from __future__ import division
+from typing import List
 
 import argparse
 import tqdm
@@ -150,14 +151,12 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
     yolo_metrics_output = ap_per_class(
         true_positives, pred_scores, pred_labels, labels)
 
-    def seg_iou_mean_without_nan(seg_iou):
+    def seg_iou_mean_without_nan(seg_iou: List[float]) -> np.ndarray:
         """This helper function is needed to remove cases, where the segmentation IOU is NaN.
         This is the case, if a whole batch does not contain any pixels of a segmentation class.
 
         :param seg_iou: Segmentation IOUs, possibly including NaN
-        :type seg_ious: TODO
         :return: Segmentation IOUs without NaN
-        :rtype: np.ndarray
         """
         seg_iou = np.asarray(seg_iou)
         return seg_iou[~np.isnan(seg_iou)].mean() 
