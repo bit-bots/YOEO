@@ -123,7 +123,7 @@ def compute_loss(combined_predictions, combined_targets, model):
 
     # Scalaing of losses
     lbox *= 0.2
-    lobj *= 1.0
+    lobj *= 10.0
     lcls *= 0.05
 
     # Merge losses
