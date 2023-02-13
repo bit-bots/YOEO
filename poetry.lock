@@ -873,20 +873,20 @@ sympy = "*"
 
 [[package]]
 name = "onnxruntime-gpu"
-version = "1.13.1"
+version = "1.14.0"
 description = "ONNX Runtime is a runtime accelerator for Machine Learning models"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "onnxruntime_gpu-1.13.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:96f2bf6cb1f8a06309d7729b6b5b461a22a1af81ceec65d9bf7c4a97b72ab8b0"},
-    {file = "onnxruntime_gpu-1.13.1-cp310-cp310-win_amd64.whl", hash = "sha256:f535a4957e7e5c352911a0e6378c516ba90ae6558dc55482e6c138a97e6e2c58"},
-    {file = "onnxruntime_gpu-1.13.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:caaa4c0cbc648f091a1de89d8a9921d770c345d6ab689c6438d0a9826d3297c5"},
-    {file = "onnxruntime_gpu-1.13.1-cp37-cp37m-win_amd64.whl", hash = "sha256:4161e3a0af092b5df5ddc46262434c90e0cd78852cf654c4e8988b838a6ace39"},
-    {file = "onnxruntime_gpu-1.13.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:06204a56d8c754ad90d4d0f27ce3a86154b02603b5a3e346e03fd8074a19e8d8"},
-    {file = "onnxruntime_gpu-1.13.1-cp38-cp38-win_amd64.whl", hash = "sha256:cda229e4fb069acd848680c59bedd86ecaf08ee773ef83414feb16d74b4f8404"},
-    {file = "onnxruntime_gpu-1.13.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:40e468102d0bda6704bd2edea2946e413110be1288803a8597f0cf001a0a0233"},
-    {file = "onnxruntime_gpu-1.13.1-cp39-cp39-win_amd64.whl", hash = "sha256:5347fe3a6f2f723e2f94ea625310dc37f31146c4517329c9532954410cf9b72e"},
+    {file = "onnxruntime_gpu-1.14.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2da1a3a00d9ad31579a8e9e300e691528d43c8260af69e06e1806bf3dc42114e"},
+    {file = "onnxruntime_gpu-1.14.0-cp310-cp310-win_amd64.whl", hash = "sha256:bb528dd010aac440098cd8b720ca2b308cab8bf38b09ccb6f2f5ac7752ce340d"},
+    {file = "onnxruntime_gpu-1.14.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:66875b7447a2e4c701acc4df7bae6c92b6e2145087700c702c4789c39d90524a"},
+    {file = "onnxruntime_gpu-1.14.0-cp37-cp37m-win_amd64.whl", hash = "sha256:3208ff89ab37418a23c13b6fc7faed85b22c045e74e1df9e35787d7c6c2602cf"},
+    {file = "onnxruntime_gpu-1.14.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:896e381b32891f11024d09bc078375cd2261de43f530c161c543ff27330804f4"},
+    {file = "onnxruntime_gpu-1.14.0-cp38-cp38-win_amd64.whl", hash = "sha256:3f776e8732a8fa43c894db17f41135b02865f674b5f3b458f0bb00c2e3b53fdc"},
+    {file = "onnxruntime_gpu-1.14.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:090d36a38428fdf451780e9ce47006f7eada8765ca4e4f28d45815c70d1bb841"},
+    {file = "onnxruntime_gpu-1.14.0-cp39-cp39-win_amd64.whl", hash = "sha256:bd6eda219f9279ded0149728899a238c951cb48d2ec16cb0fa478cba19607e36"},
 ]
 
 [package.dependencies]
@@ -1428,6 +1428,7 @@ files = [
     {file = "Shapely-1.8.5.post1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:99a2f0da0109e81e0c101a2b4cd8412f73f5f299e7b5b2deaf64cd2a100ac118"},
     {file = "Shapely-1.8.5.post1-cp310-cp310-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:6fe855e7d45685926b6ba00aaeb5eba5862611f7465775dacd527e081a8ced6d"},
     {file = "Shapely-1.8.5.post1-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:ec14ceca36f67cb48b34d02d7f65a9acae15cd72b48e303531893ba4a960f3ea"},
+    {file = "Shapely-1.8.5.post1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d8a2b2a65fa7f97115c1cd989fe9d6f39281ca2a8a014f1d4904c1a6e34d7f25"},
     {file = "Shapely-1.8.5.post1-cp310-cp310-win32.whl", hash = "sha256:21776184516a16bf82a0c3d6d6a312b3cd15a4cabafc61ee01cf2714a82e8396"},
     {file = "Shapely-1.8.5.post1-cp310-cp310-win_amd64.whl", hash = "sha256:a354199219c8d836f280b88f2c5102c81bb044ccea45bd361dc38a79f3873714"},
     {file = "Shapely-1.8.5.post1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:783bad5f48e2708a0e2f695a34ed382e4162c795cb2f0368b39528ac1d6db7ed"},
@@ -1452,6 +1453,7 @@ files = [
     {file = "Shapely-1.8.5.post1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:b65f5d530ba91e49ffc7c589255e878d2506a8b96ffce69d3b7c4500a9a9eaf8"},
     {file = "Shapely-1.8.5.post1-cp38-cp38-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:147066da0be41b147a61f8eb805dea3b13709dbc873a431ccd7306e24d712bc0"},
     {file = "Shapely-1.8.5.post1-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:c2822111ddc5bcfb116e6c663e403579d0fe3f147d2a97426011a191c43a7458"},
+    {file = "Shapely-1.8.5.post1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4b47bb6f9369e8bf3e6dbd33e6a25a47ee02b2874792a529fe04a49bf8bc0df6"},
     {file = "Shapely-1.8.5.post1-cp38-cp38-win32.whl", hash = "sha256:2e0a8c2e55f1be1312b51c92b06462ea89e6bb703fab4b114e7a846d941cfc40"},
     {file = "Shapely-1.8.5.post1-cp38-cp38-win_amd64.whl", hash = "sha256:0d885cb0cf670c1c834df3f371de8726efdf711f18e2a75da5cfa82843a7ab65"},
     {file = "Shapely-1.8.5.post1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:0b4ee3132ee90f07d63db3aea316c4c065ed7a26231458dda0874414a09d6ba3"},
@@ -1459,6 +1461,7 @@ files = [
     {file = "Shapely-1.8.5.post1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:c6a9a4a31cd6e86d0fbe8473ceed83d4fe760b19d949fb557ef668defafea0f6"},
     {file = "Shapely-1.8.5.post1-cp39-cp39-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:38f0fbbcb8ca20c16451c966c1f527cc43968e121c8a048af19ed3e339a921cd"},
     {file = "Shapely-1.8.5.post1-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:78fb9d929b8ee15cfd424b6c10879ce1907f24e05fb83310fc47d2cd27088e40"},
+    {file = "Shapely-1.8.5.post1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:89164e7a9776a19e29f01369a98529321994e2e4d852b92b7e01d4d9804c55bf"},
     {file = "Shapely-1.8.5.post1-cp39-cp39-win32.whl", hash = "sha256:8e59817b0fe63d34baedaabba8c393c0090f061917d18fc0bcc2f621937a8f73"},
     {file = "Shapely-1.8.5.post1-cp39-cp39-win_amd64.whl", hash = "sha256:e9c30b311de2513555ab02464ebb76115d242842b29c412f5a9aa0cac57be9f6"},
     {file = "Shapely-1.8.5.post1.tar.gz", hash = "sha256:ef3be705c3eac282a28058e6c6e5503419b250f482320df2172abcbea642c831"},
@@ -1762,4 +1765,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<4.0"
-content-hash = "1a79f9a1ac0977a6b6d6276a26e3425b251db8ef75ff35c872b11d1f215df99f"
+content-hash = "bb913db646a3bcbe4ec0cc1405ec8d51dcb34a33edab5188081adad3c44c2085"
