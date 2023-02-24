@@ -8,6 +8,8 @@ import tqdm
 import numpy as np
 import cv2
 
+from PIL import Image
+
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
@@ -99,7 +101,7 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5):
         detections, segmentations = model(input_img)
         detections = non_max_suppression(detections, conf_thres, nms_thres)
         detections = rescale_boxes(detections[0], img_size, image.shape[0:2])
-        segmentations = rescale_segmentation(segmentations, image.shape[0:2])
+        segmentations = rescale_segmentation(segmentations, img_size, image.shape[0:2])
     return detections.numpy(), segmentations.cpu().detach().numpy()
 
 
@@ -255,6 +257,7 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     img = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8,
                                     sep='')
     img  = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    plt.close(fig)
     # img is rgb, convert to opencv's default bgr
     img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
 
