@@ -101,7 +101,7 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5):
         detections, segmentations = model(input_img)
         detections = non_max_suppression(detections, conf_thres, nms_thres)
         detections = rescale_boxes(detections[0], img_size, image.shape[0:2])
-        segmentations = rescale_segmentation(segmentations, img_size, image.shape[0:2])
+        segmentations = rescale_segmentation(segmentations, image.shape[0:2])
     return detections.numpy(), segmentations.cpu().detach().numpy()
 
 
@@ -197,7 +197,6 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     # Get segmentation
     seg = seg.cpu().detach().numpy().astype(np.uint8)
     # Draw all of it
-
     # The amount of padding that was added
     pad_x = max(img.shape[0] - img.shape[1], 0) * (img_size / max(img.shape[:2])) // 2
     pad_y = max(img.shape[1] - img.shape[0], 0) * (img_size / max(img.shape[:2])) // 2
