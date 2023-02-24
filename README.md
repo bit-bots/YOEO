@@ -63,7 +63,7 @@ poetry run tensorboard --logdir='logs' --port=6006
 
 Storing the logs on a slow drive possibly leads to a significant training speed decrease.
 
-You can adjust the log directory using `--logdir <path>` when running `tensorboard` and `yolo-train`.
+You can adjust the log directory using `--logdir <path>` when running `tensorboard` and `yoeo-train`.
 
 ## Train on Custom Dataset
 
@@ -86,7 +86,7 @@ In `data/custom/train.txt` and `data/custom/valid.txt`, add paths to images that
 To train on the custom dataset run:
 
 ```bash
-poetry run yolo-train --model config/yoeo-custom.cfg --data config/custom.data
+poetry run yoeo-train --model config/yoeo-custom.cfg --data config/custom.data
 ```
 
 ## API
@@ -99,7 +99,7 @@ An example prediction call from a simple OpenCV python script would look like th
 import cv2
 from yoeo import detect, models
 
-# Load the YOLO model
+# Load the YOEO model
 model = models.load_model(
   "<PATH_TO_YOUR_CONFIG_FOLDER>/yoeo.cfg",
   "<PATH_TO_YOUR_WEIGHTS_FOLDER>/yoeo.pth")

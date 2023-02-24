@@ -6,8 +6,7 @@ import os
 import argparse
 import tqdm
 import numpy as np
-
-from PIL import Image
+import cv2
 
 import torch
 import torchvision.transforms as transforms
@@ -17,7 +16,7 @@ from torch.autograd import Variable
 from imgaug.augmentables.segmaps import SegmentationMapsOnImage
 
 from yoeo.models import load_model
-from yoeo.utils.utils import load_classes, rescale_boxes, non_max_suppression, print_environment_info
+from yoeo.utils.utils import load_classes, rescale_boxes, non_max_suppression, print_environment_info, rescale_segmentation
 from yoeo.utils.datasets import ImageFolder
 from yoeo.utils.transforms import Resize, DEFAULT_TRANSFORMS
 
@@ -83,7 +82,7 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5):
     :rtype: nd.array, nd.array
     """
     model.eval()  # Set model to evaluation mode
-
+    
     # Configure input
     input_img = transforms.Compose([
         DEFAULT_TRANSFORMS,
@@ -99,7 +98,8 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5):
     with torch.no_grad():
         detections, segmentations = model(input_img)
         detections = non_max_suppression(detections, conf_thres, nms_thres)
-        detections = rescale_boxes(detections[0], img_size, image.shape[:2])
+        detections = rescale_boxes(detections[0], img_size, image.shape[0:2])
+        segmentations = rescale_segmentation(segmentations, image.shape[0:2])
     return detections.numpy(), segmentations.cpu().detach().numpy()
 
 
@@ -188,7 +188,8 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     :type classes: [str]
     """
     # Create plot
-    img = np.array(Image.open(image_path))
+    img = cv2.imread(image_path)
+    img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
     plt.figure()
     fig, ax = plt.subplots(1)
     # Get segmentation
@@ -243,12 +244,21 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
 
     # Save generated image with detections
     plt.axis("off")
+    plt.tight_layout(pad=0)
     plt.gca().xaxis.set_major_locator(NullLocator())
     plt.gca().yaxis.set_major_locator(NullLocator())
     filename = os.path.basename(image_path).split(".")[0]
     output_path_1 = os.path.join(output_path, f"{filename}.png")
-    plt.savefig(output_path_1, bbox_inches="tight", pad_inches=0.0)
-    plt.close()
+    # redraw the canvas
+    fig.canvas.draw()
+    # convert canvas to image
+    img = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8,
+                                    sep='')
+    img  = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    # img is rgb, convert to opencv's default bgr
+    img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
+
+    cv2.imwrite(output_path_1, img)
 
 
 def _create_data_loader(img_path, batch_size, img_size, n_cpu):
