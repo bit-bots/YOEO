@@ -8,8 +8,6 @@ import tqdm
 import numpy as np
 import cv2
 
-from PIL import Image
-
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
@@ -197,6 +195,7 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     # Get segmentation
     seg = seg.cpu().detach().numpy().astype(np.uint8)
     # Draw all of it
+
     # The amount of padding that was added
     pad_x = max(img.shape[0] - img.shape[1], 0) * (img_size / max(img.shape[:2])) // 2
     pad_y = max(img.shape[1] - img.shape[0], 0) * (img_size / max(img.shape[:2])) // 2
@@ -256,7 +255,6 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     img = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8,
                                     sep='')
     img  = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-    plt.close(fig)
     # img is rgb, convert to opencv's default bgr
     img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
 
