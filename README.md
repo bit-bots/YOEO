@@ -123,6 +123,28 @@ print(segmentation)
 
 For more advanced usage look at the method's doc strings.
 
+## Convert your YOEO model
+
+### Convert your YOEO model to an ONNX model
+
+To convert your YOEO model to an ONNX model, you can use the following command:
+
+```bash
+poetry run yoeo-to-onnx config/yoeo.cfg  # Replace path with your .cfg file
+```
+
+For more information on ONNX, read the [ONNX runtime website](https://onnxruntime.ai/).
+
+### Convert ONNX model to OpenVino IR model
+
+After successful conversion of your YOEO model to an ONNX model using [this guide](#convert-your-yoeo-model-to-an-onnx-model), you can move on with the next conversion to an OpenVino IR model (intermediate representation) model using the following command:
+
+```bash
+poetry run yoeo-onnx-to-openvino config/yoeo.onnx  # Replace path with your .onnx file
+```
+
+For more information on OpenVino, read the [OpenVino documentation](https://docs.openvino.ai).
+
 ## Publication
 
 ### YOEO — You Only Encode Once: A CNN for Embedded Object Detection and Semantic Segmentation
