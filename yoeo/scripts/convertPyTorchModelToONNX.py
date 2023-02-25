@@ -52,14 +52,13 @@ def check_onnx(model: onnx.onnx_ml_pb2.ModelProto) -> None:
         print('The model is valid!')
 
 
-def construct_paths(model_cfg: str) -> Tuple[str, str]:
+def construct_path(model_cfg: str) -> str:
     parent_dir = get_parent_dir(model_cfg)
     filename = get_filename_wout_extension(model_cfg)
 
-    weights_path = os.path.join(parent_dir, f"{filename}.pth")
     onnx_path = os.path.join(parent_dir, f"{filename}.onnx")
 
-    return weights_path, onnx_path
+    return onnx_path
 
 
 def get_parent_dir(path: str) -> str:
@@ -82,13 +81,18 @@ def run():
     parser.add_argument(
         "model_cfg",
         type=str,
-        help="full path to model file (.cfg). It is assumed that the weights are stored in a .pth file with the same filename. ONNX model will be output with the same filename as well."
+        help="full path to model file (.cfg). ONNX model will be output with the same filename as well."
+    )
+    parser.add_argument(
+        "model_weights",
+        type=str,
+        help="full path to model weights file (.pth or .weights)."
     )
 
     args = parser.parse_args()
 
-    weights_path, onnx_path = construct_paths(args.model_cfg)
-    convert_model(args.model_cfg, weights_path, onnx_path)
+    onnx_path = construct_path(args.model_cfg)
+    convert_model(args.model_cfg, args.model_weights, onnx_path)
     check_model(onnx_path)
 
 
