@@ -134,7 +134,7 @@ def compute_loss(combined_predictions, combined_targets, model):
 
 def build_targets(p, targets, model):
     # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
-    na, nt = 1, targets.shape[0]  # number of anchors, targets #TODO
+    na, nt = len(model.yolo_layers[0].anchors), targets.shape[0]  # number of anchors, targets
     tcls, tbox, indices, anch = [], [], [], []
     gain = torch.ones(7, device=targets.device)  # normalized to gridspace gain
     # Make a tensor that iterates 0-2 for 3 anchors and repeat that as many times as we have target boxes
