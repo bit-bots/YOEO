@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-
-import os
-import glob
-import yaml
-import cv2
-import random
 import argparse
+import glob
+import os
+import random
+
+import cv2
 import numpy as np
+import yaml
 
 
 ##########

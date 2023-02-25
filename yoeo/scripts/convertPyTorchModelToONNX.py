@@ -1,11 +1,12 @@
 #! /usr/bin/env python3
-import yoeo.models
-
 import argparse
-import torch
-from typing import Tuple
-import onnx
 import os.path
+from typing import Tuple
+
+import onnx
+import torch
+
+import yoeo.models
 
 
 def convert_model(model_cfg: str, weights_pth: str, output_path: str) -> None:
