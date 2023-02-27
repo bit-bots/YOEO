@@ -123,7 +123,7 @@ def compute_loss(combined_predictions, combined_targets, model):
 
     # Scalaing of losses
     lbox *= 0.2
-    lobj *= 1.0
+    lobj *= 10.0
     lcls *= 0.05
 
     # Merge losses
@@ -134,7 +134,7 @@ def compute_loss(combined_predictions, combined_targets, model):
 
 def build_targets(p, targets, model):
     # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
-    na, nt = 3, targets.shape[0]  # number of anchors, targets #TODO
+    na, nt = len(model.yolo_layers[0].anchors), targets.shape[0]  # number of anchors, targets
     tcls, tbox, indices, anch = [], [], [], []
     gain = torch.ones(7, device=targets.device)  # normalized to gridspace gain
     # Make a tensor that iterates 0-2 for 3 anchors and repeat that as many times as we have target boxes
@@ -152,14 +152,7 @@ def build_targets(p, targets, model):
         t = targets * gain
         # Check if we have targets
         if nt:
-            # Calculate ration between anchor and target box for both width and height
-            r = t[:, :, 4:6] / anchors[:, None]
-            # Select the ratios that have the highest divergence in any axis and check if the ratio is less than 4
-            j = torch.max(r, 1. / r).max(2)[0] < 4  # compare #TODO
-            # Only use targets that have the correct ratios for their anchors
-            # That means we only keep ones that have a matching anchor and we loose the anchor dimension
-            # The anchor id is still saved in the 7th value of each target
-            t = t[j]
+            t = t.squeeze(0)
         else:
             t = targets[0]
 
