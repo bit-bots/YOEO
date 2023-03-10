@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-
 from __future__ import division
 
 import os
@@ -59,6 +58,7 @@ def detect_directory(model_path, weights_path, img_path, classes, output_path,
         output_path,
         conf_thres,
         nms_thres)
+
     _draw_and_save_output_images(
         img_detections, segmentations, imgs, img_size, output_path, classes)
 
@@ -134,11 +134,15 @@ def detect(model, dataloader, output_path, conf_thres, nms_thres):
 
     for (img_paths, input_imgs) in tqdm.tqdm(dataloader, desc="Detecting"):
         # Configure input
+        print(f"VOT TAKOE 1 {input_imgs}")
         input_imgs = Variable(input_imgs.type(Tensor))
+
+        print(f"VOT TAKOE 2 {input_imgs}")
 
         # Get detections
         with torch.no_grad():
             detections, segmentations = model(input_imgs)
+            print(f"VOT TAKOE 3 {input_imgs}")
             detections = non_max_suppression(detections, conf_thres, nms_thres)
 
         # Store image and detections
@@ -195,7 +199,7 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     # Get segmentation
     seg = seg.cpu().detach().numpy().astype(np.uint8)
     # Draw all of it
-
+    print(f"ETO EST SEG {seg}")
     # The amount of padding that was added
     pad_x = max(img.shape[0] - img.shape[1], 0) * (img_size / max(img.shape[:2])) // 2
     pad_y = max(img.shape[1] - img.shape[0], 0) * (img_size / max(img.shape[:2])) // 2
@@ -206,13 +210,14 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
                 int(pad_x) : int(img_size - pad_x),
                 ] * 255
 
-
+    print(f"MILLIARDNAYA {img}")
     ax.imshow(
         SegmentationMapsOnImage(
             seg[
                 int(pad_y) : int(img_size - pad_y),
                 int(pad_x) : int(img_size - pad_x),
                 ], shape=img.shape).draw_on_image(img)[0])
+    print("JJEEPPAAA")
     # Rescale boxes to original image
     detections = rescale_boxes(detections, img_size, img.shape[:2])
     unique_labels = detections[:, -1].cpu().unique()
@@ -275,6 +280,7 @@ def _create_data_loader(img_path, batch_size, img_size, n_cpu):
     :return: Returns DataLoader
     :rtype: DataLoader
     """
+
     dataset = ImageFolder(
         img_path,
         transform=transforms.Compose([DEFAULT_TRANSFORMS, Resize(img_size)]))
@@ -317,7 +323,6 @@ def run():
         n_cpu=args.n_cpu,
         conf_thres=args.conf_thres,
         nms_thres=args.nms_thres)
-
 
 if __name__ == '__main__':
     run()

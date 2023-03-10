@@ -8,6 +8,7 @@ import warnings
 import numpy as np
 from PIL import Image
 from PIL import ImageFile
+import cv2
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -36,11 +37,18 @@ class ImageFolder(Dataset):
         self.transform = transform
 
     def __getitem__(self, index):
+        print(self.files)
+        if self.files == 'data/samples/webcam.wc':
+            cam = cv2.VideoCapture(0)  #set the port of the camera as before
+            retval, img = cam.read()
+            print(f"WE are openned{img.type()}")
+            cv2.waitKey(1)
 
-        img_path = self.files[index % len(self.files)]
-        img = np.array(
-            Image.open(img_path).convert('RGB'),
-            dtype=np.uint8)
+        else:
+            img_path = self.files[index % len(self.files)]
+            img = np.array(
+                Image.open(img_path).convert('RGB'),
+                dtype=np.uint8)
 
         # Label Placeholder
         boxes = np.zeros((1, 5))

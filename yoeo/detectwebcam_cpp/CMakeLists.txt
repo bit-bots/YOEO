@@ -1,0 +1,16 @@
+# cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.10)
+project(detectwebcam)
+find_package(Torch REQUIRED PATHS /home/ss21mipt/libtorch/)
+find_package(OpenCV REQUIRED)
+
+include_directories(${OpenCV_INCLUDE_DIRS})
+message(${OpenCV_INCLUDE_DIRS})
+message(${OpenCV_LIBS})
+ADD_EXECUTABLE(detectwebcam detectwebcam.cpp)                         
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS} --std=c++14")
+# message(${TORCH_LIBRARIES})
+target_link_libraries(detectwebcam "${TORCH_LIBRARIES}" "${OpenCV_LIBS}")
+# target_link_libraries(detectwebcam "${TORCH_LIBRARIES}")
+# set_property(TARGET detectwebcam PROPERTY CXX_STANDARD 14)

@@ -80,9 +80,11 @@ def rescale_boxes(boxes, output_img_size, original_img_size):
     :return: rescaled detection output
     :rtype: torch.Tensor with shape(#boxes, 6)
     """
-
+    print(f"BOXES 1: {boxes}")
     rescaled_boxes = rescale_boxes_to_original_padded_img_size(boxes, output_img_size, max(original_img_size))
+    print(f"BOXES 2: {boxes}")
     rescaled_boxes = unpad_box_coordinates(rescaled_boxes, original_img_size)
+    print(f"BOXES 3: {boxes}")
 
     return rescaled_boxes
 
@@ -120,8 +122,14 @@ def unpad_box_coordinates(boxes, original_img_size: Tuple[int, int]):
     :rtype: torch.Tensor with shape(#boxes, 6)
     """
 
+    print("ТУТ ЖЕСТКОЕ ПОДГОНЯЛОВО, unpad_box_coordinates() в yoeo/utils/utils.py")
+    print("THere was     padding_top = max(original_img_size[1] - original_img_size[0], 0) // 2")
+    print("THere is     padding_top = max(original_img_size[1] - original_img_size[0], 0) // 4")
+
+    # print(f"original img size{original_img_size}")
     padding_left = max(original_img_size[0] - original_img_size[1], 0) // 2
-    padding_top = max(original_img_size[1] - original_img_size[0], 0) // 2
+    # padding_top = max(original_img_size[1] - original_img_size[0], 0) // 2
+    padding_top = max(original_img_size[1] - original_img_size[0], 0) // 4
 
     boxes[:, 0] = boxes[:, 0] - padding_left
     boxes[:, 1] = boxes[:, 1] - padding_top
@@ -144,9 +152,11 @@ def rescale_segmentation(segmentation, original_img_size: Tuple[int, int]):
     :return: rescaled segmentation
     :rtype: torch.Tensor with shape (1, original_img_size[0], original_img_size[1])
     """
-
+    print(f"SEGMENT 1 {segmentation}")
     rescaled_seg = rescale_segmentation_to_original_padded_img_size(segmentation, max(original_img_size))
+    print(f"SEGMENT 2 {rescaled_seg}")
     rescaled_seg = unpad_segmentation(rescaled_seg, original_img_size)
+    print(f"SEGMENT 3 {rescaled_seg}")
 
     return rescaled_seg
 
@@ -188,14 +198,24 @@ def unpad_segmentation(segmentation, original_img_size: Tuple[int, int]):
 
     total_vertical_padding = max(0, original_width - original_height)
     total_horizontal_padding = max(0, original_height - original_width)
+    print(f"total_vertical_padding {total_vertical_padding}")
 
     padding_top = total_vertical_padding // 2
+    print(f"padding_top {padding_top}")
+
+    k = (original_width - original_height) / original_height
+    # padding_top = total_vertical_padding // 4
     padding_bottom = total_vertical_padding - padding_top
+    print(f"padding_bottom {padding_bottom}")
+
     padding_left = total_horizontal_padding // 2
     padding_right = total_horizontal_padding - padding_left
+    print(f"XYETAAA {segmentation[..., padding_top:current_size - padding_bottom, padding_left:current_size - padding_right]}")
 
-    return segmentation[..., padding_top:current_size - padding_bottom, padding_left:current_size - padding_right]
-
+    print(f"{segmentation.shape} and {segmentation[..., padding_top:current_size - padding_bottom, padding_left:current_size - padding_right].shape}")
+    # return segmentation[..., padding_top:current_size - padding_bottom, padding_left:current_size - padding_right]
+    return segmentation[..., padding_left:current_size - padding_right]
+    # return segmentation[..., padding_top:int(current_size*k), padding_left:current_size - padding_right]
 
 def xywh2xyxy(x):
     y = x.new(x.shape)
