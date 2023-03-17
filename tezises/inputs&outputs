@@ -1,0 +1,38 @@
+PYTORCH .cfg + .pth
+
+num 1 DETECTIONS SHAPE IStorch.Size([1, 6000, 8]), <class 'torch.Tensor'>
+num 1 SEGMENTATIONS SHAPE IStorch.Size([1, 640, 640]), <class 'torch.Tensor'>
+
+torchscipt
+
+python .pt
+SHAPE OF EVERY ELEM: torch.Size([1, 3, 20, 20, 8])
+SHAPE OF EVERY ELEM: torch.Size([1, 3, 40, 40, 8])
+SHAPE OF EVERY ELEM: torch.Size([1, 3, 640, 640])
+
+cpp .pt
+Shape of every elem: [1, 3, 20, 20, 8]
+Shape of every elem: [1, 3, 40, 40, 8]
+Shape of every elem: [1, 3, 640, 640]
+
+IR
+
+python .xml
+outputs[
+<ConstOutput: names[Detections] shape[1,2535,8] type: f32>,
+<ConstOutput: names[Segmentations] shape[1,416,416] type: f32>
+]>
+
+cpp .xml
+[1,2535,8]
+[1,416,416]
+
+
+зрение робана
+
+Пути к весам и обработчику сеток:		~/env/common/vision_filters/ball_detection_wideangle.json
+Чето там еще (трешолды и другие параметры)	~/env/common/vision_filters/colors_wideangle.json
+пайплайн зрения прописан здесь		~/env/common/vision_filters/all.json
+
+
+

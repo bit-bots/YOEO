@@ -1,5 +1,5 @@
 import torch
-import models
+from yoeo.models2pt import load_model
 import torchvision
 from detectron2.export.flatten import TracingAdapter
 
@@ -7,11 +7,11 @@ cfg = "/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/config/yoeo.cfg"
 weights = "/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/weights/yoeo_mine_759.pth"
 # print("cfg.MODEL.WEIGHTS: ",cfg.MODEL.WEIGHTS)   ## RETURNS : cfg.MODEL.WEIGHTS:  drive/Detectron2/model_final.pth
 
-model = models.load_model(cfg, weights)
+model = load_model(cfg, weights)
 # print(model)
 # model.eval()
 print(torch.__version__)
-example = torch.rand(1, 3, 416, 416)
+example = torch.rand(1, 3, 640, 640)
 print(f"type(example): {type(example)}")
 # wrapper = TracingAdapter(module, example, inference_func)
 # wrapper.eval()

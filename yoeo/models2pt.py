@@ -215,7 +215,7 @@ class Darknet(nn.Module):
                 x = layer_outputs[-1] + layer_outputs[layer_i]
             elif module_def["type"] == "yolo":
                 x = module[0](x, img_size)
-                print(f"module_def[/type/] == /yolo/: {type(x)}, {x.shape}, {x}")
+                print(f"module_def[/type/] == /yolo/: {type(x)}, {x.shape}")
                 # if list(x.size()) == [1, 3, 13, 13, 8]:
                     # yolo_outputs.append(x)
                     # yolo_output1 = torch.stack((yolo_output1, x), 0)
@@ -340,9 +340,9 @@ def load_model(model_path, weights_path=None):
     :return: Returns model
     :rtype: Darknet
     """
-    
+    device = torch.device("cpu")
 
-    model = Darknet(model_path).to("cpu")
+    model = Darknet(model_path).to(device)
 
     model.apply(weights_init_normal)
 

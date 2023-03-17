@@ -187,7 +187,7 @@ auto ToTensor(cv::Mat img, bool show_output = false, bool unsqueeze = false, int
 }
 
 torch::Tensor CVtoTensor(cv::Mat img,int unsqueeze_dim = 0) {
-    cv::Size scale(416, 416);
+    cv::Size scale(640, 640);
     cv::resize(img, img, scale);
     std::cout << "== simply resize: " << img.size() << " ==" << std::endl;
     cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
@@ -208,13 +208,12 @@ int main() {
 
     torch::jit::script::Module module;
     std::cout << "BEFORE LOADING MODEL" << std::endl;
-    c10::InferenceMode guard;
     // module.load_jit("/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/weights/yoeo.pt");
     module = torch::jit::load("/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/weights/ochko.pt");
     // module = torch::jit::load("/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/weights/expected_flow.pt");
     std::cout << "AFTER LOADING MODEL" << std::endl;
-    // module.to(torch::kCPU);
-    module.eval();
+    module.to(torch::kCPU);
+    // module.eval();
     
     cv::VideoCapture cap(0);
     cv::Mat image;
@@ -251,30 +250,32 @@ int main() {
         // std::cout << "ZDOROVO" << std::endl;
         for (int i=0; i<output.size(); i++)
         {
-            std::cout << "try: " << i << output.size() << std::endl;
+            // std::cout << "try: " << i << output.size() << std::endl;
             torch::Tensor ten = output[i];
             auto x = ten.sizes();
             // std::cout << "SUCCEED" <<std::endl;
             // std::cout << "try: " << ten.sizes().size() << std::endl;
-            if (ten.sizes().size() == dets)
-            {
-                std::cout << "first: " << ten.sizes() << std::endl;
-            }
-            if (ten.sizes().size() == segs)
-            {
-                std::cout << "second: " << ten.sizes() << std::endl;
-                ten = ten.squeeze().detach().to(torch::kInt); 
-                ten = ten.mul(255).clamp(0,255);
-                std::cout << "second: " << ten << std::endl;
-                std::cout << "tyt X " << std::endl;
-                cv::Mat resultImg(416, 416,CV_8UC3,(void*)ten.data_ptr());
-                cv::cvtColor(resultImg, resultImg, cv::COLOR_BGR2RGB);
-                std::cout << "tyt Y " << std::endl;
-                segments = resultImg;
-                std::cout << "tyt Z " << std::endl;
+            std::cout << "Shape of every elem: " << ten.sizes() << std::endl;
+            // if (ten.sizes().size() == dets)
+            // {
+            //     std::cout << "first: " << ten.sizes() << std::endl;
+            // }
+            // if (ten.sizes().size() == segs)
+            // {
+            //     std::cout << "second: " << ten.sizes() << std::endl;
+            //     ten = ten.squeeze().detach().to(torch::kInt); 
+            //     ten = ten.mul(255).clamp(0,255);
+            //     // std::cout << "second: " << ten << std::endl;
+            //     std::cout << "tyt X " << std::endl;
+            //     cv::Mat resultImg(416, 416,CV_8UC3,(void*)ten.data_ptr());
+            //     cv::cvtColor(resultImg, resultImg, cv::COLOR_BGR2RGB);
+            //     std::cout << "tyt Y " << std::endl;
+            //     segments = resultImg;
+            //     std::cout << "tyt Z " << std::endl;
+            // }
 
-            }
         }
+        return 1;
         cv::imshow("webcam", image);
         cv::imshow("segmentation", segments);
         if(cv::waitKey(30)>=0)

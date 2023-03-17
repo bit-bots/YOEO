@@ -1,0 +1,631 @@
+<?xml version="1.0"?>
+<mapping>
+	<map>
+		<framework name="InputLayer" output_port_id="InputLayer" />
+		<IR name="InputLayer" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_531" output_port_id="onnx::Conv_531" />
+		<IR name="onnx::Conv_531" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_7" output_port_id="input.4" />
+		<IR name="Conv_7" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_8" output_port_id="input.8" />
+		<IR name="LeakyRelu_8" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_534" output_port_id="onnx::Conv_534" />
+		<IR name="onnx::Conv_534" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_9" output_port_id="input.16" />
+		<IR name="Conv_9" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_10" output_port_id="input.20" />
+		<IR name="LeakyRelu_10" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_537" output_port_id="onnx::Conv_537" />
+		<IR name="onnx::Conv_537" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_11" output_port_id="input.28" />
+		<IR name="Conv_11" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_12" output_port_id="onnx::Slice_162" />
+		<IR name="LeakyRelu_12" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_12" output_port_id="onnx::Concat_161" />
+		<IR name="LeakyRelu_12" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_18" output_port_id="input.32" />
+		<IR name="Slice_18" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_540" output_port_id="onnx::Conv_540" />
+		<IR name="onnx::Conv_540" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_19" output_port_id="input.40" />
+		<IR name="Conv_19" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_20" output_port_id="input.44" />
+		<IR name="LeakyRelu_20" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_543" output_port_id="onnx::Conv_543" />
+		<IR name="onnx::Conv_543" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_21" output_port_id="input.52" />
+		<IR name="Conv_21" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_22" output_port_id="onnx::Concat_173" />
+		<IR name="LeakyRelu_22" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Concat_23" output_port_id="onnx::Slice_174" />
+		<IR name="Concat_23" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_28" output_port_id="input.56" />
+		<IR name="Slice_28" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_546" output_port_id="onnx::Conv_546" />
+		<IR name="onnx::Conv_546" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_29" output_port_id="input.64" />
+		<IR name="Conv_29" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_30" output_port_id="onnx::Concat_182" />
+		<IR name="LeakyRelu_30" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Concat_31" output_port_id="onnx::Slice_183" />
+		<IR name="Concat_31" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_36" output_port_id="onnx::MaxPool_188" />
+		<IR name="Slice_36" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="MaxPool_37" output_port_id="input.68" />
+		<IR name="MaxPool_37" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_549" output_port_id="onnx::Conv_549" />
+		<IR name="onnx::Conv_549" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_38" output_port_id="input.76" />
+		<IR name="Conv_38" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_39" output_port_id="onnx::Slice_193" />
+		<IR name="LeakyRelu_39" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_39" output_port_id="onnx::Concat_192" />
+		<IR name="LeakyRelu_39" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_45" output_port_id="input.80" />
+		<IR name="Slice_45" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_552" output_port_id="onnx::Conv_552" />
+		<IR name="onnx::Conv_552" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_46" output_port_id="input.88" />
+		<IR name="Conv_46" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_47" output_port_id="input.92" />
+		<IR name="LeakyRelu_47" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_555" output_port_id="onnx::Conv_555" />
+		<IR name="onnx::Conv_555" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_48" output_port_id="input.100" />
+		<IR name="Conv_48" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_49" output_port_id="onnx::Concat_204" />
+		<IR name="LeakyRelu_49" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Concat_50" output_port_id="onnx::Slice_205" />
+		<IR name="Concat_50" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_55" output_port_id="input.104" />
+		<IR name="Slice_55" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_558" output_port_id="onnx::Conv_558" />
+		<IR name="onnx::Conv_558" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_56" output_port_id="input.112" />
+		<IR name="Conv_56" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_57" output_port_id="onnx::Concat_213" />
+		<IR name="LeakyRelu_57" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Concat_58" output_port_id="onnx::Slice_214" />
+		<IR name="Concat_58" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_63" output_port_id="onnx::MaxPool_219" />
+		<IR name="Slice_63" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="MaxPool_64" output_port_id="input.116" />
+		<IR name="MaxPool_64" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_561" output_port_id="onnx::Conv_561" />
+		<IR name="onnx::Conv_561" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_65" output_port_id="input.124" />
+		<IR name="Conv_65" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_66" output_port_id="onnx::Slice_465" />
+		<IR name="LeakyRelu_66" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_66" output_port_id="onnx::Slice_224" />
+		<IR name="LeakyRelu_66" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_66" output_port_id="onnx::Concat_223" />
+		<IR name="LeakyRelu_66" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_72" output_port_id="input.128" />
+		<IR name="Slice_72" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_564" output_port_id="onnx::Conv_564" />
+		<IR name="onnx::Conv_564" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_73" output_port_id="input.136" />
+		<IR name="Conv_73" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_74" output_port_id="input.140" />
+		<IR name="LeakyRelu_74" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_567" output_port_id="onnx::Conv_567" />
+		<IR name="onnx::Conv_567" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_75" output_port_id="input.148" />
+		<IR name="Conv_75" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_76" output_port_id="onnx::Concat_235" />
+		<IR name="LeakyRelu_76" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Concat_77" output_port_id="onnx::Slice_236" />
+		<IR name="Concat_77" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_82" output_port_id="input.152" />
+		<IR name="Slice_82" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_570" output_port_id="onnx::Conv_570" />
+		<IR name="onnx::Conv_570" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_83" output_port_id="input.160" />
+		<IR name="Conv_83" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_84" output_port_id="onnx::Concat_244" />
+		<IR name="LeakyRelu_84" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Concat_85" output_port_id="onnx::Slice_245" />
+		<IR name="Concat_85" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_90" output_port_id="onnx::MaxPool_250" />
+		<IR name="Slice_90" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="MaxPool_91" output_port_id="input.164" />
+		<IR name="MaxPool_91" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_573" output_port_id="onnx::Conv_573" />
+		<IR name="onnx::Conv_573" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_92" output_port_id="input.172" />
+		<IR name="Conv_92" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_93" output_port_id="input.176" />
+		<IR name="LeakyRelu_93" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_576" output_port_id="onnx::Conv_576" />
+		<IR name="onnx::Conv_576" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_94" output_port_id="input.184" />
+		<IR name="Conv_94" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_95" output_port_id="onnx::Slice_337" />
+		<IR name="LeakyRelu_95" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_95" output_port_id="input.188" />
+		<IR name="LeakyRelu_95" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_579" output_port_id="onnx::Conv_579" />
+		<IR name="onnx::Conv_579" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_96" output_port_id="input.196" />
+		<IR name="Conv_96" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_97" output_port_id="input.200" />
+		<IR name="LeakyRelu_97" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="module_list.29.conv_29.weight" output_port_id="module_list.29.conv_29.weight" />
+		<IR name="module_list.29.conv_29.weight" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_98" output_port_id="onnx::Reshape_261" />
+		<IR name="Conv_98" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="onnx::Reshape_607" output_port_id="onnx::Reshape_607" />
+		<IR name="onnx::Reshape_607" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Reshape_99" output_port_id="onnx::Transpose_273" />
+		<IR name="Reshape_99" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Transpose_100" output_port_id="onnx::Slice_274" />
+		<IR name="Transpose_100" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_113/Split" output_port_id="onnx::Sigmoid_311" />
+		<IR name="Slice_113/Split" output_port_id="3" />
+	</map>
+	<map>
+		<framework name="Slice_113/Split" output_port_id="onnx::Exp_320" />
+		<IR name="Slice_113/Split" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="Slice_113/Split" output_port_id="onnx::Sigmoid_327" />
+		<IR name="Slice_113/Split" output_port_id="5" />
+	</map>
+	<map>
+		<framework name="Sigmoid_114" output_port_id="onnx::Add_312" />
+		<IR name="Sigmoid_114" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="Cast_108" output_port_id="onnx::Add_306" />
+		<IR name="Cast_108" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Add_115" output_port_id="onnx::Mul_313" />
+		<IR name="Add_115" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Constant_116" output_port_id="onnx::Mul_314" />
+		<IR name="Constant_116" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Mul_117" output_port_id="onnx::Concat_315" />
+		<IR name="Mul_117" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Exp_123" output_port_id="onnx::Mul_321" />
+		<IR name="Exp_123" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="module_list.30.yolo_30.anchor_grid" output_port_id="module_list.30.yolo_30.anchor_grid" />
+		<IR name="module_list.30.yolo_30.anchor_grid" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Mul_124" output_port_id="onnx::Concat_322" />
+		<IR name="Mul_124" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Sigmoid_130" output_port_id="onnx::Concat_328" />
+		<IR name="Sigmoid_130" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="Concat_131" output_port_id="onnx::Reshape_329" />
+		<IR name="Concat_131" output_port_id="3" />
+	</map>
+	<map>
+		<framework name="onnx::Reshape_626" output_port_id="onnx::Reshape_626" />
+		<IR name="onnx::Reshape_626" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Reshape_132" output_port_id="inp" />
+		<IR name="Reshape_132" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_138" output_port_id="input.204" />
+		<IR name="Slice_138" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_582" output_port_id="onnx::Conv_582" />
+		<IR name="onnx::Conv_582" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_139" output_port_id="input.212" />
+		<IR name="Conv_139" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_140" output_port_id="x" />
+		<IR name="LeakyRelu_140" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Resize_142" output_port_id="onnx::Concat_350" />
+		<IR name="Resize_142" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="Concat_143" output_port_id="onnx::Shape_351" />
+		<IR name="Concat_143" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_156" output_port_id="input.216" />
+		<IR name="Slice_156" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_585" output_port_id="onnx::Conv_585" />
+		<IR name="onnx::Conv_585" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_157" output_port_id="input.224" />
+		<IR name="Conv_157" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_158" output_port_id="input.228" />
+		<IR name="LeakyRelu_158" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="module_list.36.conv_36.weight" output_port_id="module_list.36.conv_36.weight" />
+		<IR name="module_list.36.conv_36.weight" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_159" output_port_id="onnx::Shape_370" />
+		<IR name="Conv_159" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Concat_179" output_port_id="onnx::Reshape_394" />
+		<IR name="Concat_179" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Reshape_180" output_port_id="onnx::Transpose_395" />
+		<IR name="Reshape_180" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Transpose_181" output_port_id="onnx::Slice_396" />
+		<IR name="Transpose_181" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_218/Split" output_port_id="onnx::Sigmoid_439" />
+		<IR name="Slice_218/Split" output_port_id="3" />
+	</map>
+	<map>
+		<framework name="Slice_218/Split" output_port_id="onnx::Exp_448" />
+		<IR name="Slice_218/Split" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="Slice_218/Split" output_port_id="onnx::Sigmoid_455" />
+		<IR name="Slice_218/Split" output_port_id="5" />
+	</map>
+	<map>
+		<framework name="Sigmoid_219" output_port_id="onnx::Add_440" />
+		<IR name="Sigmoid_219" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="Cast_213" output_port_id="onnx::Add_434" />
+		<IR name="Cast_213" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Add_220" output_port_id="onnx::Mul_441" />
+		<IR name="Add_220" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Cast_221" output_port_id="onnx::Mul_442" />
+		<IR name="Cast_221" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Mul_222" output_port_id="onnx::Concat_443" />
+		<IR name="Mul_222" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Exp_228" output_port_id="onnx::Mul_449" />
+		<IR name="Exp_228" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="module_list.37.yolo_37.anchor_grid" output_port_id="module_list.37.yolo_37.anchor_grid" />
+		<IR name="module_list.37.yolo_37.anchor_grid" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Mul_229" output_port_id="onnx::Concat_450" />
+		<IR name="Mul_229" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Sigmoid_235" output_port_id="onnx::Concat_456" />
+		<IR name="Sigmoid_235" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="Concat_236" output_port_id="onnx::Reshape_457" />
+		<IR name="Concat_236" output_port_id="3" />
+	</map>
+	<map>
+		<framework name="Concat_238" output_port_id="onnx::Reshape_463" />
+		<IR name="Concat_238" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Reshape_239" output_port_id="inp.3" />
+		<IR name="Reshape_239" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Detections" output_port_id="Detections" />
+		<IR name="Detections" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_245" output_port_id="x.3" />
+		<IR name="Slice_245" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="Resize_247" output_port_id="input.232" />
+		<IR name="Resize_247" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_588" output_port_id="onnx::Conv_588" />
+		<IR name="onnx::Conv_588" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_248" output_port_id="input.240" />
+		<IR name="Conv_248" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_249" output_port_id="onnx::Concat_478" />
+		<IR name="LeakyRelu_249" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Concat_250" output_port_id="onnx::Slice_479" />
+		<IR name="Concat_250" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_255" output_port_id="x.7" />
+		<IR name="Slice_255" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="Resize_257" output_port_id="input.244" />
+		<IR name="Resize_257" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_591" output_port_id="onnx::Conv_591" />
+		<IR name="onnx::Conv_591" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_258" output_port_id="input.252" />
+		<IR name="Conv_258" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_259" output_port_id="onnx::Concat_492" />
+		<IR name="LeakyRelu_259" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Concat_260" output_port_id="onnx::Slice_493" />
+		<IR name="Concat_260" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_265" output_port_id="x.11" />
+		<IR name="Slice_265" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="Resize_267" output_port_id="input.256" />
+		<IR name="Resize_267" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_594" output_port_id="onnx::Conv_594" />
+		<IR name="onnx::Conv_594" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_268" output_port_id="input.264" />
+		<IR name="Conv_268" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_269" output_port_id="onnx::Concat_506" />
+		<IR name="LeakyRelu_269" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Concat_270" output_port_id="onnx::Slice_507" />
+		<IR name="Concat_270" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Slice_275" output_port_id="x.15" />
+		<IR name="Slice_275" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="Resize_277" output_port_id="input.268" />
+		<IR name="Resize_277" output_port_id="4" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_597" output_port_id="onnx::Conv_597" />
+		<IR name="onnx::Conv_597" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_278" output_port_id="input.276" />
+		<IR name="Conv_278" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_279" output_port_id="input.280" />
+		<IR name="LeakyRelu_279" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="onnx::Conv_600" output_port_id="onnx::Conv_600" />
+		<IR name="onnx::Conv_600" output_port_id="0" />
+	</map>
+	<map>
+		<framework name="Conv_280" output_port_id="input.288" />
+		<IR name="Conv_280" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="LeakyRelu_281" output_port_id="onnx::ArgMax_523" />
+		<IR name="LeakyRelu_281" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="ArgMax_282/Squeeze" output_port_id="onnx::Cast_524" />
+		<IR name="ArgMax_282/Squeeze" output_port_id="2" />
+	</map>
+	<map>
+		<framework name="Cast_283" output_port_id="inp.7" />
+		<IR name="Cast_283" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="Cast_285" output_port_id="onnx::Concat_527" />
+		<IR name="Cast_285" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="Cast_285" output_port_id="onnx::Cast_528" />
+		<IR name="Cast_285" output_port_id="1" />
+	</map>
+	<map>
+		<framework name="Segmentations" output_port_id="Segmentations" />
+		<IR name="Segmentations" output_port_id="1" />
+	</map>
+</mapping>

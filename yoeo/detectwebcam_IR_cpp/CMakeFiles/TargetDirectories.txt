@@ -1,0 +1,3 @@
+/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/rebuild_cache.dir
+/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/edit_cache.dir
+/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/detectwebcam_IR.dir

@@ -212,9 +212,11 @@ class Darknet(nn.Module):
                 x = layer_outputs[-1] + layer_outputs[layer_i]
             elif module_def["type"] == "yolo":
                 x = module[0](x, img_size)
+                print(f"module_def[/type/] == /yolo/: {type(x)}, {x.shape}, {x}")
                 yolo_outputs.append(x)
             elif module_def["type"] == "seg":
                 x = module[0](x)
+                print(f"module_def[/type/] == /seg/: {type(x)}, {x.shape}, {x}")
                 segmentation_outputs.append(x)
             layer_outputs.append(x)
         return (yolo_outputs, segmentation_outputs) if self.training else (torch.cat(yolo_outputs, 1), torch.cat(segmentation_outputs, 1))
@@ -324,8 +326,7 @@ def load_model(model_path, weights_path=None):
     :return: Returns model
     :rtype: Darknet
     """
-    device = torch.device("cuda" if torch.cuda.is_available()
-                          else "cpu")  # Select device for inference
+    device = torch.device("cpu")  # Select device for inference
 
     model = Darknet(model_path).to(device)
 

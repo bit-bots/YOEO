@@ -455,9 +455,11 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
 
     t = time.time()
+    print(f"DETECTIONS.SHAPE[0] = {prediction.shape}")
     output = [torch.zeros((0, 6), device="cpu")] * prediction.shape[0]
 
     for xi, x in enumerate(prediction):  # image index, image inference
+        print(f"xi.shape: {xi}, x.shape{x.shape}")
         # Apply constraints
         # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
         x = x[x[..., 4] > conf_thres]  # confidence

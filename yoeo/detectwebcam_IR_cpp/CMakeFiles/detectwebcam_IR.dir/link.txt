@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/detectwebcam_IR.dir/detectwebcam_IR.cpp.o -o detectwebcam_IR  -Wl,-rpath,/opt/intel/openvino_2022.3.0/runtime/lib/intel64 /opt/intel/openvino_2022.3.0/runtime/lib/intel64/libopenvino.so.2022.3.0 

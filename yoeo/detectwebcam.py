@@ -51,6 +51,7 @@ def detect_directory(model_path, weights_path, classes, output_path,
     :type nms_thres: float, optional
     """
     model = load_model(model_path, weights_path)
+    # model = torch.jit.load(weights_path)
     print("NY PRIVET 7")
 
     cam = cv2.VideoCapture(0)
@@ -122,12 +123,18 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5):
 
     # if torch.cuda.is_available():
     #     input_img = input_img.to("cuda")
-    print(f"model: {model}")
+    # print(f"model: {model}")
     # Get detections
     with torch.no_grad():
         detections, segmentations = model(input_img)
+        print(f"num 1 DETECTIONS SHAPE IS{detections.shape}, {type(detections)}")
+        print(f"num 1 SEGMENTATIONS SHAPE IS{segmentations.shape}, {type(segmentations)}")
         detections = non_max_suppression(detections, conf_thres, nms_thres)
+        print(f"num 2 DETECTIONS SHAPE IS{len(detections)}")
+        
         detections = rescale_boxes(detections[0], img_size, image.shape[0:2])
+        print(f"num 3 DETECTIONS SHAPE IS{detections.shape}")
+        
         segmentations = rescale_segmentation(segmentations, image.shape[0:2])
         print(f"detections shape: {detections.shape}")
         print(f"detections shape: {detections.shape}")
@@ -238,12 +245,15 @@ def _draw_and_save_output_image(image, detections, seg, img_size, output_path, c
     print("JJEEPPAAA")
     # Rescale boxes to original image
 
+    print(f"num after 1 DETECTIONS SHAPE IS{detections.shape}")
     detections = rescale_boxes(detections, img_size, img.shape[:2])
+    
     unique_labels = detections[:, -1].cpu().unique()
     n_cls_preds = len(unique_labels)
     # Bounding-box colors
     cmap = plt.get_cmap("tab20b")
     colors = [cmap(i) for i in np.linspace(0, 1, len(classes))]
+    print(f"num after 2 DETECTIONS SHAPE IS{detections.shape}")
     for x1, y1, x2, y2, conf, cls_pred in detections:
 
         print(f"\t+ Label: {classes[int(cls_pred)]} | Confidence: {conf.item():0.4f}")
