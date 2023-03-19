@@ -3,8 +3,10 @@ set(CMAKE_CXX_STANDARD 11)
 project(detectwebcam_IR)
 
 find_package(OpenVINO REQUIRED PATHS /opt/intel/openvino_2022.3.0/runtime/)
+find_package(OpenCV REQUIRED)
 # message(${OpenVINO_LIBRARIES})
 find_package(ngraph REQUIRED PATHS /opt/intel/openvino_2022.3.0/runtime/)
 add_executable(detectwebcam_IR detectwebcam_IR.cpp)
+include_directories(${OpenCV_INCLUDE_DIRS})
 
-target_link_libraries(detectwebcam_IR PRIVATE openvino::runtime "${ngraph_LIBRARIES}")
+target_link_libraries(detectwebcam_IR PRIVATE openvino::runtime "${ngraph_LIBRARIES}" "${OpenCV_LIBS}")

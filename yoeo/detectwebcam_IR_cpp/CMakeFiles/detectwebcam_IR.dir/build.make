@@ -93,6 +93,21 @@ detectwebcam_IR_EXTERNAL_OBJECTS =
 detectwebcam_IR: CMakeFiles/detectwebcam_IR.dir/detectwebcam_IR.cpp.o
 detectwebcam_IR: CMakeFiles/detectwebcam_IR.dir/build.make
 detectwebcam_IR: /opt/intel/openvino_2022.3.0/runtime/lib/intel64/libopenvino.so.2022.3.0
+detectwebcam_IR: /usr/local/lib/libopencv_gapi.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_highgui.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_ml.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_objdetect.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_photo.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_stitching.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_video.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_videoio.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_imgcodecs.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_dnn.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_calib3d.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_features2d.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_flann.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_imgproc.so.4.7.0
+detectwebcam_IR: /usr/local/lib/libopencv_core.so.4.7.0
 detectwebcam_IR: CMakeFiles/detectwebcam_IR.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable detectwebcam_IR"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/detectwebcam_IR.dir/link.txt --verbose=$(VERBOSE)

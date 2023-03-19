@@ -275,7 +275,7 @@ int main() {
             // }
 
         }
-        return 1;
+        // return 1;
         cv::imshow("webcam", image);
         cv::imshow("segmentation", segments);
         if(cv::waitKey(30)>=0)

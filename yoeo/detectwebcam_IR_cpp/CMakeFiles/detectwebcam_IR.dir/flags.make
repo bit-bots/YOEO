@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = -DIE_THREAD=IE_THREAD_TBB -DTBB_PREVIEW_WAITING_FOR_WORKERS=1
 
-CXX_INCLUDES = -isystem /opt/intel/openvino_2022.3.0/runtime/include -isystem /opt/intel/openvino_2022.3.0/runtime/include/ie
+CXX_INCLUDES = -isystem /usr/local/include/opencv4 -isystem /opt/intel/openvino_2022.3.0/runtime/include -isystem /opt/intel/openvino_2022.3.0/runtime/include/ie
 
 CXX_FLAGS = -Wno-error=deprecated-declarations -std=gnu++11
 
