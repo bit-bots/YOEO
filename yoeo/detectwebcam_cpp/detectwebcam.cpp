@@ -256,23 +256,23 @@ int main() {
             // std::cout << "SUCCEED" <<std::endl;
             // std::cout << "try: " << ten.sizes().size() << std::endl;
             std::cout << "Shape of every elem: " << ten.sizes() << std::endl;
-            // if (ten.sizes().size() == dets)
-            // {
-            //     std::cout << "first: " << ten.sizes() << std::endl;
-            // }
-            // if (ten.sizes().size() == segs)
-            // {
-            //     std::cout << "second: " << ten.sizes() << std::endl;
-            //     ten = ten.squeeze().detach().to(torch::kInt); 
-            //     ten = ten.mul(255).clamp(0,255);
-            //     // std::cout << "second: " << ten << std::endl;
-            //     std::cout << "tyt X " << std::endl;
-            //     cv::Mat resultImg(416, 416,CV_8UC3,(void*)ten.data_ptr());
-            //     cv::cvtColor(resultImg, resultImg, cv::COLOR_BGR2RGB);
-            //     std::cout << "tyt Y " << std::endl;
-            //     segments = resultImg;
-            //     std::cout << "tyt Z " << std::endl;
-            // }
+            if (ten.sizes().size() == dets)
+            {
+                std::cout << "first: " << ten.sizes() << std::endl;
+            }
+            if (ten.sizes().size() == segs)
+            {
+                std::cout << "second: " << ten.sizes() << std::endl;
+                ten = ten.squeeze().detach().to(torch::kInt); 
+                ten = ten.mul(255).clamp(0,255);
+                // std::cout << "second: " << ten << std::endl;
+                std::cout << "tyt X " << std::endl;
+                cv::Mat resultImg(416, 416,CV_8UC3,(void*)ten.data_ptr());
+                cv::cvtColor(resultImg, resultImg, cv::COLOR_BGR2RGB);
+                std::cout << "tyt Y " << std::endl;
+                segments = resultImg;
+                std::cout << "tyt Z " << std::endl;
+            }
 
         }
         // return 1;

@@ -1,0 +1,300 @@
+Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_fab67/fast && /usr/bin/make  -f CMakeFiles/cmTC_fab67.dir/build.make CMakeFiles/cmTC_fab67.dir/build
+make[1]: Entering directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_fab67.dir/src.c.o
+/usr/bin/cc -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_fab67.dir/src.c.o -c /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_fab67
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_fab67.dir/link.txt --verbose=1
+/usr/bin/cc CMakeFiles/cmTC_fab67.dir/src.c.o -o cmTC_fab67 
+/usr/bin/ld: CMakeFiles/cmTC_fab67.dir/src.c.o: in function `main':
+src.c:(.text+0x46): undefined reference to `pthread_create'
+/usr/bin/ld: src.c:(.text+0x52): undefined reference to `pthread_detach'
+/usr/bin/ld: src.c:(.text+0x5e): undefined reference to `pthread_cancel'
+/usr/bin/ld: src.c:(.text+0x6f): undefined reference to `pthread_join'
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_fab67.dir/build.make:99: cmTC_fab67] Error 1
+make[1]: Leaving directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+make: *** [Makefile:127: cmTC_fab67/fast] Error 2
+
+
+Source file was:
+#include <pthread.h>
+
+static void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_cancel(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_a5bd0/fast && /usr/bin/make  -f CMakeFiles/cmTC_a5bd0.dir/build.make CMakeFiles/cmTC_a5bd0.dir/build
+make[1]: Entering directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_a5bd0.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create -o CMakeFiles/cmTC_a5bd0.dir/CheckFunctionExists.c.o -c /usr/local/share/cmake-3.20/Modules/CheckFunctionExists.c
+Linking C executable cmTC_a5bd0
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a5bd0.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create CMakeFiles/cmTC_a5bd0.dir/CheckFunctionExists.c.o -o cmTC_a5bd0  -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_a5bd0.dir/build.make:99: cmTC_a5bd0] Error 1
+make[1]: Leaving directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+make: *** [Makefile:127: cmTC_a5bd0/fast] Error 2
+
+
+
+Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_bdf49/fast && /usr/bin/make  -f CMakeFiles/cmTC_bdf49.dir/build.make CMakeFiles/cmTC_bdf49.dir/build
+make[1]: Entering directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_bdf49.dir/src.c.o
+/usr/bin/cc -DCMAKE_HAVE_LIBC_PTHREAD  -fPIE -o CMakeFiles/cmTC_bdf49.dir/src.c.o -c /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_bdf49
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_bdf49.dir/link.txt --verbose=1
+/usr/bin/cc CMakeFiles/cmTC_bdf49.dir/src.c.o -o cmTC_bdf49 
+/usr/bin/ld: CMakeFiles/cmTC_bdf49.dir/src.c.o: in function `main':
+src.c:(.text+0x46): undefined reference to `pthread_create'
+/usr/bin/ld: src.c:(.text+0x52): undefined reference to `pthread_detach'
+/usr/bin/ld: src.c:(.text+0x5e): undefined reference to `pthread_cancel'
+/usr/bin/ld: src.c:(.text+0x6f): undefined reference to `pthread_join'
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_bdf49.dir/build.make:99: cmTC_bdf49] Error 1
+make[1]: Leaving directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+make: *** [Makefile:127: cmTC_bdf49/fast] Error 2
+
+
+Source file was:
+#include <pthread.h>
+
+static void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_cancel(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_93230/fast && /usr/bin/make  -f CMakeFiles/cmTC_93230.dir/build.make CMakeFiles/cmTC_93230.dir/build
+make[1]: Entering directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_93230.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create -fPIE -o CMakeFiles/cmTC_93230.dir/CheckFunctionExists.c.o -c /usr/local/share/cmake-3.20/Modules/CheckFunctionExists.c
+Linking C executable cmTC_93230
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_93230.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create CMakeFiles/cmTC_93230.dir/CheckFunctionExists.c.o -o cmTC_93230  -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_93230.dir/build.make:99: cmTC_93230] Error 1
+make[1]: Leaving directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+make: *** [Makefile:127: cmTC_93230/fast] Error 2
+
+
+
+Determining if the CL_VERSION_2_2 exist failed with the following output:
+Change Dir: /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_925af/fast && /usr/bin/make  -f CMakeFiles/cmTC_925af.dir/build.make CMakeFiles/cmTC_925af.dir/build
+make[1]: Entering directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_925af.dir/CheckSymbolExists.c.o
+/usr/bin/cc   -fPIE -o CMakeFiles/cmTC_925af.dir/CheckSymbolExists.c.o -c /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c:2:10: fatal error: OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h: No such file or directory
+    2 | #include <OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+make[1]: *** [CMakeFiles/cmTC_925af.dir/build.make:78: CMakeFiles/cmTC_925af.dir/CheckSymbolExists.c.o] Error 1
+make[1]: Leaving directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+make: *** [Makefile:127: cmTC_925af/fast] Error 2
+
+
+File /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef CL_VERSION_2_2
+  return ((int*)(&CL_VERSION_2_2))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+Determining if the CL_VERSION_2_1 exist failed with the following output:
+Change Dir: /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_16cae/fast && /usr/bin/make  -f CMakeFiles/cmTC_16cae.dir/build.make CMakeFiles/cmTC_16cae.dir/build
+make[1]: Entering directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_16cae.dir/CheckSymbolExists.c.o
+/usr/bin/cc   -fPIE -o CMakeFiles/cmTC_16cae.dir/CheckSymbolExists.c.o -c /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c:2:10: fatal error: OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h: No such file or directory
+    2 | #include <OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+make[1]: *** [CMakeFiles/cmTC_16cae.dir/build.make:78: CMakeFiles/cmTC_16cae.dir/CheckSymbolExists.c.o] Error 1
+make[1]: Leaving directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+make: *** [Makefile:127: cmTC_16cae/fast] Error 2
+
+
+File /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef CL_VERSION_2_1
+  return ((int*)(&CL_VERSION_2_1))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+Determining if the CL_VERSION_2_0 exist failed with the following output:
+Change Dir: /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_34b47/fast && /usr/bin/make  -f CMakeFiles/cmTC_34b47.dir/build.make CMakeFiles/cmTC_34b47.dir/build
+make[1]: Entering directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_34b47.dir/CheckSymbolExists.c.o
+/usr/bin/cc   -fPIE -o CMakeFiles/cmTC_34b47.dir/CheckSymbolExists.c.o -c /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c:2:10: fatal error: OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h: No such file or directory
+    2 | #include <OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+make[1]: *** [CMakeFiles/cmTC_34b47.dir/build.make:78: CMakeFiles/cmTC_34b47.dir/CheckSymbolExists.c.o] Error 1
+make[1]: Leaving directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+make: *** [Makefile:127: cmTC_34b47/fast] Error 2
+
+
+File /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef CL_VERSION_2_0
+  return ((int*)(&CL_VERSION_2_0))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+Determining if the CL_VERSION_1_2 exist failed with the following output:
+Change Dir: /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_d3bd2/fast && /usr/bin/make  -f CMakeFiles/cmTC_d3bd2.dir/build.make CMakeFiles/cmTC_d3bd2.dir/build
+make[1]: Entering directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_d3bd2.dir/CheckSymbolExists.c.o
+/usr/bin/cc   -fPIE -o CMakeFiles/cmTC_d3bd2.dir/CheckSymbolExists.c.o -c /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c:2:10: fatal error: OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h: No such file or directory
+    2 | #include <OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+make[1]: *** [CMakeFiles/cmTC_d3bd2.dir/build.make:78: CMakeFiles/cmTC_d3bd2.dir/CheckSymbolExists.c.o] Error 1
+make[1]: Leaving directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+make: *** [Makefile:127: cmTC_d3bd2/fast] Error 2
+
+
+File /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef CL_VERSION_1_2
+  return ((int*)(&CL_VERSION_1_2))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+Determining if the CL_VERSION_1_1 exist failed with the following output:
+Change Dir: /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_c3dda/fast && /usr/bin/make  -f CMakeFiles/cmTC_c3dda.dir/build.make CMakeFiles/cmTC_c3dda.dir/build
+make[1]: Entering directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_c3dda.dir/CheckSymbolExists.c.o
+/usr/bin/cc   -fPIE -o CMakeFiles/cmTC_c3dda.dir/CheckSymbolExists.c.o -c /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c:2:10: fatal error: OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h: No such file or directory
+    2 | #include <OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+make[1]: *** [CMakeFiles/cmTC_c3dda.dir/build.make:78: CMakeFiles/cmTC_c3dda.dir/CheckSymbolExists.c.o] Error 1
+make[1]: Leaving directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+make: *** [Makefile:127: cmTC_c3dda/fast] Error 2
+
+
+File /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef CL_VERSION_1_1
+  return ((int*)(&CL_VERSION_1_1))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+Determining if the CL_VERSION_1_0 exist failed with the following output:
+Change Dir: /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_e0de1/fast && /usr/bin/make  -f CMakeFiles/cmTC_e0de1.dir/build.make CMakeFiles/cmTC_e0de1.dir/build
+make[1]: Entering directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_e0de1.dir/CheckSymbolExists.c.o
+/usr/bin/cc   -fPIE -o CMakeFiles/cmTC_e0de1.dir/CheckSymbolExists.c.o -c /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c:2:10: fatal error: OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h: No such file or directory
+    2 | #include <OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+make[1]: *** [CMakeFiles/cmTC_e0de1.dir/build.make:78: CMakeFiles/cmTC_e0de1.dir/CheckSymbolExists.c.o] Error 1
+make[1]: Leaving directory '/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp'
+make: *** [Makefile:127: cmTC_e0de1/fast] Error 2
+
+
+File /home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/yoeo/detectwebcam_IR_cpp/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <OpenCL_INCLUDE_DIR-NOTFOUND/CL/cl.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef CL_VERSION_1_0
+  return ((int*)(&CL_VERSION_1_0))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}

@@ -175,10 +175,19 @@ def detect_image(compiled_model, image, network_image_height=416, network_image_
     # Get detections
     output_seg = compiled_model.output(1)
     result = compiled_model([input_image])[output_seg]
+    print(f"RESULT TYPE and SHAPE: {type(result)}, {result.shape} AND OUTPUTSEG == {type(output_seg)}")
+    unq = []
+    for elem in result:
+        for raw in elem:
+            for l in raw:
+                if l not in unq:
+                    unq.append(l)
+                    print(l)
+    print(f"UNQ IS {unq}")
 
     # Convert the network result of disparity map to an image that shows
     # distance as colors.
-    result_image = convert_result_to_image(result=result)
+    result_image = convert_result_to_image(result=result) 
     # result_image = to_bgr(result_image)
     # Resize back to original image shape. The `cv2.resize` function expects shape
     # in (width, height), [::-1] reverses the (height, width) shape to match this.
