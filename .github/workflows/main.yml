@@ -32,6 +32,15 @@ jobs:
           poetry run yoeo-test -h
           poetry run yoeo-detect -h
 
+      - name: Demo Training
+        run: poetry run yoeo-train --data config/custom.data --epochs 30
+
+      - name: Demo Evaluate
+        run: poetry run yoeo-test --data config/custom.data --weights checkpoints/yoeo_checkpoint_29.pth
+
+      - name: Demo Detect
+        run: poetry run yoeo-detect --batch_size 2 --weights checkpoints/yoeo_checkpoint_29.pth
+
   linter:
     runs-on: ubuntu-18.04
     steps:
