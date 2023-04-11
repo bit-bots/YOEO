@@ -216,7 +216,7 @@ def run():
     parser.add_argument("--iou_thres", type=float, default=0.5, help="IOU threshold required to qualify as detected")
     parser.add_argument("--conf_thres", type=float, default=0.01, help="Object confidence threshold")
     parser.add_argument("--nms_thres", type=float, default=0.4, help="IOU threshold for non-maximum suppression")
-    parser.add_argument("--multiple_robot_classes", type=bool, default=False, help="Set to True if multiple robot classes exist and nms shall be performed across all robot classes")
+    parser.add_argument("--multiple_robot_classes", action="store_true", help="Set to True if multiple robot classes exist and nms shall be performed across all robot classes")
 
     args = parser.parse_args()
     print(f"Command line arguments: {args}")

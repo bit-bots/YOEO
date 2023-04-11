@@ -78,7 +78,7 @@ def run():
     parser.add_argument("--nms_thres", type=float, default=0.5, help="Evaluation: IOU threshold for non-maximum suppression")
     parser.add_argument("--logdir", type=str, default="logs", help="Directory for training log files (e.g. for TensorBoard)")
     parser.add_argument("--seed", type=int, default=-1, help="Makes results reproducable. Set -1 to disable.")
-    parser.add_argument("--multiple_robot_classes", type=bool, default=False, help="Set to True if multiple robot classes exist and nms shall be performed across all robot classes")
+    parser.add_argument("--multiple_robot_classes", action="store_true", help="Set to True if multiple robot classes exist and nms shall be performed across all robot classes")
     args = parser.parse_args()
     print(f"Command line arguments: {args}")
 
