@@ -64,7 +64,9 @@ def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_s
         iou_thres,
         conf_thres,
         nms_thres,
-        verbose)
+        verbose,
+        multi_robot=multi_robot,
+        first_robot_id=first_robot_id)
     return metrics_output, seg_class_ious
 
 
