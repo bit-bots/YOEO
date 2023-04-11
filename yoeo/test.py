@@ -21,7 +21,8 @@ from yoeo.utils.parse_config import parse_data_config
 
 
 def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_size=8, img_size=416,
-                        n_cpu=8, iou_thres=0.5, conf_thres=0.5, nms_thres=0.5, verbose=True):
+                        n_cpu=8, iou_thres=0.5, conf_thres=0.5, nms_thres=0.5, verbose=True,
+                        multi_robot=False, first_robot_id=0):
     """Evaluate model on validation dataset.
 
     :param model_path: Path to model definition file (.cfg)
@@ -46,6 +47,10 @@ def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_s
     :type nms_thres: float, optional
     :param verbose: If True, prints stats of model, defaults to True
     :type verbose: bool, optional
+    :param multi_robot: set to 'True' if multiple robot classes exist and nms shall be performed across all classes.
+    :type multi_robot: bool, optional
+    :param first_robot_id: first class ID of robot classes. Only effective if multi_robot=True.
+    :type first_robot_id: int, optional
     :return: Returns precision, recall, AP, f1, ap_class
     """
     dataloader = _create_validation_data_loader(
@@ -90,7 +95,7 @@ def print_eval_stats(metrics_output, seg_class_ious, class_names, verbose):
     print(f"----Average IoU {mean_seg_class_ious:.5f} ----")
 
 
-def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, nms_thres, verbose):
+def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, nms_thres, verbose, multi_robot=False, first_robot_id=0):
     """Evaluate model on validation dataset.
 
     :param model: Model to evaluate
@@ -109,6 +114,10 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
     :type nms_thres: float
     :param verbose: If True, prints stats of model
     :type verbose: bool
+    :param multi_robot: set to 'True' if multiple robot classes exist and nms shall be performed across all classes.
+    :type multi_robot: bool, optional
+    :param first_robot_id: first class ID of robot classes. Only effective if multi_robot=True.
+    :type first_robot_id: int, optional
     :return: Returns precision, recall, AP, f1, ap_class
     """
     model.eval()  # Set model to evaluation mode
@@ -133,7 +142,7 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
             t1 = time.time()
             yolo_outputs, segmentation_outputs = model(imgs)
             times.append(time.time() - t1)
-            yolo_outputs = non_max_suppression(yolo_outputs, conf_thres=conf_thres, iou_thres=nms_thres)
+            yolo_outputs = non_max_suppression(yolo_outputs, conf_thres=conf_thres, iou_thres=nms_thres, multi_robot=multi_robot, first_robot_id=first_robot_id)
 
         sample_metrics += get_batch_statistics(yolo_outputs, bb_targets, iou_threshold=iou_thres)
 
@@ -207,6 +216,8 @@ def run():
     parser.add_argument("--iou_thres", type=float, default=0.5, help="IOU threshold required to qualify as detected")
     parser.add_argument("--conf_thres", type=float, default=0.01, help="Object confidence threshold")
     parser.add_argument("--nms_thres", type=float, default=0.4, help="IOU threshold for non-maximum suppression")
+    parser.add_argument("--multiple_robot_classes", type=bool, default=False, help="Set to True if multiple robot classes exist and nms shall be performed across all robot classes")
+
     args = parser.parse_args()
     print(f"Command line arguments: {args}")
 
@@ -215,6 +226,12 @@ def run():
     # Path to file containing all images for validation
     valid_path = data_config["valid"]
     class_names = load_classes(data_config["names"])  # Detection and segmentation class names
+
+    first_robot_class_id = -1
+    for idx, c in enumerate(class_names["detection"]):
+        if "robot" in c:
+            first_robot_class_id = idx
+            break
 
     evaluate_model_file(
         args.model,
@@ -227,7 +244,10 @@ def run():
         iou_thres=args.iou_thres,
         conf_thres=args.conf_thres,
         nms_thres=args.nms_thres,
-        verbose=True)
+        verbose=True,
+        multi_robot=args.multiple_robot_classes,
+        first_robot_id=first_robot_class_id
+    )
 
 
 if __name__ == "__main__":

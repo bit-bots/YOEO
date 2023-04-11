@@ -418,7 +418,7 @@ def box_iou(box1, box2):
     return inter / (area1[:, None] + area2 - inter)
 
 
-def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None):
+def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, multi_robot=False, first_robot_id=0):
     """Performs Non-Maximum Suppression (NMS) on inference results
     Returns:
          detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
@@ -473,7 +473,15 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
             x = x[x[:, 4].argsort(descending=True)[:max_nms]]
 
         # Batched NMS
-        c = x[:, 5:6] * max_wh  # classes
+        if not multi_robot:
+            c = x[:, 5:6] * max_wh  # classes
+        else:
+            # If multiple robot classes are present, all robot classes are treated as one class in order to perform
+            # nms across all classes and not per class. For this, all robot classes get the same offset.
+            c = torch.clone(x[:, 5:6])
+            c[c > first_robot_id] = first_robot_id
+            c *= max_wh
+
         # boxes (offset by class), scores
         boxes, scores = x[:, :4] + c, x[:, 4]
         i = torchvision.ops.nms(boxes, scores, iou_thres)  # NMS
