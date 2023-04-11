@@ -316,7 +316,7 @@ def run():
     parser.add_argument("--n_cpu", type=int, default=8, help="Number of cpu threads to use during batch generation")
     parser.add_argument("--conf_thres", type=float, default=0.5, help="Object confidence threshold")
     parser.add_argument("--nms_thres", type=float, default=0.4, help="IOU threshold for non-maximum suppression")
-    parser.add_argument("--multiple_robot_classes", action="store_true", help="Set to True if multiple robot classes exist and nms shall be performed across all robot classes")
+    parser.add_argument("--multiple_robot_classes", action="store_true", help="If multiple robot classes exist and nms shall be performed across all robot classes")
     args = parser.parse_args()
     print(f"Command line arguments: {args}")
 
