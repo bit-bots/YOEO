@@ -152,13 +152,10 @@ def build_targets(p, targets, model):
         t = targets * gain
         # Check if we have targets
         if nt:
+            t = t.squeeze(0)
             # Check if we use anchor boxes
-            if na == 1:
-                # If we don't use anchor boxes we just use the first anchor box
-                t = t.squeeze(0)
-            else:
+            if na != 1:
                 # Calculate ratio between anchor and target box for both width and height
-                t = t.squeeze(0)
                 r = t[:, :, 4:6] / anchors[:, None]
                 # Select the ratios that have the highest divergence in any axis and check if the ratio is less than 4
                 j = torch.max(r, 1. / r).max(2)[0] < 4
