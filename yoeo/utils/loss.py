@@ -157,7 +157,7 @@ def build_targets(p, targets, model):
                 # If we don't use anchor boxes we just use the first anchor box
                 t = t.squeeze(0)
             else:
-                # Calculate ration between anchor and target box for both width and height
+                # Calculate ratio between anchor and target box for both width and height
                 t = t.squeeze(0)
                 r = t[:, :, 4:6] / anchors[:, None]
                 # Select the ratios that have the highest divergence in any axis and check if the ratio is less than 4
