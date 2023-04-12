@@ -153,6 +153,16 @@ def build_targets(p, targets, model):
         # Check if we have targets
         if nt:
             t = t.squeeze(0)
+            # Check if we use anchor boxes
+            if na != 1:
+                # Calculate ratio between anchor and target box for both width and height
+                r = t[:, :, 4:6] / anchors[:, None]
+                # Select the ratios that have the highest divergence in any axis and check if the ratio is less than 4
+                j = torch.max(r, 1. / r).max(2)[0] < 4
+                # Only use targets that have the correct ratios for their anchors
+                # That means we only keep ones that have a matching anchor and we loose the anchor dimension
+                # The anchor id is still saved in the 7th value of each target
+                t = t[j]
         else:
             t = targets[0]
 

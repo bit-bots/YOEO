@@ -1,21 +1,24 @@
-name: Ubuntu CI
+name: CI
 
-on: [push, pull_request, workflow_dispatch]
+on: [pull_request, workflow_dispatch]
 
 jobs:
   main:
-    runs-on: ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+        matrix:
+            os: [ubuntu-22.04, ubuntu-20.04, windows-latest]
     steps:
       - uses: actions/checkout@v2
 
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
-          python-version: 3.7
+          python-version: 3.8
 
       - name: Upgrade pip
         run: python3 -m pip install --upgrade pip
-
+      
       - name: Install Poetry
         run: pip3 install poetry --user
 
@@ -25,21 +28,21 @@ jobs:
       # Prints the help pages of all scripts to see if the imports etc. work
       - name: Test the help pages
         run: |
-          poetry run yolo-train -h
-          poetry run yolo-test -h
-          poetry run yolo-detect -h
+          poetry run yoeo-train -h
+          poetry run yoeo-test -h
+          poetry run yoeo-detect -h
 
       - name: Demo Training
-        run: poetry run yolo-train --data config/custom.data  --model config/yolov3.cfg --epochs 30
+        run: poetry run yoeo-train --data config/custom.data --epochs 30
 
       - name: Demo Evaluate
-        run: poetry run yolo-test --data config/custom.data  --model config/yolov3.cfg --weights checkpoints/yolov3_ckpt_29.pth
+        run: poetry run yoeo-test --data config/custom.data --weights checkpoints/yoeo_checkpoint_29.pth
 
       - name: Demo Detect
-        run: poetry run yolo-detect --batch_size 2 --weights checkpoints/yolov3_ckpt_29.pth
+        run: poetry run yoeo-detect --batch_size 2 --weights checkpoints/yoeo_checkpoint_29.pth
 
   linter:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
 
