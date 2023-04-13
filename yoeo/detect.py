@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
-from __future__ import division
-
+from __future__ import division, annotations
 import os
 import argparse
 import tqdm
@@ -12,6 +11,8 @@ import torch
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
+
+from typing import Optional, List
 
 from imgaug.augmentables.segmaps import SegmentationMapsOnImage
 

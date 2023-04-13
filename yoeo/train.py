@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from __future__ import division
+from __future__ import division, annotations
 
 import os
 import argparse
@@ -12,6 +12,8 @@ import torch
 from torch.utils.data import DataLoader
 import torch.optim as optim
 from torch.autograd import Variable
+
+from typing import List, Optional
 
 from yoeo.models import load_model
 from yoeo.utils.logger import Logger
