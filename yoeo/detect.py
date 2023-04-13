@@ -27,7 +27,7 @@ from matplotlib.ticker import NullLocator
 
 def detect_directory(model_path, weights_path, img_path, classes, output_path,
                      batch_size=8, img_size=416, n_cpu=8, conf_thres=0.5, nms_thres=0.5,
-                     multi_robot=False, first_robot_id=0):
+                     robot_class_ids: Optional[List[int]] = None):
     """Detects objects on all images in specified directory and saves output images with drawn detections.
 
     :param model_path: Path to model definition file (.cfg)
@@ -50,10 +50,8 @@ def detect_directory(model_path, weights_path, img_path, classes, output_path,
     :type conf_thres: float, optional
     :param nms_thres: IOU threshold for non-maximum suppression, defaults to 0.5
     :type nms_thres: float, optional
-    :param multi_robot: set to 'True' if multiple robot classes exist and nms shall be performed across all classes.
-    :type multi_robot: bool, optional
-    :param first_robot_id: first class ID of robot classes. Only effective if multi_robot=True.
-    :type first_robot_id: int, optional
+    :param robot_class_ids: List of class IDs of robot classes if multiple robot classes exist.
+    :type robot_class_ids: List[int], optional
     """
     dataloader = _create_data_loader(img_path, batch_size, img_size, n_cpu)
     model = load_model(model_path, weights_path)
@@ -64,8 +62,7 @@ def detect_directory(model_path, weights_path, img_path, classes, output_path,
         output_path,
         conf_thres,
         nms_thres,
-        multi_robot,
-        first_robot_id
+        robot_class_ids=robot_class_ids
     )
     _draw_and_save_output_images(
         img_detections, segmentations, imgs, img_size, output_path, classes)
@@ -73,7 +70,7 @@ def detect_directory(model_path, weights_path, img_path, classes, output_path,
     print(f"---- Detections were saved to: '{output_path}' ----")
 
 
-def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5, multi_robot=False, first_robot_id=0):
+def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5, robot_class_ids: Optional[List[int]] = None):
     """Inferences one image with model.
 
     :param model: Model for inference
@@ -86,10 +83,8 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5, mult
     :type conf_thres: float, optional
     :param nms_thres: IOU threshold for non-maximum suppression, defaults to 0.5
     :type nms_thres: float, optional
-    :param multi_robot: set to 'True' if multiple robot classes exist and nms shall be performed across all classes.
-    :type multi_robot: bool, optional
-    :param first_robot_id: first class ID of robot classes. Only effective if multi_robot=True.
-    :type first_robot_id: int, optional
+    :param robot_class_ids: List of class IDs of robot classes if multiple robot classes exist.
+    :type robot_class_ids: List[int], optional
     :return: Detections on image with each detection in the format: [x1, y1, x2, y2, confidence, class], Segmentation as 2d numpy array with the coresponding class id in each cell
     :rtype: nd.array, nd.array
     """
@@ -109,13 +104,13 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5, mult
     # Get detections
     with torch.no_grad():
         detections, segmentations = model(input_img)
-        detections = non_max_suppression(detections, conf_thres, nms_thres, multi_robot, first_robot_id)
+        detections = non_max_suppression(detections, conf_thres, nms_thres, robot_class_ids=robot_class_ids)
         detections = rescale_boxes(detections[0], img_size, image.shape[0:2])
         segmentations = rescale_segmentation(segmentations, image.shape[0:2])
     return detections.numpy(), segmentations.cpu().detach().numpy()
 
 
-def detect(model, dataloader, output_path, conf_thres, nms_thres, multi_robot=False, first_robot_id=0):
+def detect(model, dataloader, output_path, conf_thres, nms_thres, robot_class_ids: Optional[List[int]] = None):
     """Inferences images with model.
 
     :param model: Model for inference
@@ -128,10 +123,8 @@ def detect(model, dataloader, output_path, conf_thres, nms_thres, multi_robot=Fa
     :type conf_thres: float, optional
     :param nms_thres: IOU threshold for non-maximum suppression, defaults to 0.5
     :type nms_thres: float, optional
-    :param multi_robot: set to 'True' if multiple robot classes exist and nms shall be performed across all classes.
-    :type multi_robot: bool, optional
-    :param first_robot_id: first class ID of robot classes. Only effective if multi_robot=True.
-    :type first_robot_id: int, optional
+    :param robot_class_ids: List of class IDs of robot classes if multiple robot classes exist.
+    :type robot_class_ids: List[int], optional
     :return: List of detections. The coordinates are given for the padded image that is provided by the dataloader.
         Use `utils.rescale_boxes` to transform them into the desired input image coordinate system before its transformed by the dataloader),
         List of input image paths
@@ -155,7 +148,7 @@ def detect(model, dataloader, output_path, conf_thres, nms_thres, multi_robot=Fa
         # Get detections
         with torch.no_grad():
             detections, segmentations = model(input_imgs)
-            detections = non_max_suppression(detections, conf_thres, nms_thres, multi_robot, first_robot_id)
+            detections = non_max_suppression(detections, conf_thres, nms_thres, robot_class_ids=robot_class_ids)
 
         # Store image and detections
         img_detections.extend(detections)
@@ -316,18 +309,20 @@ def run():
     parser.add_argument("--n_cpu", type=int, default=8, help="Number of cpu threads to use during batch generation")
     parser.add_argument("--conf_thres", type=float, default=0.5, help="Object confidence threshold")
     parser.add_argument("--nms_thres", type=float, default=0.4, help="IOU threshold for non-maximum suppression")
-    parser.add_argument("--multiple_robot_classes", action="store_true", help="If multiple robot classes exist and nms shall be performed across all robot classes")
+    parser.add_argument("--multiple_robot_classes", action="store_true",
+                        help="If multiple robot classes exist and nms shall be performed across all robot classes")
     args = parser.parse_args()
     print(f"Command line arguments: {args}")
 
     # Extract class names from file
     classes = load_classes(args.classes)['detection']  # List of class names
 
-    first_robot_class_id = -1
-    for idx, c in enumerate(classes):
-        if "robot" in c:
-            first_robot_class_id = idx
-            break
+    robot_class_ids = None
+    if args.multiple_robot_classes:
+        robot_class_ids = []
+        for idx, c in enumerate(classes):
+            if "robot" in c:
+                robot_class_ids.append(idx)
 
     detect_directory(
         args.model,
@@ -340,8 +335,7 @@ def run():
         n_cpu=args.n_cpu,
         conf_thres=args.conf_thres,
         nms_thres=args.nms_thres,
-        multi_robot=args.multiple_robot_classes,
-        first_robot_id=first_robot_class_id
+        robot_class_ids=robot_class_ids
     )
 
 

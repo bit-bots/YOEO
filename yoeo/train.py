@@ -78,7 +78,8 @@ def run():
     parser.add_argument("--nms_thres", type=float, default=0.5, help="Evaluation: IOU threshold for non-maximum suppression")
     parser.add_argument("--logdir", type=str, default="logs", help="Directory for training log files (e.g. for TensorBoard)")
     parser.add_argument("--seed", type=int, default=-1, help="Makes results reproducable. Set -1 to disable.")
-    parser.add_argument("--multiple_robot_classes", action="store_true", help="If multiple robot classes exist and nms shall be performed across all robot classes")
+    parser.add_argument("--multiple_robot_classes", action="store_true",
+                        help="If multiple robot classes exist and nms shall be performed across all robot classes")
     args = parser.parse_args()
     print(f"Command line arguments: {args}")
 
@@ -96,11 +97,13 @@ def run():
     train_path = data_config["train"]
     valid_path = data_config["valid"]
     class_names = load_classes(data_config["names"])
-    first_robot_class_id = -1
-    for idx, c in enumerate(class_names["detection"]):
-        if "robot" in c:
-            first_robot_class_id = idx
-            break
+
+    robot_class_ids = None
+    if args.multiple_robot_classes:
+        robot_class_ids = []
+        for idx, c in enumerate(class_names["detection"]):
+            if "robot" in c:
+                robot_class_ids.append(idx)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -257,8 +260,7 @@ def run():
                 conf_thres=args.conf_thres,
                 nms_thres=args.nms_thres,
                 verbose=args.verbose,
-                multi_robot=args.multiple_robot_classes,
-                first_robot_id=first_robot_class_id
+                robot_class_ids=robot_class_ids
             )
 
             if metrics_output is not None:
