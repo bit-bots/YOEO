@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from __future__ import division, annotaions
+from __future__ import division, annotations
 from typing import List, Optional
 
 import argparse
