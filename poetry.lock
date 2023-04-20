@@ -849,52 +849,32 @@ lint = ["black (>=22.3)", "clang-format (==13.0.0)", "flake8 (>=5.0.2)", "isort[
 
 [[package]]
 name = "onnx-simplifier"
-version = "0.3.10"
+version = "0.4.22"
 description = "Simplify your ONNX model"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "onnx-simplifier-0.3.10.tar.gz", hash = "sha256:0d9fed12a7aecb391e5747ed1b6461f700ca360620d04c751557f79329af31f3"},
+    {file = "onnx-simplifier-0.4.22.tar.gz", hash = "sha256:f3da941dbba8d95e6da67ccfdc80f72d6bbcc61b77a53f3f23f38a8478843e08"},
+    {file = "onnx_simplifier-0.4.22-cp310-cp310-macosx_10_15_universal2.whl", hash = "sha256:3c06694796f413ff79535e87f1d5d017e8c8fcf7850e2a578457013211d5d1c9"},
+    {file = "onnx_simplifier-0.4.22-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:209c5f83bcf9a1db869d56a8cafd6adcaef50fa56b9ec3f6eb206540cb9f53d5"},
+    {file = "onnx_simplifier-0.4.22-cp310-cp310-win_amd64.whl", hash = "sha256:7b6112c4d1181a4ac595568f96eb2fc10b50337629cb2988821b22ef37d85d69"},
+    {file = "onnx_simplifier-0.4.22-cp311-cp311-macosx_10_15_universal2.whl", hash = "sha256:895144ba84108b52be8162e6178f4dfff16b0a30c7c7ee5a098e737d1bd2d76d"},
+    {file = "onnx_simplifier-0.4.22-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5307820c6cd0b0f90699525908e4a13b3b260c6a44199a73d28193742992d337"},
+    {file = "onnx_simplifier-0.4.22-cp311-cp311-win_amd64.whl", hash = "sha256:8a355cfa2123fe02e3e94977bc05f0136a8b6cd9c9b023ca3382ee90c5f774e2"},
+    {file = "onnx_simplifier-0.4.22-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ea9d46f5873a667be0e5568ee7f93d2e4032b76f3bec4d35842e536cc55494a9"},
+    {file = "onnx_simplifier-0.4.22-cp37-cp37m-win_amd64.whl", hash = "sha256:3b1fb141a14e9f75d4383791bd58159c8aa794b548cf1a1366355ff3ab2b9e0d"},
+    {file = "onnx_simplifier-0.4.22-cp38-cp38-macosx_10_15_universal2.whl", hash = "sha256:11f4e9b244fdea04c27c7f8967504217f22684112816588454d58b023baafa02"},
+    {file = "onnx_simplifier-0.4.22-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b23ac8beb3464c8d3ec9fff12017220a0346a10624f8d945b817e5eabc0c110a"},
+    {file = "onnx_simplifier-0.4.22-cp38-cp38-win_amd64.whl", hash = "sha256:40a03e492a153cc41dbd1641dddd19ade1153ec785ab7be8b4ae6dce66915865"},
+    {file = "onnx_simplifier-0.4.22-cp39-cp39-macosx_10_15_universal2.whl", hash = "sha256:1e7d5d17707d7d0071383f9f6ca65823604a4bd0f0d5aef960dd745d30011cf3"},
+    {file = "onnx_simplifier-0.4.22-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b0d81f6884f6613e86987d1730ce44106d08d7a3159cf19bcf9569a4c9e94456"},
+    {file = "onnx_simplifier-0.4.22-cp39-cp39-win_amd64.whl", hash = "sha256:c6f9ac8ae894e4e40cdb934dfc42b4536a0b6c91cfb5545d82472548dd73dad4"},
 ]
 
 [package.dependencies]
 onnx = "*"
-onnxoptimizer = ">=0.2.6"
-protobuf = ">=3.7.0"
 rich = "*"
-
-[[package]]
-name = "onnxoptimizer"
-version = "0.3.8"
-description = "Open Neural Network Exchange"
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "onnxoptimizer-0.3.8-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:6e40530dcc08b5d504c150da90be68f7e438aeb7008dd0d79cd20058944d4087"},
-    {file = "onnxoptimizer-0.3.8-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ecee31591b9e11075bfa9b46778fb7ae6ae9861f8b2187b7455cbe1529638132"},
-    {file = "onnxoptimizer-0.3.8-cp310-cp310-win_amd64.whl", hash = "sha256:e8469416d81973aea588fe0b85365a413e79cb7b155e3ca5be538b6492669944"},
-    {file = "onnxoptimizer-0.3.8-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:12ab4825d809e96c3978230d6d7696ddef87bb91837f5ec11f4cb96b3fe72a09"},
-    {file = "onnxoptimizer-0.3.8-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:da7241b9f1069e02621ce0762f6a013d1af84eb12542b2c4159817965c8b09b9"},
-    {file = "onnxoptimizer-0.3.8-cp311-cp311-win_amd64.whl", hash = "sha256:62029b1e83df4706079a135f23626b460cdfb47b33df0236e6bda5148702b007"},
-    {file = "onnxoptimizer-0.3.8-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:33847b812ffdab2de13695097df7f8adcfb1adf10373e2a7e85b9bbe3a8fa583"},
-    {file = "onnxoptimizer-0.3.8-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:acb000dfa2dedbf513c2aec75ba2f6f0d25530a3f9f7c7fc417ee70978cdc897"},
-    {file = "onnxoptimizer-0.3.8-cp37-cp37m-win_amd64.whl", hash = "sha256:81c73dd78a7e9f31609a0a4d0b469cb387869ea36436a3758052888067948bad"},
-    {file = "onnxoptimizer-0.3.8-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:4edacafab548edb7183b8eb11807503f5612cb72f608bfd8316fae9595226c5f"},
-    {file = "onnxoptimizer-0.3.8-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0047309f1fc314e2bc06ec01865005660e22c005f97b011b66be6129533b9e28"},
-    {file = "onnxoptimizer-0.3.8-cp38-cp38-win_amd64.whl", hash = "sha256:1f822deb51633a1e9d10097440f4419e6de337a43e428a2df88fa3b867ef5453"},
-    {file = "onnxoptimizer-0.3.8-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:b375f3f34c69309f873e4edfdcd9ddcd0e917749585ed5b6dc38a7c42a414df2"},
-    {file = "onnxoptimizer-0.3.8-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b748c5b4ab2788325e30b189f82bf8595f92c4e7a46c6a2e6ee6b9e5c7cfc580"},
-    {file = "onnxoptimizer-0.3.8-cp39-cp39-win_amd64.whl", hash = "sha256:14c767335525db75ca2292bad0f8d84d1056764cb29ea1bd81303b3477322498"},
-    {file = "onnxoptimizer-0.3.8.tar.gz", hash = "sha256:158bf9fda2e33bfe8ba1484f295cf25447921822f840de90831f7007af1295d3"},
-]
-
-[package.dependencies]
-onnx = "*"
-
-[package.extras]
-mypy = ["mypy (==0.600)"]
 
 [[package]]
 name = "opencv-python"
@@ -1748,4 +1728,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<4.0"
-content-hash = "2f03dc2b78d4bae0ad744f554ef53bdd4f54fe819df580e33cfaf05c20728875"
+content-hash = "64aa939bb3831831f886866ecfd6880ab9304b629c68c0160b8ffc6f85e8991a"
