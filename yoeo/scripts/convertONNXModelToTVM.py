@@ -32,10 +32,16 @@ def make_parser():
         type=int,
         help="Number of tuning trials")
     parser.add_argument(
-        "--full",
+        "--half",
         default=False,
         action="store_true",
-        help="Tune with full precision (FP32) instead of mixed precision."
+        help="Tune with mixed precision instead of full precision (FP32)."
+    )
+    parser.add_argument(
+        "--no_tuning",
+        default=False,
+        action="store_true",
+        help="Disables the tuning of the model for testing purposes."
     )
     parser.add_argument(
         "-c",
@@ -77,24 +83,26 @@ def run():
     mod, params = relay.frontend.from_onnx(onnx_model, shape_list)
 
     # Convert model to FP16 (half)
-    if not args.full:
+    if args.half:
         mod = ToMixedPrecision(mixed_precision_type='float16')(mod)
 
     # Build an TVM Compiler model
     tvmc_model = TVMCModel(mod, params)
 
+    
     # Tune the model (depending on the hardware and parameters this takes days)
-    tvmc.tune(
-            tvmc_model,
-            target=args.target,
-            prior_records=args.tuning_record_checkpoint,
-            tuning_records=args.output_tuning_records,
-            min_repeat_ms=200,
-            number=20,
-            repeat=3,
-            trials=args.trials,
-            enable_autoscheduler=True
-        )
+    if not args.no_tuning:
+        tvmc.tune(
+                tvmc_model,
+                target=args.target,
+                prior_records=args.tuning_record_checkpoint,
+                tuning_records=args.output_tuning_records,
+                min_repeat_ms=200,
+                number=20,
+                repeat=3,
+                trials=args.trials,
+                enable_autoscheduler=True
+            )
 
     # Compile the model based on the optimizations discovered in the tuning
     package = tvmc.compile(
