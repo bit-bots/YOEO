@@ -9,94 +9,15 @@
 #include <ngraph/type/element_type.hpp>
 #include "include/format_reader_ptr.h"
 
-
-cv::Mat tensorToMat(const ov::Tensor &tensor)
-{
-    auto sizes = tensor.get_shape();
-    int elem[5] = {5,6,7,8,9};
-    int flag = 0;
-    int skok = 0;
-    std::cout << "in tensorToMat check sizes" << sizes[0] << " " << sizes[1] << " " << sizes[2] << std::endl;
-    cv::Mat result = cv::Mat{sizes[1], sizes[2], CV_32FC(sizes[0]), tensor.data<float_t>()};
-    for (size_t row = 0; row < sizes[1]; row++) {
-        for (size_t col = 0; col < sizes[2]; col++) {
-            for (size_t ch = 0; ch < sizes[0]; ch++) {
-                for (int k = 0; k<5; k++){
-                    if (result.at<cv::Vec3b>(row, col)[ch] == elem[k]){
-                        flag++;
-                    }
-                }
-                if (flag == 0){
-                    elem[0+skok] = result.at<cv::Vec3b>(row, col)[ch];
-                    std::cout << result.at<cv::Vec3b>(row, col)[ch] << std::endl;
-                    skok++;
-                }
-                flag = 0;
-                result.at<cv::Vec3b>(row, col)[ch] = result.at<cv::Vec3b>(row, col)[ch] * 100;
-            }
-        }
-    }
-    std::cout << "UNIQUE ARE: " << elem[0] << " " << elem[1] << " " << elem[2] << " " << elem[3] << " " << elem[4] << std::endl;
-    return result;
-}
-
-// void colorizeSegmentation(const Mat &score, Mat &segm)
-// {
-//     const int rows = score.size[2];
-//     const int cols = score.size[3];
-//     const int chns = score.size[1];
-//     if (colors.empty())
-//     {
-//         // Generate colors.
-//         colors.push_back(Vec3b());
-//         for (int i = 1; i < chns; ++i)
-//         {
-//             Vec3b color;
-//             for (int j = 0; j < 3; ++j)
-//                 color[j] = (colors[i - 1][j] + rand() % 256) / 2;
-//             colors.push_back(color);
-//         }
-//     }
-//     else if (chns != (int)colors.size())
-//     {
-//         CV_Error(Error::StsError, format("Number of output classes does not match "
-//                                          "number of colors (%d != %d)", chns, colors.size()));
-//     }
-//     Mat maxCl = Mat::zeros(rows, cols, CV_8UC1);
-//     Mat maxVal(rows, cols, CV_32FC1, score.data);
-//     for (int ch = 1; ch < chns; ch++)
-//     {
-//         for (int row = 0; row < rows; row++)
-//         {
-//             const float *ptrScore = score.ptr<float>(0, ch, row);
-//             uint8_t *ptrMaxCl = maxCl.ptr<uint8_t>(row);
-//             float *ptrMaxVal = maxVal.ptr<float>(row);
-//             for (int col = 0; col < cols; col++)
-//             {
-//                 if (ptrScore[col] > ptrMaxVal[col])
-//                 {
-//                     ptrMaxVal[col] = ptrScore[col];
-//                     ptrMaxCl[col] = (uchar)ch;
-//                 }
-//             }
-//         }
-//     }
-//     segm.create(rows, cols, CV_8UC3);
-//     for (int row = 0; row < rows; row++)
-//     {
-//         const uchar *ptrMaxCl = maxCl.ptr<uchar>(row);
-//         Vec3b *ptrSegm = segm.ptr<Vec3b>(row);
-//         for (int col = 0; col < cols; col++)
-//         {
-//             ptrSegm[col] = colors[ptrMaxCl[col]];
-//         }
-//     }
-// }
+#include <chrono>
+#include <algorithm>
+#define CLOCK std::chrono::steady_clock
+#define CLOCK_CAST std::chrono::duration_cast<std::chrono::microseconds>
 
 int main()
 {
-    auto xml = "/home/ss21mipt/Documents/starkit/DIPLOMA/YOEO/config/IR&onnx_for_416_Petr_1/yoeo.xml";
-    // auto xml = "/home/ss21mipt/Documents/starkit/DIPLOMA/to_rhoban/weights/Feds_yolov8_2_openvino/best.xml";
+    auto xml;
+
     ov::Core core;
 
     // PROVERKA INPUT and OUTPUT
@@ -110,7 +31,7 @@ int main()
     ov::preprocess::InputInfo& input = ppp.input(0);            // inputs = net.getInputsInfo(); 
     auto input_shape = net->input(0).get_partial_shape();
     auto output1_shape = net->output(0).get_partial_shape();
-    std::cout << net->input(0).get_partial_shape() << output1_shape << std::endl;
+    // std::cout << net->input(0).get_partial_shape() << output1_shape << std::endl;
     // auto output_1 = ppp.output(0);       // outputs = net.getOutputsInfo();
     // auto output_2 = ppp.output(1);       // outputs = net.getOutputsInfo();
     
@@ -127,7 +48,7 @@ int main()
     // input.preprocess().convert_layout({0, 3, 1, 2});
     // input.tensor().set_element_type(ov::element::f32);
     // input.tensor().set_color_format(ov::preprocess::ColorFormat::NV12_TWO_PLANES);  // add NV12 to BGR conversion
-    std::cout << "before converting color" << std::endl;
+    // std::cout << "before converting color" << std::endl;
     // input.preprocess().convert_color(ov::preprocess::ColorFormat::RGB);             // input_data->getPreProcess().setColorFormat(ColorFormat::RGB);
     
     // output_1.tensor().set_element_type(ov::element::f32);                   // output_data->setPrecision(Precision::FP32);
@@ -137,53 +58,54 @@ int main()
     
     // INPUT = [1,3,H,W]    OUTPUTS = OUTPUT[0], OUTPUT[1] = [1, ( 3*(H/32)*(W/32) + 3*(H/16)*(W/16) ), (5 + numof_classes)], [1, H, W]
 
-    // for (auto item : inputs)
-    // {
-    //     inputsName = item.first;
-    //     auto input_data = item.second;
-    //     input_data->setPrecision(Precision::FP32);
-    //     input_data->setLayout(Layout::NCHW);
-    //     input_data->getPreProcess().setColorFormat(ColorFormat::RGB);
-    //     std::cout << "input name = " << m_inputName << std::endl;
-    // }
- 
- 
-    // for (auto item : outputs)
-    // {
-    //     auto output_data = item.second;
-    //     output_data->setPrecision(Precision::FP32);
-    //     outputsName = item.first;
-    //     std::cout << "Loading model to the device " << device << std::endl;
-    // }
-    // std::cout << "Loading model to the device " << device << std::endl;
-
     ov::CompiledModel compiled_model = core.compile_model(net, "CPU");    // auto executable_network = ie.LoadNetwork(net, device);
     ov::InferRequest infer_request = compiled_model.create_infer_request();    // infer_request = executable_network.CreateInferRequest();
  
     ov::Tensor m_inputData = infer_request.get_input_tensor(0);    // m_inputData = infer_request.GetBlob(inputsName);
     
-    std::cout << "Shape of input tensor: " << m_inputData.get_shape() << std::endl; 
-    std::cout << "Type of input tensor: " << m_inputData.get_element_type() << std::endl;    
+    // std::cout << "Shape of input tensor: " << m_inputData.get_shape() << std::endl; 
+    // std::cout << "Type of input tensor: " << m_inputData.get_element_type() << std::endl;    
     auto m_numChannels = m_inputData.get_shape()[1];
     auto m_inputW = m_inputData.get_shape()[3];
     auto m_inputH = m_inputData.get_shape()[2];
     auto m_imageSize = m_inputH * m_inputW;
     auto data1 = m_inputData.data<float_t>();
-    std::cout << "m_numChannels: " << m_numChannels <<  std::endl <<"m_inputW: " << m_inputW <<  std::endl << "m_inputH: " << m_inputH <<  std::endl<< "m_imageSize: " << m_imageSize << std::endl;
+    // std::cout << "m_numChannels: " << m_numChannels <<  std::endl <<"m_inputW: " << m_inputW <<  std::endl << "m_inputH: " << m_inputH <<  std::endl<< "m_imageSize: " << m_imageSize << std::endl;
     
     // ov::element::Type input_tensor_type = ov::element::f32;
 
 
-    cv::VideoCapture cap(0);
+    // cv::VideoCapture cap(0);
+    cv::VideoCapture cap("/home/ss21mipt/DIPLOMA/test_data/sahr3/video.avi");
     cv::Mat image;
     cv::Mat segments;
     cv::Mat mask;
     cv::Mat test_mask;
-    std::cout << "doshlo" << std::endl;
-
-    while (cap.isOpened()){
+    int index = 0;
+    std::chrono::steady_clock::time_point begin;
+    std::chrono::steady_clock::time_point end;
+    std::chrono::steady_clock::time_point begin_global;
+    std::chrono::steady_clock::time_point end_global;
+    auto time_preproc= 0;
+    auto t_preproc = 0;
+    auto t_preproc_max = 0;
+    auto t_preproc_min = 100;
+    auto time_infer = 0;
+    auto t_infer = 0;
+    auto t_infer_max = 0;
+    auto t_infer_min = 100;
+    auto time_postproc = 0;
+    auto t_postproc = 0;
+    auto t_postproc_max = 0;
+    auto t_postproc_min = 100;
+    // std::cout << "doshlo" << std::endl;
+    begin_global = CLOCK::now();
+    // while (cap.isOpened()){
+    while (index < 500){
+        begin = CLOCK::now();
         cap >> image;
-        std::cout << "doshlo" << std::endl;
+        // image = cv::imread("/home/ss21mipt/DIPLOMA/IoU_tool/ground_t/frame111.jpg");
+        // std::cout << "doshlo" << std::endl;
         if (image.empty() || !image.data) {
             return false;
         }
@@ -193,32 +115,53 @@ int main()
         // ПЕРЕБИВАНИЕ КАРТИНКИ В ВЕКТОР
 
         
-        std::cout << "SIZES of Mat: "  << image.size[0] << " " << image.size[1] << " " << image.channels()<<  std::endl;
+        // std::cout << "SIZES of Mat: "  << image.size[0] << " " << image.size[1] << " " << image.channels()<<  std::endl;
 
         // auto data1 = input_tensor1.data<int32_t>();
         // std::shared_ptr input_data = getData(data_img);
         // m_inputData = ov::Tensor(input_tensor_type, input_shape, input_data.get());   
         // FILLING THE DATA1
-        
         for (size_t row = 0; row < m_inputH; row++) {
             for (size_t col = 0; col < m_inputW; col++) {
                 for (size_t ch = 0; ch < m_numChannels; ch++) {
         // #ifdef NCS2
                     data1[m_imageSize * ch + row * m_inputW + col] = float(image.at<cv::Vec3b>(row, col)[ch]);
-                    // std::cout << "XYETA " << float(image.at<cv::Vec3b>(row, col)[ch]) << data1[m_imageSize * ch + row * m_inputW + col] << std::endl ;
+                    
         // #else
                     // data[m_imageSize * ch + row * m_inputW + col] = float(blob_image.at<cv::Vec3b>(row, col)[ch] / 255.0);
         // #endif // NCS2
                 }
             }
         }
+        end = CLOCK::now();
+        time_preproc = time_preproc + (CLOCK_CAST(end - begin).count() / 1000.0);
+        t_preproc = (CLOCK_CAST(end - begin).count() / 1000.0);
+        if (t_preproc > t_preproc_max) {
+            t_preproc_max = t_preproc;
+        }
+        if (t_preproc < t_preproc_min) {
+            t_preproc_min = t_preproc;
+        }
+        std::cout << "FPS #1 PREPROCESSING: " <<  (CLOCK_CAST(end - begin).count() / 1000.0) << std::endl;
 
         // data1 = &array_mat[0];
-
+        begin = CLOCK::now();
         infer_request.infer();
         std::cout << "HAHA" << std::endl;
-        ov::Tensor output_tensor1 = infer_request.get_output_tensor(0);
+        end = CLOCK::now();
+        time_infer = time_infer + (CLOCK_CAST(end - begin).count() / 1000.0);
+        t_infer = (CLOCK_CAST(end - begin).count() / 1000.0);
+        if (t_infer > t_infer_max) {
+            t_infer_max = t_infer;
+        }
+        if (t_infer < t_infer_min) {
+            t_infer_min = t_infer;
+        }
+        std::cout << "FPS #2 INFERENCE: " <<  (CLOCK_CAST(end - begin).count() / 1000.0) << std::endl;
 
+        begin = CLOCK::now();
+
+        ov::Tensor output_tensor1 = infer_request.get_output_tensor(0);
         ov::Tensor output_tensor2 = infer_request.get_output_tensor(1);
         
         // IR v10 works with converted precisions (i64 -> i32)
@@ -226,36 +169,59 @@ int main()
         auto out_data2 = output_tensor2.data<float_t>();
         auto mask_shape = output_tensor2.get_shape();
         
-        std::cout << "SEGMENTATION MASK" << mask_shape << std::endl;
-        std::cout << "SEGMENTATION MASK" << *out_data2 << std::endl;
+        // std::cout << "SEGMENTATION MASK" << mask_shape << std::endl;
+        // std::cout << "SEGMENTATION MASK" << *out_data2 << std::endl;
         test_mask = cv::Mat::ones(mask_shape[1], mask_shape[2], CV_8UC1);
         // TENSOR TO MAT
-        std::cout << test_mask.channels() << test_mask.size() << std::endl;
+        // std::cout << test_mask.channels() << test_mask.size() << std::endl;
         for(size_t i=0; i<(m_inputH); i++){
             for(size_t j=0; j<m_inputW; j++){
                 // mask.at<float>(i, j) = float(data1[i * m_inputW + j]);
                 // std::cout << test_mask.at(i) << std::endl;
+                if (out_data2[i*m_inputH+j] == 1) {
+                    out_data2[i*m_inputH+j] = 0;    // зануляем фильтр зеленого
+                }
                 test_mask.at<uchar>(i*m_inputH+j) = (char)(out_data2[i*m_inputH+j]*100);
-                std::cout << " ZDOROVA" << std::endl;
-             
-                    
-                // std::cout << data1[i+j] << " " << mask.at<float>(i, j) << std::endl;
-                // std::cout << data1[i+j] << std::endl;
-                // std::cout << out_data1[i+j] << std::endl;
             } 
         }
-
+        // end = CLOCK::now();
+        // std::cout << "FPS #2 INTO FINAL MASK " <<  (CLOCK_CAST(end - begin).count() / 1000.0) << std::endl;
+        
+        // begin = CLOCK::now();
         // auto segments = tensorToMat(output_tensor2);
-        cv::imshow("webcam", image);
-        cv::imshow("segmentation", test_mask);
+        // cv::imshow("webcam", image);
+        cv::resize(test_mask, test_mask, cv::Size(720,540));
+        // cv::imshow("YOEO_segmentation", test_mask);
         // std::cout << "doshlo" << mask << std::endl;
-        if(cv::waitKey(30)>=0)
-                break;
-        std::cout << "Allo blyat " << std::endl;
+        // if(cv::waitKey(30)>=0)
+        //         break;
+        // std::cout << "Allo blyat " << std::endl;
         // cv::imwrite("alpha.png", mask);
         // break;
+        index++;
+        end = CLOCK::now();
+        time_postproc = time_postproc + (CLOCK_CAST(end - begin).count() / 1000.0);
+        t_postproc = (CLOCK_CAST(end - begin).count() / 1000.0);
+        if (t_postproc > t_postproc_max) {
+            t_postproc_max = t_postproc;
+        }
+        if (t_postproc < t_postproc_min) {
+            t_postproc_min = t_postproc;
+        }
+        std::cout << "FPS #3 POSTPROCESSING " <<  (CLOCK_CAST(end - begin).count() / 1000.0) << std::endl;
+        std::cout << "index = " << index << std::endl;
     }
-    cv::destroyWindow("segmentation");
-    cv::destroyWindow("webcam");
+    // cv::imwrite("/home/ss21mipt/DIPLOMA/IoU_tool/YOEO_segmentation.jpg", test_mask);
+    end_global = CLOCK::now();
+    std::cout << "AVERAGE FPS " <<  (index * 1.0 / (CLOCK_CAST(end_global - begin_global).count() / 1000000.0)) << std::endl;
+    std::cout << "AVERAGE PREPROCESSING FPS: " << index*1.0/(time_preproc / 1000.0) << std::endl;
+    std::cout << "AVERAGE INFERENCE FPS: " << index*1.0/(time_infer / 1000.0) << std::endl;
+    std::cout << "AVERAGE POSTPROCESSING FPS: " << index*1.0/(time_postproc / 1000.0) << std::endl;
+
+    std::cout << "AVERAGE PREPROCESSING time: " << ((time_preproc) / (index*1.0)) << " in range [" << t_preproc_min << ", " << t_preproc_max << "]" << std::endl;
+    std::cout << "AVERAGE INFERENCE time: " << ((time_infer) / (index*1.0)) << " in range [" << t_infer_min << ", " << t_infer_max << "]" << std::endl;
+    std::cout << "AVERAGE POSTPROCESSING time: " << ((time_postproc) / (index*1.0)) << " in range [" << t_postproc_min << ", " << t_postproc_max << "]" << std::endl;
+    cv::destroyWindow("YOEO_segmentation");
+    // cv::destroyWindow("webcam");
 
 }
