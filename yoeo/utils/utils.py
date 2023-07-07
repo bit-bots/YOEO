@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, annotations
 
 from typing import Tuple
 
@@ -11,7 +11,7 @@ import torchvision
 import numpy as np
 import subprocess
 import random
-from typing import List
+from typing import List, Optional
 import yaml
 
 
@@ -418,7 +418,8 @@ def box_iou(box1, box2):
     return inter / (area1[:, None] + area2 - inter)
 
 
-def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None):
+def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None,
+                        robot_class_ids: Optional[List[int]] = None):
     """Performs Non-Maximum Suppression (NMS) on inference results
     Returns:
          detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
@@ -436,6 +437,8 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
     t = time.time()
     output = [torch.zeros((0, 6), device="cpu")] * prediction.shape[0]
+    if robot_class_ids:
+        robot_class_ids = torch.tensor(robot_class_ids, device=prediction.device, dtype=prediction.dtype)
 
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
@@ -473,7 +476,15 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
             x = x[x[:, 4].argsort(descending=True)[:max_nms]]
 
         # Batched NMS
-        c = x[:, 5:6] * max_wh  # classes
+        if robot_class_ids is None:
+            c = x[:, 5:6] * max_wh  # classes
+        else:
+            # If multiple robot classes are present, all robot classes are treated as one class in order to perform
+            # nms across all classes and not per class. For this, all robot classes get the same offset.
+            c = torch.clone(x[:, 5:6])
+            c[torch.isin(c, robot_class_ids)] = robot_class_ids[0]
+            c *= max_wh
+
         # boxes (offset by class), scores
         boxes, scores = x[:, :4] + c, x[:, 4]
         i = torchvision.ops.nms(boxes, scores, iou_thres)  # NMS

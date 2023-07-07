@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
-from __future__ import division
-from typing import List
+from __future__ import division, annotations
+from typing import List, Optional
 
 import argparse
 import tqdm
@@ -14,14 +14,16 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
 from yoeo.models import load_model
-from yoeo.utils.utils import load_classes, ap_per_class, get_batch_statistics, non_max_suppression, to_cpu, xywh2xyxy, print_environment_info, seg_iou
+from yoeo.utils.utils import load_classes, ap_per_class, get_batch_statistics, non_max_suppression, to_cpu, xywh2xyxy, \
+    print_environment_info, seg_iou
 from yoeo.utils.datasets import ListDataset
 from yoeo.utils.transforms import DEFAULT_TRANSFORMS
 from yoeo.utils.parse_config import parse_data_config
 
 
 def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_size=8, img_size=416,
-                        n_cpu=8, iou_thres=0.5, conf_thres=0.5, nms_thres=0.5, verbose=True):
+                        n_cpu=8, iou_thres=0.5, conf_thres=0.5, nms_thres=0.5, verbose=True,
+                        robot_class_ids: Optional[List[int]] = None):
     """Evaluate model on validation dataset.
 
     :param model_path: Path to model definition file (.cfg)
@@ -46,6 +48,8 @@ def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_s
     :type nms_thres: float, optional
     :param verbose: If True, prints stats of model, defaults to True
     :type verbose: bool, optional
+    :param robot_class_ids: List of class IDs of robot classes if multiple robot classes exist.
+    :type robot_class_ids: List[int], optional
     :return: Returns precision, recall, AP, f1, ap_class
     """
     dataloader = _create_validation_data_loader(
@@ -59,7 +63,8 @@ def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_s
         iou_thres,
         conf_thres,
         nms_thres,
-        verbose)
+        verbose,
+        robot_class_ids=robot_class_ids)
     return metrics_output, seg_class_ious
 
 
@@ -77,7 +82,6 @@ def print_eval_stats(metrics_output, seg_class_ious, class_names, verbose):
     else:
         print("---- mAP not measured (no detections found by model) ----")
 
-
     # Print segmentation statistics
     if verbose:
         # Print IoU per segmentation class
@@ -90,7 +94,8 @@ def print_eval_stats(metrics_output, seg_class_ious, class_names, verbose):
     print(f"----Average IoU {mean_seg_class_ious:.5f} ----")
 
 
-def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, nms_thres, verbose):
+def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, nms_thres, verbose,
+              robot_class_ids: Optional[List[int]] = None):
     """Evaluate model on validation dataset.
 
     :param model: Model to evaluate
@@ -109,6 +114,8 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
     :type nms_thres: float
     :param verbose: If True, prints stats of model
     :type verbose: bool
+    :param robot_class_ids: List of class IDs of robot classes if multiple robot classes exist.
+    :type robot_class_ids: List[int], optional
     :return: Returns precision, recall, AP, f1, ap_class
     """
     model.eval()  # Set model to evaluation mode
@@ -119,7 +126,7 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
     sample_metrics = []  # List of tuples (TP, confs, pred)
     seg_ious = []
     import time
-    times=[]
+    times = []
     for _, imgs, bb_targets, mask_targets in tqdm.tqdm(dataloader, desc="Validating"):
         # Extract labels
         labels += bb_targets[:, 1].tolist()
@@ -133,7 +140,12 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
             t1 = time.time()
             yolo_outputs, segmentation_outputs = model(imgs)
             times.append(time.time() - t1)
-            yolo_outputs = non_max_suppression(yolo_outputs, conf_thres=conf_thres, iou_thres=nms_thres)
+            yolo_outputs = non_max_suppression(
+                yolo_outputs,
+                conf_thres=conf_thres,
+                iou_thres=nms_thres,
+                robot_class_ids=robot_class_ids
+            )
 
         sample_metrics += get_batch_statistics(yolo_outputs, bb_targets, iou_threshold=iou_thres)
 
@@ -143,7 +155,7 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
         print("---- No detections over whole validation set ----")
         return None
 
-    print(f"Times: Mean {1/np.array(times).mean()}fps | Std: {np.array(times).std()} ms")
+    print(f"Times: Mean {1 / np.array(times).mean()}fps | Std: {np.array(times).std()} ms")
 
     # Concatenate sample statistics
     true_positives, pred_scores, pred_labels = [
@@ -159,7 +171,7 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
         :return: Segmentation IOUs without NaN
         """
         seg_iou = np.asarray(seg_iou)
-        return seg_iou[~np.isnan(seg_iou)].mean() 
+        return seg_iou[~np.isnan(seg_iou)].mean()
 
     seg_class_ious = [seg_iou_mean_without_nan(class_ious) for class_ious in list(zip(*seg_ious))]
 
@@ -197,8 +209,10 @@ def _create_validation_data_loader(img_path, batch_size, img_size, n_cpu):
 def run():
     print_environment_info()
     parser = argparse.ArgumentParser(description="Evaluate validation data.")
-    parser.add_argument("-m", "--model", type=str, default="config/yoeo.cfg", help="Path to model definition file (.cfg)")
-    parser.add_argument("-w", "--weights", type=str, default="weights/yoeo.pth", help="Path to weights or checkpoint file (.weights or .pth)")
+    parser.add_argument("-m", "--model", type=str, default="config/yoeo.cfg",
+                        help="Path to model definition file (.cfg)")
+    parser.add_argument("-w", "--weights", type=str, default="weights/yoeo.pth",
+                        help="Path to weights or checkpoint file (.weights or .pth)")
     parser.add_argument("-d", "--data", type=str, default="config/torso.data", help="Path to data config file (.data)")
     parser.add_argument("-b", "--batch_size", type=int, default=8, help="Size of each image batch")
     parser.add_argument("-v", "--verbose", action='store_true', help="Makes the validation more verbose")
@@ -207,6 +221,9 @@ def run():
     parser.add_argument("--iou_thres", type=float, default=0.5, help="IOU threshold required to qualify as detected")
     parser.add_argument("--conf_thres", type=float, default=0.01, help="Object confidence threshold")
     parser.add_argument("--nms_thres", type=float, default=0.4, help="IOU threshold for non-maximum suppression")
+    parser.add_argument("--multiple_robot_classes", action="store_true",
+                        help="If multiple robot classes exist and nms shall be performed across all robot classes")
+
     args = parser.parse_args()
     print(f"Command line arguments: {args}")
 
@@ -215,6 +232,13 @@ def run():
     # Path to file containing all images for validation
     valid_path = data_config["valid"]
     class_names = load_classes(data_config["names"])  # Detection and segmentation class names
+
+    robot_class_ids = None
+    if args.multiple_robot_classes:
+        robot_class_ids = []
+        for idx, c in enumerate(class_names["detection"]):
+            if "robot" in c:
+                robot_class_ids.append(idx)
 
     evaluate_model_file(
         args.model,
@@ -227,7 +251,9 @@ def run():
         iou_thres=args.iou_thres,
         conf_thres=args.conf_thres,
         nms_thres=args.nms_thres,
-        verbose=True)
+        verbose=True,
+        robot_class_ids=robot_class_ids
+    )
 
 
 if __name__ == "__main__":
