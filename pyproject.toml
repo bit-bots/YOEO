@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "YOEO"
-version = "1.4.0"
+version = "1.4.1"
 description = "A hybrid CNN for object detection and semantic segmentation"
 authors = ["Florian Vahl <git@flova.de>", "Jan Gutsche <git@jagut.de>"]
 
@@ -20,6 +20,7 @@ PyYAML = "^6.0"
 opencv-python = "^4.5.2"
 
 [tool.poetry.dev-dependencies]
+onnxruntime = "^1.14.0"
 profilehooks = "^1.12.0"
 onnx = "^1.9.0"
 onnx-simplifier = "^0.3.5"
@@ -34,3 +35,4 @@ yoeo-train = "yoeo.train:run"
 yoeo-test = "yoeo.test:run"
 yoeo-to-onnx = "yoeo.scripts.convertPyTorchModelToONNX:run"
 yoeo-onnx-to-openvino = "yoeo.scripts.convertONNXModelToOpenVinoIR:run"
+yoeo-onnx-to-tvm = "yoeo.scripts.convertONNXModelToTVM:run"
