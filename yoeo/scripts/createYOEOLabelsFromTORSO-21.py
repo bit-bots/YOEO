@@ -168,7 +168,7 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
         partition_txt_file.writelines([str(os.path.join(images_dir, image_name)) + "\n" for image_name in image_names])
 
 # The names file contains the class names of bb detections and segmentations
-names_path = os.path.join(destination_dir, "yoeo.names.yaml")
+names_path = os.path.join(destination_dir, "yoeo_names.yaml")
 names = {
     'detection': CLASSES['bb_classes'],
     'segmentation': CLASSES["segmentation_classes"],
