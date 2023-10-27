@@ -96,8 +96,8 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5, robo
         DEFAULT_TRANSFORMS,
         Resize(img_size)])((
             image,
-            np.empty((1, 5)),
-            np.empty((img_size, img_size), dtype=np.uint8)))[0].unsqueeze(0)
+            np.zeros((1, 5)),
+            np.zeros((img_size, img_size), dtype=np.uint8)))[0].unsqueeze(0)
 
     if torch.cuda.is_available():
         input_img = input_img.to("cuda")
