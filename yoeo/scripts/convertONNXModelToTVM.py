@@ -26,7 +26,6 @@ def make_parser():
         type=int,
         help="Input image size")
     parser.add_argument(
-        "-t",
         "--trials",
         default=20000,
         type=int,
@@ -56,7 +55,6 @@ def make_parser():
         type=str,
         help="Path to the tuning records that are created for this optimization")
     parser.add_argument(
-        "-t",
         "--target",
         default="vulkan -from_device=0",
         type=str,
@@ -89,7 +87,7 @@ def run():
     # Build an TVM Compiler model
     tvmc_model = TVMCModel(mod, params)
 
-    
+
     # Tune the model (depending on the hardware and parameters this takes days)
     if not args.no_tuning:
         tvmc.tune(
