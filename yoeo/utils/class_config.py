@@ -79,6 +79,12 @@ class ClassConfig:
             return SqueezeConfig(squeeze_ids, surrogate_id)
 
     def get_squeeze_class_names(self) -> List[str]:
+        """
+        Get the class names of the classes that should be squeezed together during evaluation
+
+        :return: a list of class names that should be squeezed together during evaluation
+        :rtype: List[str]
+        """
         return self._class_names_to_squeeze
 
     def get_surrogate_id(self) -> Optional[int]:
@@ -92,15 +98,25 @@ class ClassConfig:
         """
         return None if not self._ids_to_squeeze else self._ids_to_squeeze[0]
         
-    def get_det_class_names(self) -> List[str]:
+    def get_squeezed_det_class_names(self) -> List[str]:
         """
-        Get the (squeezed) list of detection class names.
+        Get the squeezed list of detection class names.
 
-        :return: The (squeezed) list of detection class names.
+        :return: The squeezed list of detection class names.
         :rtype: List[str]
         """
 
         return self._squeezed_det_class_names
+
+    def get_unsqueezed_det_class_names(self) -> List[str]:
+        """
+        Get the unsqueezed list of detection class names.
+
+        :return: The unsqueezed list of detection class names.
+        :rtype: List[str]
+        """
+
+        return self._det_class_names
 
     def get_seg_class_names(self) -> List[str]:
         """
@@ -144,10 +160,20 @@ class ClassConfig:
         return self._ids_to_squeeze is not None
 
     def squeeze(self, labels: List[int]) -> List[int]:
+        """
+        Squeeze a list of class ids. Given a set of classes that should be squeezed X, replace all class ids in X by
+        the surrogate id.
+
+        :param labels: list of class ids to squeeze.
+        :type labels: List[int]
+
+        :return: squeezed list of class ids where 
+        :rtype: List[int]
+        """
         surrogate_id = self.get_surrogate_id()
 
         return [label if label not in self._ids_to_squeeze else surrogate_id for label in labels]
-
+    
     @classmethod
     def load_from(cls, path: str, class_names: ClassNames) -> ClassConfig:
         content = cls._read_yaml_file(path)

@@ -1,7 +1,5 @@
 from __future__ import division, annotations
 
-from typing import Tuple
-
 import time
 import platform
 import tqdm
@@ -11,8 +9,10 @@ import torchvision
 import numpy as np
 import subprocess
 import random
-from typing import List, Optional
-import yaml
+from typing import List, Optional, Tuple
+
+from yoeo.utils.dataclasses import SqueezeConfig
+from yoeo.utils.metric import Metric
 
 
 def provide_determinism(seed=42):
@@ -43,16 +43,6 @@ def worker_seed_set(worker_id):
 
 def to_cpu(tensor):
     return tensor.detach().cpu()
-
-
-def load_classes(path: str) -> dict:
-    with open(path, 'r', encoding="utf-8") as fp:
-        names = yaml.load(fp, Loader=yaml.SafeLoader)
-
-    assert "detection" in names.keys(), f"Missing key 'detection' in {path}"
-    assert "segmentation" in names.keys(), f"Missing key 'segmentation' in {path}"
-
-    return names
 
 
 def weights_init_normal(m):
@@ -298,11 +288,33 @@ def compute_ap(recall, precision):
     return ap
 
 
-def get_batch_statistics(outputs, targets, iou_threshold):
+def get_batch_statistics(outputs, 
+                         targets, 
+                         iou_threshold, 
+                         squeeze_config: Optional[SqueezeConfig] = None
+                         ) -> Tuple[List, Optional[Metric]]:
+    """
+    Calculcate the batch statistics. If 'squeeze_config' is not 'None', the contained classes will be squeezed into one
+    class ('SqueezeConfig.surrogate_id') for batch statistics evaluation and evalutated separately on a secondary class
+    label. The statistics for the latter are returned as a 'Metric' object. If 'squeeze_config' is None, no 'Metric'
+    object will be returned and the tuple will simply contain 'None' at the respective position.
+
+    :return: The batch statistics, as well as an optional Metric object for the secondary class argument if
+             'squeeze_config' is not None
+    :rtype: Tuple[List, Optional[Metric]]
+    """
     """ Compute true positives, predicted scores and predicted labels per sample """
     batch_metrics = []
-    for sample_i in range(len(outputs)):
 
+    squeeze_active: bool = squeeze_config is not None
+
+    if squeeze_active:
+        secondary_metric = Metric(len(squeeze_config.squeeze_ids))
+        squeeze_ids = torch.tensor(squeeze_config.squeeze_ids)
+    else:
+        secondary_metric = None
+
+    for sample_i in range(len(outputs)):
         if outputs[sample_i] is None:
             continue
 
@@ -311,16 +323,24 @@ def get_batch_statistics(outputs, targets, iou_threshold):
         pred_scores = output[:, 4]
         pred_labels = output[:, -1]
 
+        if squeeze_active:
+            sec_pred_labels = compute_secondary_labels(pred_labels, squeeze_ids)
+            pred_labels = squeeze_primary_labels(pred_labels, squeeze_ids, squeeze_config.surrogate_id)
+
         true_positives = np.zeros(pred_boxes.shape[0])
 
         annotations = targets[targets[:, 0] == sample_i][:, 1:]
         target_labels = annotations[:, 0] if len(annotations) else []
+
+        if squeeze_active and type(target_labels) is not list:
+            sec_target_labels = compute_secondary_labels(target_labels, squeeze_ids)
+            target_labels = squeeze_primary_labels(target_labels, squeeze_ids, squeeze_config.surrogate_id)
+
         if len(annotations):
             detected_boxes = []
             target_boxes = annotations[:, 1:]
 
             for pred_i, (pred_box, pred_label) in enumerate(zip(pred_boxes, pred_labels)):
-
                 # If targets are found break
                 if len(detected_boxes) == len(annotations):
                     break
@@ -343,8 +363,36 @@ def get_batch_statistics(outputs, targets, iou_threshold):
                 if iou >= iou_threshold and box_index not in detected_boxes:
                     true_positives[pred_i] = 1
                     detected_boxes += [box_index]
+
+                if squeeze_active:
+                    sec_pred_label = sec_pred_labels[pred_i]
+
+                    if pred_label in squeeze_ids:
+                        secondary_metric.update(sec_pred_label.int(), sec_target_labels[box_index].int())
+
         batch_metrics.append([true_positives, pred_scores, pred_labels])
-    return batch_metrics
+
+    return batch_metrics, secondary_metric
+
+def compute_secondary_labels(labels: torch.tensor, squeeze_ids: torch.tensor) -> torch.tensor: 
+    secondary_labels = labels.clone()
+
+    # We replace the actual class labels with values from {0, ...} for classes that should be squeezed into a
+    # single class. All other classes get the label -1.
+    for idx, squeeze_id in enumerate(squeeze_ids):
+        # Replace label with value in {0, ...}
+        secondary_labels[labels == squeeze_id] = idx
+        
+        # Replace all other labels with -1
+        secondary_labels[torch.logical_not(torch.isin(labels, squeeze_ids))] = -1
+
+    return secondary_labels
+
+def squeeze_primary_labels(labels: torch.tensor, squeeze_ids: torch.tensor, surrogate_id: int) -> torch.tesor:
+    # Replace all primary labels that are contained in squeeze_ids with the surrogate_id
+    labels[torch.isin(labels, squeeze_ids)] = surrogate_id
+
+    return labels
 
 
 def bbox_wh_iou(wh1, wh2):
@@ -419,8 +467,11 @@ def box_iou(box1, box2):
 
 
 def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None,
-                        robot_class_ids: Optional[List[int]] = None):
-    """Performs Non-Maximum Suppression (NMS) on inference results
+                        squeeze_config: Optional[SqueezeConfig] = None):
+    """
+    Performs Non-Maximum Suppression (NMS) on inference results. If 'squeeze_config' is not 'None', the contained 
+    classes will be treated as one class ('SqueezeConfig.surrogate_id') during non-maximum supression.
+    
     Returns:
          detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
     """
@@ -437,8 +488,8 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
     t = time.time()
     output = [torch.zeros((0, 6), device="cpu")] * prediction.shape[0]
-    if robot_class_ids:
-        robot_class_ids = torch.tensor(robot_class_ids, device=prediction.device, dtype=prediction.dtype)
+    if squeeze_config:
+        squeeze_ids = torch.tensor(squeeze_config.squeeze_ids, device=prediction.device, dtype=prediction.dtype)
 
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
@@ -476,13 +527,13 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
             x = x[x[:, 4].argsort(descending=True)[:max_nms]]
 
         # Batched NMS
-        if robot_class_ids is None:
+        if squeeze_config is None:
             c = x[:, 5:6] * max_wh  # classes
         else:
-            # If multiple robot classes are present, all robot classes are treated as one class in order to perform
-            # nms across all classes and not per class. For this, all robot classes get the same offset.
+            # If for example multiple robot classes are present, all robot classes are treated as one class in order 
+            # to perform nms across all classes and not per class. For this, all robot classes get the same offset.
             c = torch.clone(x[:, 5:6])
-            c[torch.isin(c, robot_class_ids)] = robot_class_ids[0]
+            c[torch.isin(c, squeeze_ids)] = squeeze_config.surrogate_id
             c *= max_wh
 
         # boxes (offset by class), scores
