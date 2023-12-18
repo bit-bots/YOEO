@@ -1,6 +1,8 @@
 #!/bin/bash
 # Download weights for yoeo-rev-7
 wget "http://data.bit-bots.de/models/2021_12_06_flo_torso21_yoeo_7/yoeo.pth"
+# Download yoeo-x
+wget -O yoeox.pth "https://data.bit-bots.de/models/2022_10_07_flo_torso21_yoeox/pytorch/yoeo.pth"
 # Download weights for vanilla YOLOv3
 wget -c "https://pjreddie.com/media/files/yolov3.weights" --header "Referer: pjreddie.com"
 # # Download weights for tiny YOLOv3
