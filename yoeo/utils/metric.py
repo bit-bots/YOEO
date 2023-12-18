@@ -81,4 +81,4 @@ class Metric:
     def TPR(self, class_id: int) -> float:
         denom = (self._tp(class_id) + self._fn(class_id))
         return self._tp(class_id) / denom if denom != 0 else float("nan")
-    
+        
