@@ -12,7 +12,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
-from typing import Optional, List
+from typing import Optional
 
 from imgaug.augmentables.segmaps import SegmentationMapsOnImage
 
@@ -66,7 +66,7 @@ def detect_directory(model_path, weights_path, img_path, class_config: ClassConf
         class_config.get_group_config()
     )
     _draw_and_save_output_images(
-        img_detections, segmentations, imgs, img_size, output_path, class_config.get_unsqueezed_det_class_names())
+        img_detections, segmentations, imgs, img_size, output_path, class_config.get_ungrouped_det_class_names())
 
     print(f"---- Detections were saved to: '{output_path}' ----")
 
