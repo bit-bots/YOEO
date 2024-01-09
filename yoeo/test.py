@@ -93,7 +93,7 @@ def print_eval_stats(metrics_output: Optional[Tuple[np.ndarray]],
         mbACC = secondary_metric.mbACC()
 
         if verbose:
-            classes = class_config.get_squeeze_class_names()
+            classes = class_config.get_group_class_names()
             mbACC_per_class = [secondary_metric.bACC(i) for i in range(len(classes))]
                         
             sec_table = [["Index", "Class", "bACC"]]
@@ -176,14 +176,14 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
                 yolo_outputs,
                 conf_thres=conf_thres,
                 iou_thres=nms_thres,
-                squeeze_config=class_config.get_squeeze_config()
+                group_config=class_config.get_squeeze_config()
             )
 
         sample_stat, secondary_stat = get_batch_statistics(
             yolo_outputs, 
             bb_targets, 
             iou_threshold=iou_thres, 
-            squeeze_config=class_config.get_squeeze_config()
+            group_config=class_config.get_squeeze_config()
         )
 
         sample_metrics += sample_stat

@@ -29,6 +29,6 @@ class ClassNames:
 
 
 @dataclass
-class SqueezeConfig:
-    squeeze_ids: List[int]
+class GroupConfig:
+    group_ids: List[int]
     surrogate_id: int

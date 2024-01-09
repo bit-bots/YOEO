@@ -18,7 +18,7 @@ from imgaug.augmentables.segmaps import SegmentationMapsOnImage
 
 from yoeo.models import load_model
 from yoeo.utils.class_config import ClassConfig
-from yoeo.utils.dataclasses import ClassNames, SqueezeConfig
+from yoeo.utils.dataclasses import ClassNames, GroupConfig
 from yoeo.utils.utils import rescale_boxes, non_max_suppression, print_environment_info, rescale_segmentation
 from yoeo.utils.datasets import ImageFolder
 from yoeo.utils.transforms import Resize, DEFAULT_TRANSFORMS
@@ -30,7 +30,7 @@ from matplotlib.ticker import NullLocator
 
 def detect_directory(model_path, weights_path, img_path, class_config: ClassConfig, output_path,
                      batch_size=8, img_size=416, n_cpu=8, conf_thres=0.5, nms_thres=0.5,
-                     robot_class_ids: Optional[List[int]] = None):
+                     ):
     """Detects objects on all images in specified directory and saves output images with drawn detections.
 
     :param model_path: Path to model definition file (.cfg)
@@ -53,8 +53,6 @@ def detect_directory(model_path, weights_path, img_path, class_config: ClassConf
     :type conf_thres: float, optional
     :param nms_thres: IOU threshold for non-maximum suppression, defaults to 0.5
     :type nms_thres: float, optional
-    :param robot_class_ids: List of class IDs of robot classes if multiple robot classes exist.
-    :type robot_class_ids: List[int], optional
     """
     dataloader = _create_data_loader(img_path, batch_size, img_size, n_cpu)
     model = load_model(model_path, weights_path)
@@ -65,7 +63,7 @@ def detect_directory(model_path, weights_path, img_path, class_config: ClassConf
         output_path,
         conf_thres,
         nms_thres,
-        class_config.get_squeeze_config()
+        class_config.get_group_config()
     )
     _draw_and_save_output_images(
         img_detections, segmentations, imgs, img_size, output_path, class_config.get_unsqueezed_det_class_names())
@@ -78,7 +76,7 @@ def detect_image(model,
                  img_size: int = 416, 
                  conf_thres: float = 0.5, 
                  nms_thres: float = 0.5,
-                 squeeze_config: Optional[SqueezeConfig] = None
+                 group_config: Optional[GroupConfig] = None
                  ):
     """Inferences one image with model.
 
@@ -92,8 +90,8 @@ def detect_image(model,
     :type conf_thres: float
     :param nms_thres: IOU threshold for non-maximum suppression, defaults to 0.5
     :type nms_thres: float
-    :param squeeze_config: SqueezeConfiguration for this model (optional, defaults to None)
-    :type squeeze_config: Optional[SqueezeConfig]
+    :param group_config: GroupConfiguration for this model (optional, defaults to None)
+    :type group_config: Optional[GroupConfig]
 
     :return: Detections on image with each detection in the format: [x1, y1, x2, y2, confidence, class], Segmentation as 2d numpy array with the coresponding class id in each cell
     :rtype: nd.array, nd.array
@@ -118,7 +116,7 @@ def detect_image(model,
             prediction=detections, 
             conf_thres=conf_thres, 
             iou_thres=nms_thres, 
-            squeeze_config=squeeze_config
+            group_config=group_config
         )
         detections = rescale_boxes(detections[0], img_size, image.shape[0:2])
         segmentations = rescale_segmentation(segmentations, image.shape[0:2])
@@ -130,7 +128,7 @@ def detect(model,
            output_path: str, 
            conf_thres: float = 0.5, 
            nms_thres: float = 0.5,
-           squeeze_config: Optional[SqueezeConfig] = None
+           group_config: Optional[GroupConfig] = None
             ):
     """Inferences images with model.
 
@@ -144,8 +142,8 @@ def detect(model,
     :type conf_thres: float
     :param nms_thres: IOU threshold for non-maximum suppression, defaults to 0.5
     :type nms_thres: float
-    :param squeeze_config: SqueezeConfiguration for this model (optional, defaults to None)
-    :type squeeze_config: Optional[SqueezeConfig]
+    :param group_config: GroupConfig for this model (optional, defaults to None)
+    :type group_config: Optional[GroupConfig]
 
     :return: List of detections. The coordinates are given for the padded image that is provided by the dataloader.
         Use `utils.rescale_boxes` to transform them into the desired input image coordinate system before its transformed by the dataloader),
@@ -174,7 +172,7 @@ def detect(model,
                 prediction=detections, 
                 conf_thres=conf_thres, 
                 iou_thres=nms_thres, 
-                squeeze_config=squeeze_config
+                group_config=group_config
             )
 
         # Store image and detections

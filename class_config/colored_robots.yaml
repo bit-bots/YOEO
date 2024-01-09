@@ -1,4 +1,4 @@
-squeeze_classes:
+group_classes:
   - robot_red
   - robot_blue
   - robot_unknown
