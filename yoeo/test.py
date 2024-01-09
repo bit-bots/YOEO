@@ -148,8 +148,8 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
     import time
     times = []
 
-    if class_config.classes_should_be_squeezed():
-        secondary_metric = Metric(len(class_config.get_squeeze_ids()))
+    if class_config.classes_should_be_grouped():
+        secondary_metric = Metric(len(class_config.get_group_ids()))
     else:
         secondary_metric = None
 
@@ -157,10 +157,10 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
         # Extract labels
         labels += bb_targets[:, 1].tolist()
 
-        # If a subset of the detection classes should be squeezed into one class for non-maximum suppression and the 
-        # subsequent AP-computation, we need to squeeze those class labels here.
-        if class_config.classes_should_be_squeezed():
-            labels = class_config.squeeze(labels)
+        # If a subset of the detection classes should be grouped into one class for non-maximum suppression and the 
+        # subsequent AP-computation, we need to group those class labels here.
+        if class_config.classes_should_be_grouped():
+            labels = class_config.group(labels)
 
         # Rescale target
         bb_targets[:, 2:] = xywh2xyxy(bb_targets[:, 2:])
@@ -176,19 +176,19 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
                 yolo_outputs,
                 conf_thres=conf_thres,
                 iou_thres=nms_thres,
-                group_config=class_config.get_squeeze_config()
+                group_config=class_config.get_group_config()
             )
 
         sample_stat, secondary_stat = get_batch_statistics(
             yolo_outputs, 
             bb_targets, 
             iou_threshold=iou_thres, 
-            group_config=class_config.get_squeeze_config()
+            group_config=class_config.get_group_config()
         )
 
         sample_metrics += sample_stat
 
-        if class_config.classes_should_be_squeezed():
+        if class_config.classes_should_be_grouped():
             secondary_metric += secondary_stat
 
         seg_ious.append(seg_iou(to_cpu(segmentation_outputs), mask_targets, model.num_seg_classes))
