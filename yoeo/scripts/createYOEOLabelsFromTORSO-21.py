@@ -11,8 +11,9 @@ from tqdm import tqdm
 # Available classes for YOEO
 CLASSES = {
     'bb_classes': ['ball', 'goalpost', 'robot'],
+    'bb_classes_with_robot_colors': ['ball', 'goalpost', 'robot_blue', 'robot_red', 'robot_unknown'],
     'segmentation_classes': ['background', 'lines', 'field'],
-    'skip_classes': ['obstacle', 'L-Intersection', 'X-Intersection', 'T-Intersection']
+    'skip_classes': ['obstacle', 'L-Intersection', 'X-Intersection', 'T-Intersection'],
     }
 
 
@@ -37,6 +38,7 @@ parser.add_argument("--destination-dir", type=str, default="", help="Writes outp
 parser.add_argument("--skip-blurred", action="store_true", help="Skip blurred labels")
 parser.add_argument("--skip-concealed", action="store_true", help="Skip concealed labels")
 parser.add_argument("--skip-classes", nargs="+", default=[], help="These bounding box classes will be skipped")
+parser.add_argument("--robots-with-team-colors", action="store_true", help="The robot class will be subdivided into subclasses, one for each team color (currently either 'blue', 'red' or 'unknown').")
 args = parser.parse_args()
 
 # Remove skipped classes from CLASSES list
@@ -145,7 +147,19 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
                     relative_center_x = center_x / img_width
                     relative_center_y = center_y / img_height
 
-                    classID = CLASSES['bb_classes'].index(annotation['type'])  # Derive classID from index in predefined classes
+                    # Derive classID from index in predefined classes
+                    if not args.robots_with_team_colors:
+                        classID = CLASSES['bb_classes'].index(annotation['type'])
+                    else:
+                        class_name = annotation['type']
+                        
+                        # If the annotation contains a robot, the team color has to be appended to the annotation type
+                        # to get the full class name.
+                        if class_name == 'robot':
+                            class_name += f"_{annotation['color']}"
+
+                        classID = CLASSES['bb_classes_with_robot_colors'].index(class_name)                  
+                    
                     annotations.append(f"{classID} {relative_center_x} {relative_center_y} {relative_annotation_width} {relative_annotation_height}")
             else:
                 print(f"The annotation type '{annotation['type']}' is not supported. Image: '{img_name_with_extension}'")
@@ -170,7 +184,7 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
 # The names file contains the class names of bb detections and segmentations
 names_path = os.path.join(destination_dir, "yoeo_names.yaml")
 names = {
-    'detection': CLASSES['bb_classes'],
+    'detection': CLASSES['bb_classes'] if not args.robots_with_team_colors else CLASSES['bb_classes_with_robot_colors'],
     'segmentation': CLASSES["segmentation_classes"],
 }
 with open(names_path, "w") as names_file:
