@@ -34,7 +34,7 @@ args = parser.parse_args()
 
 # Available classes for YOEO
 CLASSES = {
-    'bb_classes': ['ball', 'goalpost', 'robot'] if args.robots_with_team_colors else ['ball', 'goalpost', 'robot_blue', 'robot_red', 'robot_unknown'],
+    'bb_classes': ['ball', 'goalpost', 'robot'] if not args.robots_with_team_colors else ['ball', 'goalpost', 'robot_blue', 'robot_red', 'robot_unknown'],
     'segmentation_classes': ['background', 'lines', 'field'],
     'skip_classes': ['obstacle', 'L-Intersection', 'X-Intersection', 'T-Intersection'],
     }
@@ -122,8 +122,12 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
         annotations = []
 
         for annotation in image_data['annotations']:
-            class_name = annotation['type']
+            # Skip annotations that are not in the image
+            if not annotation['in_image']:
+                continue
 
+            # Derive the class name of the current annotation
+            class_name = annotation['type']
             if args.robots_with_team_colors and class_name == 'robot':
                 class_name += f"_{annotation['color']}"
 
@@ -134,25 +138,24 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
                 (args.skip_concealed and annotation.get('concealed', False))):
                 continue
             elif class_name in CLASSES['bb_classes']:  # Handle bounding boxes
-                if annotation['in_image']:  # If annotation is not in image, do nothing
-                    min_x = min(map(lambda x: x[0], annotation['vector']))
-                    max_x = max(map(lambda x: x[0], annotation['vector']))
-                    min_y = min(map(lambda x: x[1], annotation['vector']))
-                    max_y = max(map(lambda x: x[1], annotation['vector']))
+                min_x = min(map(lambda x: x[0], annotation['vector']))
+                max_x = max(map(lambda x: x[0], annotation['vector']))
+                min_y = min(map(lambda x: x[1], annotation['vector']))
+                max_y = max(map(lambda x: x[1], annotation['vector']))
 
-                    annotation_width = max_x - min_x
-                    annotation_height = max_y - min_y
-                    relative_annotation_width = annotation_width / img_width
-                    relative_annotation_height = annotation_height / img_height
+                annotation_width = max_x - min_x
+                annotation_height = max_y - min_y
+                relative_annotation_width = annotation_width / img_width
+                relative_annotation_height = annotation_height / img_height
 
-                    center_x = min_x + (annotation_width / 2)
-                    center_y = min_y + (annotation_height / 2)
-                    relative_center_x = center_x / img_width
-                    relative_center_y = center_y / img_height
+                center_x = min_x + (annotation_width / 2)
+                center_y = min_y + (annotation_height / 2)
+                relative_center_x = center_x / img_width
+                relative_center_y = center_y / img_height
 
-                    # Derive classID from index in predefined classes
-                    classID = CLASSES['bb_classes'].index(class_name)                
-                    annotations.append(f"{classID} {relative_center_x} {relative_center_y} {relative_annotation_width} {relative_annotation_height}")
+                # Derive classID from index in predefined classes
+                classID = CLASSES['bb_classes'].index(class_name)                
+                annotations.append(f"{classID} {relative_center_x} {relative_center_y} {relative_annotation_width} {relative_annotation_height}")
             else:
                 print(f"The annotation type '{class_name}' is not supported. Image: '{img_name_with_extension}'")
 
