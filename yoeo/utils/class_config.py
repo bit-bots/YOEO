@@ -26,16 +26,16 @@ class ClassConfig:
         :return: The ids of all class names that should be grouped into one class if there are any. None otherwise.
         :rtype: Optional[List[int]]
         """
-        squeeze_ids = None
+        group_ids = None
 
         if self._class_names_to_group:
-            squeeze_ids = []
+            group_ids = []
 
             for idx, class_name in enumerate(self._det_class_names):
                 if class_name in self._class_names_to_group:
-                    squeeze_ids.append(idx)
+                    group_ids.append(idx)
 
-        return squeeze_ids
+        return group_ids
 
     def _group_class_names(self) -> List[str]:
         """
@@ -51,7 +51,7 @@ class ClassConfig:
         # Copy the list of detection class names
         grouped_class_names = list(self._det_class_names)
 
-        if self._class_names_to_group:
+        if self._ids_to_group:
             # Insert the surrogate class name before the first to be grouped class name
             grouped_class_names.insert(self.get_surrogate_id(), self._group_surrogate_name)
 
@@ -70,7 +70,7 @@ class ClassConfig:
         :rtype: Optional[GroupConfig] 
         """
 
-        group_ids = self.get_squeeze_ids()
+        group_ids = self.get_group_ids()
         surrogate_id = self.get_surrogate_id()
 
         if group_ids is None or surrogate_id is None:
@@ -128,7 +128,7 @@ class ClassConfig:
 
         return self._seg_class_names
 
-    def get_squeeze_ids(self) -> Optional[List[int]]:
+    def get_group_ids(self) -> Optional[List[int]]:
         """
         Get the (ungrouped) ids of the class names that should be grouped into one class.
 
