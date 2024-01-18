@@ -9,7 +9,7 @@ import tqdm
 import numpy as np
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, ConcatDataset
 import torch.optim as optim
 from torch.autograd import Variable
 
@@ -18,7 +18,7 @@ from typing import List, Optional
 from yoeo.models import load_model
 from yoeo.utils.logger import Logger
 from yoeo.utils.utils import to_cpu, load_classes, print_environment_info, provide_determinism, worker_seed_set
-from yoeo.utils.datasets import ListDataset
+from yoeo.utils.datasets import ListDataset, NegativeDataset
 from yoeo.utils.augmentations import AUGMENTATION_TRANSFORMS
 from yoeo.utils.transforms import DEFAULT_TRANSFORMS
 from yoeo.utils.parse_config import parse_data_config
@@ -30,11 +30,15 @@ from terminaltables import AsciiTable
 from torchsummary import summary
 
 
-def _create_data_loader(img_path, batch_size, img_size, n_cpu, multiscale_training=False):
+def _create_data_loader(img_path, negative_img_dir, negative_data_fraction, batch_size, img_size, n_cpu, multiscale_training=False):
     """Creates a DataLoader for training.
 
     :param img_path: Path to file containing all paths to training images.
     :type img_path: str
+    :param negative_img_dir: Path to negative image folder
+    :type negative_img_dir: str
+    :param negative_data_fraction: Fraction of negative data relative to positive data
+    :type negative_data_fraction: float
     :param batch_size: Size of each image batch
     :type batch_size: int
     :param img_size: Size of each image dimension for yolo
@@ -51,8 +55,20 @@ def _create_data_loader(img_path, batch_size, img_size, n_cpu, multiscale_traini
         img_size=img_size,
         multiscale=multiscale_training,
         transform=AUGMENTATION_TRANSFORMS)
+    
+    dataset_len = len(dataset)
+    negative_dataset_len = int(negative_data_fraction*dataset_len)
+    
+    negative_dataset = NegativeDataset(
+        negative_img_dir,
+        img_size=img_size,
+        transform=AUGMENTATION_TRANSFORMS,
+        negative_dataset_max_len=negative_dataset_len)
+    
+    concat_dataset = ConcatDataset([dataset, negative_dataset])
+
     dataloader = DataLoader(
-        dataset,
+        concat_dataset,
         batch_size=batch_size,
         shuffle=True,
         num_workers=n_cpu,
@@ -61,12 +77,13 @@ def _create_data_loader(img_path, batch_size, img_size, n_cpu, multiscale_traini
         worker_init_fn=worker_seed_set)
     return dataloader
 
-
 def run():
     print_environment_info()
     parser = argparse.ArgumentParser(description="Trains the YOLO model.")
     parser.add_argument("-m", "--model", type=str, default="config/yoeo.cfg", help="Path to model definition file (.cfg)")
     parser.add_argument("-d", "--data", type=str, default="config/torso.data", help="Path to data config file (.data)")
+    parser.add_argument("-n", "--negative_data_dir", default='', type=str, help="Path to negative data directory")
+    parser.add_argument("--negative_data_fraction", default=0, type=float, help="Fraction of negative data relative to positive data (default=0.0)")
     parser.add_argument("-e", "--epochs", type=int, default=300, help="Number of epochs")
     parser.add_argument("-v", "--verbose", action='store_true', help="Makes the training more verbose")
     parser.add_argument("--n_cpu", type=int, default=8, help="Number of cpu threads to use during batch generation")
@@ -128,6 +145,8 @@ def run():
     # Load training dataloader
     dataloader = _create_data_loader(
         train_path,
+        args.negative_data_dir,
+        args.negative_data_fraction,
         mini_batch_size,
         model.hyperparams['height'],
         args.n_cpu,
@@ -136,6 +155,8 @@ def run():
     # Load validation dataloader
     validation_dataloader = _create_validation_data_loader(
         valid_path,
+        args.negative_data_dir,
+        args.negative_data_fraction,
         mini_batch_size,
         model.hyperparams['height'],
         args.n_cpu)

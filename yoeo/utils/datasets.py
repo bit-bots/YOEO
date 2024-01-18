@@ -54,6 +54,44 @@ class ImageFolder(Dataset):
 
     def __len__(self):
         return len(self.files)
+    
+
+class NegativeDataset(Dataset):
+    def __init__(self, folder_path, img_size=416, transform=None,negative_dataset_max_len=0):
+        self.img_size = img_size
+        self.transform = transform
+        self.negative_dataset_max_len = negative_dataset_max_len
+        if folder_path:
+            self.files = sorted(glob.glob("%s/*.*" % folder_path))[:self.negative_dataset_max_len]
+        else:
+            self.files = []
+            
+    def __getitem__(self, index):
+        img_path = self.files[index % len(self.files)]
+        img = np.array(
+            Image.open(img_path).convert('RGB'),
+            dtype=np.uint8)
+        
+        # Label Placeholder
+        bb_targets = np.zeros((1, 5))
+        mask_targets = np.zeros_like(img)
+
+        # -----------
+        #  Transform
+        # -----------
+        if self.transform:
+            try:
+                img, bb_targets, mask_targets = self.transform(
+                    (img, bb_targets, mask_targets)
+                )
+            except Exception as e:
+                print(f"Could not apply transform.")
+                raise e
+
+        return img_path, img, bb_targets, mask_targets
+
+    def __len__(self):
+        return len(self.files)
 
 
 class ListDataset(Dataset):
@@ -138,7 +176,6 @@ class ListDataset(Dataset):
             except Exception as e:
                 print(f"Could not apply transform.")
                 raise e
-                return
 
         return img_path, img, bb_targets, mask_targets
 

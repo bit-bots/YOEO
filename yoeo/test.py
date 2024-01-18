@@ -10,18 +10,18 @@ import numpy as np
 from terminaltables import AsciiTable
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, ConcatDataset
 from torch.autograd import Variable
 
 from yoeo.models import load_model
 from yoeo.utils.utils import load_classes, ap_per_class, get_batch_statistics, non_max_suppression, to_cpu, xywh2xyxy, \
     print_environment_info, seg_iou
-from yoeo.utils.datasets import ListDataset
+from yoeo.utils.datasets import ListDataset, NegativeDataset
 from yoeo.utils.transforms import DEFAULT_TRANSFORMS
 from yoeo.utils.parse_config import parse_data_config
 
 
-def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_size=8, img_size=416,
+def evaluate_model_file(model_path, weights_path, img_path, class_names, negative_img_dir="", negative_data_fraction=0.0, batch_size=8, img_size=416,
                         n_cpu=8, iou_thres=0.5, conf_thres=0.5, nms_thres=0.5, verbose=True,
                         robot_class_ids: Optional[List[int]] = None):
     """Evaluate model on validation dataset.
@@ -34,6 +34,10 @@ def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_s
     :type img_path: str
     :param class_names: Dict containing detection and segmentation class names
     :type class_names: Dict
+    :param negative_img_dir: Path to negative image folder, defaults to ""
+    :type negative_img_dir: str
+    :param negative_data_fraction: Fraction of negative data relative to positive data, defaults to 0.0
+    :type negative_data_fraction: float
     :param batch_size: Size of each image batch, defaults to 8
     :type batch_size: int, optional
     :param img_size: Size of each image dimension for yolo, defaults to 416
@@ -53,7 +57,7 @@ def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_s
     :return: Returns precision, recall, AP, f1, ap_class
     """
     dataloader = _create_validation_data_loader(
-        img_path, batch_size, img_size, n_cpu)
+        img_path, negative_img_dir, negative_data_fraction, batch_size, img_size, n_cpu)
     model = load_model(model_path, weights_path)
     metrics_output, seg_class_ious = _evaluate(
         model,
@@ -180,12 +184,16 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
     return yolo_metrics_output, seg_class_ious
 
 
-def _create_validation_data_loader(img_path, batch_size, img_size, n_cpu):
+def _create_validation_data_loader(img_path, negative_img_dir, negative_data_fraction, batch_size, img_size, n_cpu):
     """
     Creates a DataLoader for validation.
 
     :param img_path: Path to file containing all paths to validation images.
     :type img_path: str
+    :param negative_img_dir: Path to negative image folder
+    :type negative_img_dir: str
+    :param negative_data_fraction: Fraction of negative data relative to positive data
+    :type negative_data_fraction: float
     :param batch_size: Size of each image batch
     :type batch_size: int
     :param img_size: Size of each image dimension for yolo
@@ -196,8 +204,19 @@ def _create_validation_data_loader(img_path, batch_size, img_size, n_cpu):
     :rtype: DataLoader
     """
     dataset = ListDataset(img_path, img_size=img_size, multiscale=False, transform=DEFAULT_TRANSFORMS)
+    
+    dataset_len = len(dataset)
+    negative_dataset_len = int(negative_data_fraction*dataset_len)
+    
+    negative_dataset = NegativeDataset(
+        negative_img_dir,
+        img_size=img_size,
+        negative_dataset_max_len=negative_dataset_len)
+    
+    concat_dataset = ConcatDataset([dataset, negative_dataset])
+
     dataloader = DataLoader(
-        dataset,
+        concat_dataset,
         batch_size=batch_size,
         shuffle=False,
         num_workers=n_cpu,
@@ -214,6 +233,8 @@ def run():
     parser.add_argument("-w", "--weights", type=str, default="weights/yoeo.pth",
                         help="Path to weights or checkpoint file (.weights or .pth)")
     parser.add_argument("-d", "--data", type=str, default="config/torso.data", help="Path to data config file (.data)")
+    parser.add_argument("-n", "--negative_data_dir", default='', type=str, help="Path to negative data directory")
+    parser.add_argument("--negative_data_fraction", default=0, type=float, help="Fraction of negative data relative to positive data (default=0.0)")
     parser.add_argument("-b", "--batch_size", type=int, default=8, help="Size of each image batch")
     parser.add_argument("-v", "--verbose", action='store_true', help="Makes the validation more verbose")
     parser.add_argument("--img_size", type=int, default=416, help="Size of each image dimension for yolo")
