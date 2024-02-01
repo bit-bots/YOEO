@@ -15,7 +15,7 @@ from torch.autograd import Variable
 
 from yoeo.models import load_model
 from yoeo.utils.logger import Logger
-from yoeo.utils.utils import to_cpu, load_classes, print_environment_info, provide_determinism, worker_seed_set
+from yoeo.utils.utils import to_cpu, print_environment_info, provide_determinism, worker_seed_set
 from yoeo.utils.datasets import ListDataset, NegativeDataset
 from yoeo.utils.dataclasses import ClassNames
 from yoeo.utils.class_config import ClassConfig
