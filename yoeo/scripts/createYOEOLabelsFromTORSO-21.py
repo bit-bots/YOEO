@@ -8,14 +8,6 @@ import numpy as np
 from tqdm import tqdm
 
 
-# Available classes for YOEO
-CLASSES = {
-    'bb_classes': ['ball', 'goalpost', 'robot'],
-    'segmentation_classes': ['background', 'lines', 'field'],
-    'skip_classes': ['obstacle', 'L-Intersection', 'X-Intersection', 'T-Intersection']
-    }
-
-
 def range_limited_float_type_0_to_1(arg):
     """Type function for argparse - a float within some predefined bounds
     Derived from 'https://stackoverflow.com/questions/55324449/how-to-specify-a-minimum-or-maximum-float-value-with-argparse/55410582#55410582'.
@@ -37,7 +29,15 @@ parser.add_argument("--destination-dir", type=str, default="", help="Writes outp
 parser.add_argument("--skip-blurred", action="store_true", help="Skip blurred labels")
 parser.add_argument("--skip-concealed", action="store_true", help="Skip concealed labels")
 parser.add_argument("--skip-classes", nargs="+", default=[], help="These bounding box classes will be skipped")
+parser.add_argument("--robots-with-team-colors", action="store_true", help="The robot class will be subdivided into subclasses, one for each team color (currently either 'blue', 'red' or 'unknown').")
 args = parser.parse_args()
+
+# Available classes for YOEO
+CLASSES = {
+    'bb_classes': ['ball', 'goalpost', 'robot'] if not args.robots_with_team_colors else ['ball', 'goalpost', 'robot_blue', 'robot_red', 'robot_unknown'],
+    'segmentation_classes': ['background', 'lines', 'field'],
+    'skip_classes': ['obstacle', 'L-Intersection', 'X-Intersection', 'T-Intersection'],
+    }
 
 # Remove skipped classes from CLASSES list
 for skip_class in args.skip_classes:
@@ -122,33 +122,42 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
         annotations = []
 
         for annotation in image_data['annotations']:
+            # Skip annotations that are not in the image
+            if not annotation['in_image']:
+                continue
+
+            # Derive the class name of the current annotation
+            class_name = annotation['type']
+            if args.robots_with_team_colors and class_name == 'robot':
+                class_name += f"_{annotation['color']}"
+
             # Skip annotations, if is not a bounding box or should be skipped or is blurred or concealed and user chooses to skip them
-            if (annotation['type'] in CLASSES['segmentation_classes'] or  # Handled by segmentations
-                annotation['type'] in CLASSES['skip_classes'] or  # Skip this annotation class
+            if (class_name in CLASSES['segmentation_classes'] or  # Handled by segmentations
+                class_name in CLASSES['skip_classes'] or  # Skip this annotation class
                 (args.skip_blurred and annotation.get('blurred', False)) or
                 (args.skip_concealed and annotation.get('concealed', False))):
                 continue
-            elif annotation['type'] in CLASSES['bb_classes']:  # Handle bounding boxes
-                if annotation['in_image']:  # If annotation is not in image, do nothing
-                    min_x = min(map(lambda x: x[0], annotation['vector']))
-                    max_x = max(map(lambda x: x[0], annotation['vector']))
-                    min_y = min(map(lambda x: x[1], annotation['vector']))
-                    max_y = max(map(lambda x: x[1], annotation['vector']))
+            elif class_name in CLASSES['bb_classes']:  # Handle bounding boxes
+                min_x = min(map(lambda x: x[0], annotation['vector']))
+                max_x = max(map(lambda x: x[0], annotation['vector']))
+                min_y = min(map(lambda x: x[1], annotation['vector']))
+                max_y = max(map(lambda x: x[1], annotation['vector']))
 
-                    annotation_width = max_x - min_x
-                    annotation_height = max_y - min_y
-                    relative_annotation_width = annotation_width / img_width
-                    relative_annotation_height = annotation_height / img_height
+                annotation_width = max_x - min_x
+                annotation_height = max_y - min_y
+                relative_annotation_width = annotation_width / img_width
+                relative_annotation_height = annotation_height / img_height
 
-                    center_x = min_x + (annotation_width / 2)
-                    center_y = min_y + (annotation_height / 2)
-                    relative_center_x = center_x / img_width
-                    relative_center_y = center_y / img_height
+                center_x = min_x + (annotation_width / 2)
+                center_y = min_y + (annotation_height / 2)
+                relative_center_x = center_x / img_width
+                relative_center_y = center_y / img_height
 
-                    classID = CLASSES['bb_classes'].index(annotation['type'])  # Derive classID from index in predefined classes
-                    annotations.append(f"{classID} {relative_center_x} {relative_center_y} {relative_annotation_width} {relative_annotation_height}")
+                # Derive classID from index in predefined classes
+                classID = CLASSES['bb_classes'].index(class_name)                
+                annotations.append(f"{classID} {relative_center_x} {relative_center_y} {relative_annotation_width} {relative_annotation_height}")
             else:
-                print(f"The annotation type '{annotation['type']}' is not supported. Image: '{img_name_with_extension}'")
+                print(f"The annotation type '{class_name}' is not supported. Image: '{img_name_with_extension}'")
 
         # Store bounding box annotations in .txt file
         with open(os.path.join(labels_dir, img_name_without_extension + ".txt"), "w") as output:

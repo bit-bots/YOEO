@@ -13,12 +13,12 @@ from torch.utils.data import DataLoader, ConcatDataset
 import torch.optim as optim
 from torch.autograd import Variable
 
-from typing import List, Optional
-
 from yoeo.models import load_model
 from yoeo.utils.logger import Logger
 from yoeo.utils.utils import to_cpu, load_classes, print_environment_info, provide_determinism, worker_seed_set
 from yoeo.utils.datasets import ListDataset, NegativeDataset
+from yoeo.utils.dataclasses import ClassNames
+from yoeo.utils.class_config import ClassConfig
 from yoeo.utils.augmentations import AUGMENTATION_TRANSFORMS
 from yoeo.utils.transforms import DEFAULT_TRANSFORMS
 from yoeo.utils.parse_config import parse_data_config
@@ -97,8 +97,7 @@ def run():
     parser.add_argument("--nms_thres", type=float, default=0.5, help="Evaluation: IOU threshold for non-maximum suppression")
     parser.add_argument("--logdir", type=str, default="logs", help="Directory for training log files (e.g. for TensorBoard)")
     parser.add_argument("--seed", type=int, default=-1, help="Makes results reproducable. Set -1 to disable.")
-    parser.add_argument("--multiple_robot_classes", action="store_true",
-                        help="If multiple robot classes exist and nms shall be performed across all robot classes")
+    parser.add_argument("--class_config", type=str, default="class_config/default.yaml", help="Class configuration for evaluation")
     args = parser.parse_args()
     print(f"Command line arguments: {args}")
 
@@ -115,14 +114,9 @@ def run():
     data_config = parse_data_config(args.data)
     train_path = data_config["train"]
     valid_path = data_config["valid"]
-    class_names = load_classes(data_config["names"])
 
-    robot_class_ids = None
-    if args.multiple_robot_classes:
-        robot_class_ids = []
-        for idx, c in enumerate(class_names["detection"]):
-            if "robot" in c:
-                robot_class_ids.append(idx)
+    class_names = ClassNames.load_from(data_config["names"])
+    class_config = ClassConfig.load_from(args.class_config, class_names)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -277,13 +271,12 @@ def run():
             metrics_output = _evaluate(
                 model,
                 validation_dataloader,
-                class_names,
+                class_config=class_config,
                 img_size=model.hyperparams['height'],
                 iou_thres=args.iou_thres,
                 conf_thres=args.conf_thres,
                 nms_thres=args.nms_thres,
                 verbose=args.verbose,
-                robot_class_ids=robot_class_ids
             )
 
             if metrics_output is not None:
@@ -295,6 +288,10 @@ def run():
                     ("validation/mAP", AP.mean()),
                     ("validation/f1", f1.mean()),
                     ("validation/seg_iou", np.array(seg_class_ious).mean())]
+                
+                if metrics_output[2] is not None:
+                    evaluation_metrics.append(("validation/secondary_mbACC", metrics_output[2].mbACC()))
+
                 logger.list_of_scalars_summary(evaluation_metrics, epoch)
 
 
