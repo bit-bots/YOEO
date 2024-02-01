@@ -211,10 +211,10 @@ def _create_validation_data_loader(img_path, negative_img_dir, negative_data_fra
     negative_dataset = NegativeDataset(
         negative_img_dir,
         img_size=img_size,
+        transform=DEFAULT_TRANSFORMS,
         negative_dataset_max_len=negative_dataset_len)
     
     concat_dataset = ConcatDataset([dataset, negative_dataset])
-
     dataloader = DataLoader(
         concat_dataset,
         batch_size=batch_size,
