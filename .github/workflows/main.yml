@@ -9,18 +9,16 @@ jobs:
         matrix:
             os: [ubuntu-24.04, ubuntu-22.04, windows-latest]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - name: Install Poetry
+        run: pipx install poetry
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.x
-
-      - name: Upgrade pip
-        run: python3 -m pip install --upgrade pip
-      
-      - name: Install Poetry
-        run: pip3 install poetry --user
+          cache: "poetry"
 
       - name: Install Dependencies
         run: poetry install
