@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "YOEO"
-version = "1.6.0"
+version = "1.6.1"
 description = "A hybrid CNN for object detection and semantic segmentation"
 authors = ["Florian Vahl <git@flova.de>", "Jan Gutsche <git@jagut.de>"]
 
@@ -36,3 +36,4 @@ yoeo-test = "yoeo.test:run"
 yoeo-to-onnx = "yoeo.scripts.convertPyTorchModelToONNX:run"
 yoeo-onnx-to-openvino = "yoeo.scripts.convertONNXModelToOpenVinoIR:run"
 yoeo-onnx-to-tvm = "yoeo.scripts.convertONNXModelToTVM:run"
+yoeo-custiomize-cfg = "yoeo.scripts.customizeCfg:run"
