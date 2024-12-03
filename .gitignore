@@ -15,3 +15,7 @@ checkpoints/
 logs/
 
 .python-version
+
+*.onnx
+*.pth
+**/tuning_records.json
