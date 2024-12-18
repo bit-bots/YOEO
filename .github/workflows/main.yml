@@ -7,23 +7,21 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
         matrix:
-            os: [ubuntu-22.04, ubuntu-20.04, windows-latest]
+            os: [ubuntu-24.04, ubuntu-22.04, windows-latest]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - name: Install Poetry
+        run: pipx install poetry
 
       - name: Set up Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.8
-
-      - name: Upgrade pip
-        run: python3 -m pip install --upgrade pip
-      
-      - name: Install Poetry
-        run: pip3 install poetry --user
+          python-version: 3.x
+          cache: "poetry"
 
       - name: Install Dependencies
-        run: poetry install
+        run: poetry install --with dev
 
       # Prints the help pages of all scripts to see if the imports etc. work
       - name: Test the help pages

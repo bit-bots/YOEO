@@ -1,0 +1,6 @@
+group_classes:
+  - robot_red
+  - robot_blue
+  - robot_unknown
+
+surrogate_class: robot

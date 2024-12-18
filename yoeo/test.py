@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 from __future__ import division, annotations
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import argparse
 import tqdm
@@ -14,16 +14,18 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
 from yoeo.models import load_model
-from yoeo.utils.utils import load_classes, ap_per_class, get_batch_statistics, non_max_suppression, to_cpu, xywh2xyxy, \
+from yoeo.utils.utils import ap_per_class, get_batch_statistics, non_max_suppression, to_cpu, xywh2xyxy, \
     print_environment_info, seg_iou
 from yoeo.utils.datasets import ListDataset
 from yoeo.utils.transforms import DEFAULT_TRANSFORMS
+from yoeo.utils.dataclasses import ClassNames
+from yoeo.utils.class_config import ClassConfig
 from yoeo.utils.parse_config import parse_data_config
+from yoeo.utils.metric import Metric
 
 
-def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_size=8, img_size=416,
-                        n_cpu=8, iou_thres=0.5, conf_thres=0.5, nms_thres=0.5, verbose=True,
-                        robot_class_ids: Optional[List[int]] = None):
+def evaluate_model_file(model_path, weights_path, img_path, class_config, batch_size=8, img_size=416,
+                        n_cpu=8, iou_thres=0.5, conf_thres=0.5, nms_thres=0.5, verbose=True):
     """Evaluate model on validation dataset.
 
     :param model_path: Path to model definition file (.cfg)
@@ -32,8 +34,8 @@ def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_s
     :type weights_path: str
     :param img_path: Path to file containing all paths to validation images.
     :type img_path: str
-    :param class_names: Dict containing detection and segmentation class names
-    :type class_names: Dict
+    :param class_config: Object containing all class name related settings
+    :type class_config: TrainConfig
     :param batch_size: Size of each image batch, defaults to 8
     :type batch_size: int, optional
     :param img_size: Size of each image dimension for yolo, defaults to 416
@@ -48,62 +50,82 @@ def evaluate_model_file(model_path, weights_path, img_path, class_names, batch_s
     :type nms_thres: float, optional
     :param verbose: If True, prints stats of model, defaults to True
     :type verbose: bool, optional
-    :param robot_class_ids: List of class IDs of robot classes if multiple robot classes exist.
-    :type robot_class_ids: List[int], optional
     :return: Returns precision, recall, AP, f1, ap_class
     """
     dataloader = _create_validation_data_loader(
         img_path, batch_size, img_size, n_cpu)
     model = load_model(model_path, weights_path)
-    metrics_output, seg_class_ious = _evaluate(
+    metrics_output, seg_class_ious, secondary_metric = _evaluate(
         model,
         dataloader,
-        class_names,
+        class_config,
         img_size,
         iou_thres,
         conf_thres,
         nms_thres,
-        verbose,
-        robot_class_ids=robot_class_ids)
-    return metrics_output, seg_class_ious
+        verbose)
+    return metrics_output, seg_class_ious, secondary_metric
 
 
-def print_eval_stats(metrics_output, seg_class_ious, class_names, verbose):
+def print_eval_stats(metrics_output: Optional[Tuple[np.ndarray]], 
+                     seg_class_ious: List[np.float64], 
+                     secondary_metric: Optional[Metric], 
+                     class_config: ClassConfig, 
+                     verbose: bool
+                     ):
     # Print detection statistics
+    print("#### Detection ####")
     if metrics_output is not None:
         precision, recall, AP, f1, ap_class = metrics_output
         if verbose:
             # Prints class AP and mean AP
             ap_table = [["Index", "Class", "AP"]]
+            class_names = class_config.get_squeezed_det_class_names()
             for i, c in enumerate(ap_class):
-                ap_table += [[c, class_names['detection'][c], "%.5f" % AP[i]]]
+                ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
             print(AsciiTable(ap_table).table)
         print(f"---- mAP {AP.mean():.5f} ----")
     else:
         print("---- mAP not measured (no detections found by model) ----")
 
+    if secondary_metric is not None:
+        print("#### Detection - Secondary ####")
+        mbACC = secondary_metric.mbACC()
+
+        if verbose:
+            classes = class_config.get_group_class_names()
+            mbACC_per_class = [secondary_metric.bACC(i) for i in range(len(classes))]
+                        
+            sec_table = [["Index", "Class", "bACC"]]
+            for i, c in enumerate(classes):
+                sec_table += [[i, c, "%.5f" % mbACC_per_class[i]]]
+            print(AsciiTable(sec_table).table)
+
+        print(f"---- mbACC {mbACC:.5f} ----")
+
+    print("#### Segmentation ####")
     # Print segmentation statistics
     if verbose:
         # Print IoU per segmentation class
         seg_table = [["Index", "Class", "IoU"]]
+        class_names = class_config.get_seg_class_names()
         for i, iou in enumerate(seg_class_ious):
-            seg_table += [[i, class_names['segmentation'][i], "%.5f" % iou]]
+            seg_table += [[i, class_names[i], "%.5f" % iou]]
         print(AsciiTable(seg_table).table)
     # Print mean IoU
     mean_seg_class_ious = np.array(seg_class_ious).mean()
     print(f"----Average IoU {mean_seg_class_ious:.5f} ----")
 
 
-def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, nms_thres, verbose,
-              robot_class_ids: Optional[List[int]] = None):
+def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, nms_thres, verbose):
     """Evaluate model on validation dataset.
 
     :param model: Model to evaluate
     :type model: models.Darknet
     :param dataloader: Dataloader provides the batches of images with targets
     :type dataloader: DataLoader
-    :param class_names: Dict containing detection and segmentation class names
-    :type class_names: Dict
+    :param class_config: Object storing all class related settings
+    :type class_config: TrainConfig
     :param img_size: Size of each image dimension for yolo
     :type img_size: int
     :param iou_thres: IOU threshold required to qualify as detected
@@ -114,8 +136,6 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
     :type nms_thres: float
     :param verbose: If True, prints stats of model
     :type verbose: bool
-    :param robot_class_ids: List of class IDs of robot classes if multiple robot classes exist.
-    :type robot_class_ids: List[int], optional
     :return: Returns precision, recall, AP, f1, ap_class
     """
     model.eval()  # Set model to evaluation mode
@@ -127,9 +147,21 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
     seg_ious = []
     import time
     times = []
+
+    if class_config.classes_should_be_grouped():
+        secondary_metric = Metric(len(class_config.get_group_ids()))
+    else:
+        secondary_metric = None
+
     for _, imgs, bb_targets, mask_targets in tqdm.tqdm(dataloader, desc="Validating"):
         # Extract labels
         labels += bb_targets[:, 1].tolist()
+
+        # If a subset of the detection classes should be grouped into one class for non-maximum suppression and the 
+        # subsequent AP-computation, we need to group those class labels here.
+        if class_config.classes_should_be_grouped():
+            labels = class_config.group(labels)
+
         # Rescale target
         bb_targets[:, 2:] = xywh2xyxy(bb_targets[:, 2:])
         bb_targets[:, 2:] *= img_size
@@ -144,10 +176,20 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
                 yolo_outputs,
                 conf_thres=conf_thres,
                 iou_thres=nms_thres,
-                robot_class_ids=robot_class_ids
+                group_config=class_config.get_group_config()
             )
 
-        sample_metrics += get_batch_statistics(yolo_outputs, bb_targets, iou_threshold=iou_thres)
+        sample_stat, secondary_stat = get_batch_statistics(
+            yolo_outputs, 
+            bb_targets, 
+            iou_threshold=iou_thres, 
+            group_config=class_config.get_group_config()
+        )
+
+        sample_metrics += sample_stat
+
+        if class_config.classes_should_be_grouped():
+            secondary_metric += secondary_stat
 
         seg_ious.append(seg_iou(to_cpu(segmentation_outputs), mask_targets, model.num_seg_classes))
 
@@ -160,6 +202,7 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
     # Concatenate sample statistics
     true_positives, pred_scores, pred_labels = [
         np.concatenate(x, 0) for x in list(zip(*sample_metrics))]
+    
     yolo_metrics_output = ap_per_class(
         true_positives, pred_scores, pred_labels, labels)
 
@@ -175,9 +218,9 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
 
     seg_class_ious = [seg_iou_mean_without_nan(class_ious) for class_ious in list(zip(*seg_ious))]
 
-    print_eval_stats(yolo_metrics_output, seg_class_ious, class_names, verbose)
+    print_eval_stats(yolo_metrics_output, seg_class_ious, secondary_metric, class_config, verbose)
 
-    return yolo_metrics_output, seg_class_ious
+    return yolo_metrics_output, seg_class_ious, secondary_metric
 
 
 def _create_validation_data_loader(img_path, batch_size, img_size, n_cpu):
@@ -221,8 +264,7 @@ def run():
     parser.add_argument("--iou_thres", type=float, default=0.5, help="IOU threshold required to qualify as detected")
     parser.add_argument("--conf_thres", type=float, default=0.01, help="Object confidence threshold")
     parser.add_argument("--nms_thres", type=float, default=0.4, help="IOU threshold for non-maximum suppression")
-    parser.add_argument("--multiple_robot_classes", action="store_true",
-                        help="If multiple robot classes exist and nms shall be performed across all robot classes")
+    parser.add_argument("--class_config", type=str, default="class_config/default.yaml", help="Class configuration for evaluation")
 
     args = parser.parse_args()
     print(f"Command line arguments: {args}")
@@ -231,28 +273,22 @@ def run():
     data_config = parse_data_config(args.data)
     # Path to file containing all images for validation
     valid_path = data_config["valid"]
-    class_names = load_classes(data_config["names"])  # Detection and segmentation class names
 
-    robot_class_ids = None
-    if args.multiple_robot_classes:
-        robot_class_ids = []
-        for idx, c in enumerate(class_names["detection"]):
-            if "robot" in c:
-                robot_class_ids.append(idx)
+    class_names = ClassNames.load_from(data_config["names"])  # Detection and segmentation class names
+    class_config = ClassConfig.load_from(args.class_config, class_names)
 
     evaluate_model_file(
         args.model,
         args.weights,
         valid_path,
-        class_names,
+        class_config,
         batch_size=args.batch_size,
         img_size=args.img_size,
         n_cpu=args.n_cpu,
         iou_thres=args.iou_thres,
         conf_thres=args.conf_thres,
         nms_thres=args.nms_thres,
-        verbose=True,
-        robot_class_ids=robot_class_ids
+        verbose=args.verbose,
     )
 
 
