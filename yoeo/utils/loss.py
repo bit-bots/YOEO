@@ -71,6 +71,9 @@ def compute_loss(combined_predictions, combined_targets, model):
     # Build yolo targets
     tcls, tbox, indices, anchors = build_targets(yolo_predictions, yolo_targets, model)  # targets
 
+    # Define the balance between the losses of the different yolo layers
+    balance = [4.0, 1.0, 0.4] if len(yolo_predictions) == 3 else [4.0, 1.0, 0.25, 0.06, .02]
+
     # Define different loss functions classification
     BCEcls = nn.BCEWithLogitsLoss(
         pos_weight=torch.tensor([1.0], device=device))
@@ -94,9 +97,17 @@ def compute_loss(combined_predictions, combined_targets, model):
 
             # Regression of the box
             # Apply sigmoid to xy offset predictions in each cell that has a target
-            pxy = ps[:, :2].sigmoid()
-            # Apply exponent to wh predictions and multiply with the anchor box that matched best with the label for each cell that has a target
-            pwh = torch.exp(ps[:, 2:4]) * anchors[layer_index]
+
+            # Check if the model has the new_coords system 
+            if model.yolo_layers[layer_index].new_coords:
+                pxy = ps[:, :2].sigmoid()
+                # Apply exponent to wh predictions and multiply with the anchor box that matched best with the label for each cell that has a target
+                pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[layer_index]
+            else:
+                pxy = ps[:, :2].sigmoid()
+                # Apply exponent to wh predictions and multiply with the anchor box that matched best with the label for each cell that has a target
+                pwh = torch.exp(ps[:, 2:4]) * anchors[layer_index]
+
             # Build box out of xy and wh
             pbox = torch.cat((pxy, pwh), 1)
             # Calculate CIoU or GIoU for each target with the predicted box for its cell + anchor
@@ -119,12 +130,12 @@ def compute_loss(combined_predictions, combined_targets, model):
 
         # Classification of the objectness the sequel
         # Calculate the BCE loss between the on the fly generated target and the network prediction
-        lobj += BCEobj(layer_predictions[..., 4], tobj) # obj loss
+        lobj += BCEobj(layer_predictions[..., 4], tobj) * balance[layer_index] # obj loss
 
     # Scalaing of losses
-    lbox *= 0.2
-    lobj *= 10.0
-    lcls *= 0.05
+    lbox *= 0.05
+    lobj *= 1.0
+    lcls *= 0.5
 
     # Merge losses
     loss = lbox + lobj + lcls + seg_loss
