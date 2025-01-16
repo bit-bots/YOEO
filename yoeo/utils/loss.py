@@ -71,9 +71,6 @@ def compute_loss(combined_predictions, combined_targets, model):
     # Build yolo targets
     tcls, tbox, indices, anchors = build_targets(yolo_predictions, yolo_targets, model)  # targets
 
-    # Define the balance between the losses of the different yolo layers
-    balance = [4.0, 1.0, 0.4] if len(yolo_predictions) == 3 else [4.0, 1.0, 0.25, 0.06, .02]
-
     # Define different loss functions classification
     BCEcls = nn.BCEWithLogitsLoss(
         pos_weight=torch.tensor([1.0], device=device))
@@ -130,12 +127,12 @@ def compute_loss(combined_predictions, combined_targets, model):
 
         # Classification of the objectness the sequel
         # Calculate the BCE loss between the on the fly generated target and the network prediction
-        lobj += BCEobj(layer_predictions[..., 4], tobj) * balance[layer_index] # obj loss
+        lobj += BCEobj(layer_predictions[..., 4], tobj) # obj loss
 
     # Scalaing of losses
-    lbox *= 0.05
-    lobj *= 1.0
-    lcls *= 0.5
+    lbox *= 0.2
+    lobj *= 10.0
+    lcls *= 0.05
 
     # Merge losses
     loss = lbox + lobj + lcls + seg_loss
