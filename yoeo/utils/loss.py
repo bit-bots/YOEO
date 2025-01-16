@@ -94,9 +94,17 @@ def compute_loss(combined_predictions, combined_targets, model):
 
             # Regression of the box
             # Apply sigmoid to xy offset predictions in each cell that has a target
-            pxy = ps[:, :2].sigmoid()
-            # Apply exponent to wh predictions and multiply with the anchor box that matched best with the label for each cell that has a target
-            pwh = torch.exp(ps[:, 2:4]) * anchors[layer_index]
+
+            # Check if the model has the new_coords system 
+            if model.yolo_layers[layer_index].new_coords:
+                pxy = ps[:, :2].sigmoid()
+                # Apply exponent to wh predictions and multiply with the anchor box that matched best with the label for each cell that has a target
+                pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[layer_index]
+            else:
+                pxy = ps[:, :2].sigmoid()
+                # Apply exponent to wh predictions and multiply with the anchor box that matched best with the label for each cell that has a target
+                pwh = torch.exp(ps[:, 2:4]) * anchors[layer_index]
+
             # Build box out of xy and wh
             pbox = torch.cat((pxy, pwh), 1)
             # Calculate CIoU or GIoU for each target with the predicted box for its cell + anchor

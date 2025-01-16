@@ -9,6 +9,7 @@ import tqdm
 import numpy as np
 
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.optim as optim
 from torch.autograd import Variable
@@ -138,22 +139,35 @@ def run():
     # Create optimizer
     # ################
 
-    params = [p for p in model.parameters() if p.requires_grad]
+    unregularized_parameters, regularized_parameters = [], []
+    for _, v in model.named_modules():
+        if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):
+            unregularized_parameters.append(v.bias)  # biases
+        if isinstance(v, nn.BatchNorm2d):
+            unregularized_parameters.append(v.weight)  # no decay
+        elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):
+            regularized_parameters.append(v.weight)  # apply decay
+
 
     if (model.hyperparams['optimizer'] in [None, "adam"]):
         optimizer = optim.Adam(
-            params,
+            unregularized_parameters,
             lr=model.hyperparams['learning_rate'],
-            weight_decay=model.hyperparams['decay'],
         )
     elif (model.hyperparams['optimizer'] == "sgd"):
         optimizer = optim.SGD(
-            params,
+            unregularized_parameters,
             lr=model.hyperparams['learning_rate'],
-            weight_decay=model.hyperparams['decay'],
             momentum=model.hyperparams['momentum'])
     else:
         print("Unknown optimizer. Please choose between (adam, sgd).")
+
+    # add normal weights with with weight_decay
+    optimizer.add_param_group({'params': regularized_parameters, 'weight_decay': model.hyperparams['decay']})
+
+    print(f'Optimizer groups: {len(unregularized_parameters)} unregularized, '
+          f'{len(regularized_parameters)} with weight decay')
+    del unregularized_parameters, regularized_parameters
 
     # skip epoch zero, because then the calculations for when to evaluate/checkpoint makes more intuitive sense
     # e.g. when you stop after 30 epochs and evaluate every 10 epochs then the evaluations happen after: 10,20,30
