@@ -55,6 +55,9 @@ assert os.path.exists(args.dataset_collection_dir), f"Is the given path correct?
 dataset_collection_dir = args.dataset_collection_dir
 destination_dir = args.dataset_collection_dir
 
+# Keep track of all classes with base_footprint annotations
+classes_with_base_footprint = set()
+
 # Overwrite defaults, if destination path is given
 if args.destination_dir:
     create_symlinks = True
@@ -85,9 +88,6 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
 
     # Collect file names of images to dump them later to the train.txt or text.txt file
     image_names = []
-
-    # Keep track of all classes with base_footprint annotations
-    classes_with_base_footprint = set()
 
     # Load annotation data from yaml file
     print(f"Loading annotation file: '{partition_annotations_file}'...")
