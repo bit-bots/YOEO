@@ -30,6 +30,7 @@ parser.add_argument("--skip-blurred", action="store_true", help="Skip blurred la
 parser.add_argument("--skip-concealed", action="store_true", help="Skip concealed labels")
 parser.add_argument("--skip-classes", nargs="+", default=[], help="These bounding box classes will be skipped")
 parser.add_argument("--robots-with-team-colors", action="store_true", help="The robot class will be subdivided into subclasses, one for each team color (currently either 'blue', 'red' or 'unknown').")
+parser.add_argument("--add-base-footprint", action="store_true", help="Add base_footprint to bounding box annotations")
 args = parser.parse_args()
 
 # Available classes for YOEO
@@ -138,10 +139,10 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
                 (args.skip_concealed and annotation.get('concealed', False))):
                 continue
             elif class_name in CLASSES['bb_classes']:  # Handle bounding boxes
-                min_x = min(map(lambda x: x[0], annotation['vector']))
-                max_x = max(map(lambda x: x[0], annotation['vector']))
-                min_y = min(map(lambda x: x[1], annotation['vector']))
-                max_y = max(map(lambda x: x[1], annotation['vector']))
+                min_x = min(pt[0] for pt in annotation['vector'])
+                max_x = max(pt[0] for pt in annotation['vector'])
+                min_y = min(pt[1] for pt in annotation['vector'])
+                max_y = max(pt[1] for pt in annotation['vector'])
 
                 annotation_width = max_x - min_x
                 annotation_height = max_y - min_y
@@ -154,8 +155,25 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
                 relative_center_y = center_y / img_height
 
                 # Derive classID from index in predefined classes
-                classID = CLASSES['bb_classes'].index(class_name)                
-                annotations.append(f"{classID} {relative_center_x} {relative_center_y} {relative_annotation_width} {relative_annotation_height}")
+                classID = CLASSES['bb_classes'].index(class_name)
+
+                # Serialize bounding box
+                serialized_bounding_box = f"{classID} {relative_center_x} {relative_center_y} {relative_annotation_width} {relative_annotation_height}"
+
+                # Extract other properties
+                if args.add_base_footprint:
+                    # Default value if key point is not present
+                    base_footprint_x, base_footprint_y = -1, -1
+                    # Check if the annotation exists (some classes do not have base_footprint)
+                    # and is not None (negative label)
+                    if 'base_footprint' in annotation and annotation['base_footprint']:
+                        base_footprint_x = annotation['base_footprint'][0] / img_width
+                        base_footprint_y = annotation['base_footprint'][1] / img_height
+                    # Serialize base_footprint key point
+                    serialized_bounding_box += f" {base_footprint_x} {base_footprint_y}"
+                    
+                # Add row to file
+                annotations.append(serialized_bounding_box)
             else:
                 print(f"The annotation type '{class_name}' is not supported. Image: '{img_name_with_extension}'")
 
