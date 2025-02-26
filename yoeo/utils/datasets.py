@@ -111,7 +111,12 @@ class ListDataset(Dataset):
             # Ignore warning if file is empty
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                boxes = np.loadtxt(label_path).reshape(-1, 5)
+                boxes = np.loadtxt(label_path)
+
+            # We need to provide a number of columns to have the correct shape if there are none
+            if len(boxes) == 0:
+                boxes = boxes.reshape(-1, 7)
+
         except Exception:
             print(f"Could not read label '{label_path}'.")
             return

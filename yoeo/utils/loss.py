@@ -135,12 +135,16 @@ def compute_loss(combined_predictions, combined_targets, model):
 def build_targets(p, targets, model):
     # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
     na, nt = len(model.yolo_layers[0].anchors), targets.shape[0]  # number of anchors, targets
+
+    # Check if we need to build targets for base footprints
+    base_footprint_present = targets.shape[1] > 5
+
     tcls, tbox, indices, anch = [], [], [], []
     gain = torch.ones(7, device=targets.device)  # normalized to gridspace gain
     # Make a tensor that iterates 0-2 for 3 anchors and repeat that as many times as we have target boxes
-    ai = torch.arange(na, device=targets.device).float().view(na, 1).repeat(1, nt)
+    anchor_index = torch.arange(na, device=targets.device).float().view(na, 1).repeat(1, nt)
     # Copy target boxes anchor size times and append an anchor index to each copy the anchor index is also expressed by the new first dimension
-    targets = torch.cat((targets.repeat(na, 1, 1), ai[:, :, None]), 2)
+    targets = torch.cat((targets.repeat(na, 1, 1), anchor_index[:, :, None]), 2)
 
     for i, yolo_layer in enumerate(model.yolo_layers):
         # Scale anchors by the yolo grid cell size so that an anchor with the size of the cell would result in 1

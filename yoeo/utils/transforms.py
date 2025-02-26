@@ -5,6 +5,7 @@ import numpy as np
 import imgaug.augmenters as iaa
 from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
 from imgaug.augmentables.segmaps import SegmentationMapsOnImage
+from imgaug.augmentables.kps import Keypoint, KeypointsOnImage
 
 from .utils import xywh2xyxy_np
 import torchvision.transforms as transforms
@@ -18,29 +19,51 @@ class ImgAug(object):
         # Unpack data
         img, boxes, seg = data
 
-        # Convert xywh to xyxy
+        # Extract base_footprints if they exist
         boxes = np.array(boxes)
-        boxes[:, 1:] = xywh2xyxy_np(boxes[:, 1:])
+        base_footprints = boxes[:, 5:]
+        base_footprints_present = base_footprints.shape[1] > 0
+
+        # Replace -1 with nan as our placeholder for no base_footprint
+        base_footprints[base_footprints==-1] = np.nan
+
+        # Convert xywh to xyxy
+        boxes[:, 1:5] = xywh2xyxy_np(boxes[:, 1:5])
 
         # Convert bounding boxes to imgaug
         bounding_boxes = BoundingBoxesOnImage(
             [BoundingBox(*box[1:], label=box[0]) for box in boxes],
             shape=img.shape)
 
+        # Convert base_footprints to imgaug
+        kps = KeypointsOnImage([
+                Keypoint(*base_footprint) for base_footprint in base_footprints
+            ] if base_footprints_present else [],
+            shape=img.shape
+        )
+
         # Convert sementations to imgaug
         segmentation_mask = SegmentationMapsOnImage(seg, shape=img.shape)
 
         # Apply augmentations
-        img, bounding_boxes, segmentation_mask = self.augmentations(
+        img, bounding_boxes, segmentation_mask, kps = self.augmentations(
             image=img,
             bounding_boxes=bounding_boxes,
-            segmentation_maps=segmentation_mask)
+            segmentation_maps=segmentation_mask,
+            keypoints=kps)
 
         # Clip out of image boxes
         bounding_boxes = bounding_boxes.clip_out_of_image()
 
+        # Disable out of image keypoints
+        for kp in kps.keypoints:
+            if kp.is_out_of_image(img):
+                kp.x = np.nan
+                kp.y = np.nan
+
         # Convert bounding boxes back to numpy
-        boxes = np.zeros((len(bounding_boxes), 5))
+        box_dimension = 5 if not base_footprints_present else 7
+        boxes = np.zeros((len(bounding_boxes), box_dimension))
         for box_idx, box in enumerate(bounding_boxes):
             # Extract coordinates for unpadded + unscaled image
             x1 = box.x1
@@ -55,6 +78,11 @@ class ImgAug(object):
             boxes[box_idx, 3] = (x2 - x1)
             boxes[box_idx, 4] = (y2 - y1)
 
+            # Add base_footprint if it exists
+            if base_footprints_present:
+                boxes[box_idx, 5] = kps.keypoints[box_idx].x
+                boxes[box_idx, 6] = kps.keypoints[box_idx].y
+
         # Convert segmentation back to numpy
         seg = segmentation_mask.get_arr()
 
@@ -68,8 +96,13 @@ class RelativeLabels(object):
     def __call__(self, data):
         img, boxes, seg = data
         h, w, _ = img.shape
+        # Transform boxes to relative coordinates
         boxes[:,[1, 3]] /= w
         boxes[:,[2, 4]] /= h
+        # Transform the base_footprint of the box if it exists
+        if boxes.shape[1] > 5:
+            boxes[:, 5:] /= w
+            boxes[:, 6:] /= h
         return img, boxes, seg
 
 
@@ -80,8 +113,13 @@ class AbsoluteLabels(object):
     def __call__(self, data):
         img, boxes, seg = data
         h, w, _ = img.shape
+        # Transform boxes to absolute coordinates
         boxes[:,[1, 3]] *= w
         boxes[:,[2, 4]] *= h
+        # Transform the base_footprint of the box if it exists
+        if boxes.shape[1] > 5:
+            boxes[:, 5:] *= w
+            boxes[:, 6:] *= h
         return img, boxes, seg
 
 
@@ -102,9 +140,9 @@ class ToTensor(object):
         img, boxes, seg = data
         # Extract image as PyTorch tensor
         img = transforms.ToTensor()(img)
-        seg = transforms.ToTensor()(seg) * 255 # Because troch maps this to 0-1 instead of 0-255
+        seg = transforms.ToTensor()(seg) * 255 # Because torch maps this to 0-1 instead of 0-255
 
-        bb_targets = torch.zeros((len(boxes), 6))
+        bb_targets = torch.zeros((len(boxes), 1 + boxes.shape[1]))
         bb_targets[:, 1:] = transforms.ToTensor()(boxes)
 
         return img, bb_targets, seg

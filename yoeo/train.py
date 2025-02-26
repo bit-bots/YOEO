@@ -167,9 +167,9 @@ def run():
         for batch_i, (_, imgs, bb_targets, mask_targets) in enumerate(tqdm.tqdm(dataloader, desc=f"Training Epoch {epoch}")):
             batches_done = len(dataloader) * epoch + batch_i
 
-            imgs = Variable(imgs.to(device, non_blocking=True))
-            bb_targets = Variable(bb_targets.to(device), requires_grad=False)
-            mask_targets = Variable(mask_targets.to(device=device), requires_grad=False)
+            imgs = imgs.to(device, non_blocking=True)
+            bb_targets = bb_targets.to(device)
+            mask_targets = mask_targets.to(device=device)
 
             outputs = model(imgs)
 
@@ -267,7 +267,7 @@ def run():
                     ("validation/mAP", AP.mean()),
                     ("validation/f1", f1.mean()),
                     ("validation/seg_iou", np.array(seg_class_ious).mean())]
-                
+
                 if metrics_output[2] is not None:
                     evaluation_metrics.append(("validation/secondary_mbACC", metrics_output[2].mbACC()))
 
