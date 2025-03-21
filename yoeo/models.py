@@ -157,7 +157,9 @@ class YOLOLayer(nn.Module):
             x = torch.cat([
                 (x[..., 0:2].sigmoid() + self.grid) * stride,  # xy
                 torch.exp(x[..., 2:4]) * self.anchor_grid, # wh
-                x[..., 4:].sigmoid(),
+                x[..., 4:-3].sigmoid(),
+                x[..., -3, None].sigmoid(), # basefootprint confidence
+                (x[..., -2:].tan() + self.grid) * stride # basefoot print xy
             ], axis=4).view(bs, -1, self.no)
 
         return x

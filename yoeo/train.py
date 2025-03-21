@@ -216,7 +216,7 @@ def run():
                         ["Class loss", float(loss_components[2])],
                         ["Base footprint point loss", float(loss_components[3])],
                         ["Base footprint visibility loss", float(loss_components[4])],
-                        ["Loss", float(loss_components[5])],
+                        ["Segmentation loss", float(loss_components[5])],
                         ["Batch loss", to_cpu(loss).item()],
                     ]).table)
 

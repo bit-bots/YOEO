@@ -76,8 +76,6 @@ def compute_loss(combined_predictions, combined_targets, model):
     # Build yolo targets
     yolo_targets = build_targets(yolo_predictions, yolo_targets, model)  # targets
 
-    print(yolo_targets)
-
     # Define different loss functions classification
     BCEcls = nn.BCEWithLogitsLoss(
         pos_weight=torch.tensor([1.0], device=device))
@@ -132,7 +130,8 @@ def compute_loss(combined_predictions, combined_targets, model):
                 # Get the base footprints and the visibility of the base footprints
                 base_footprints, base_footprint_visible = yolo_targets['base_footprint'][layer_index]
                 # Calculate the MSE loss between the predicted base footprints and the target base footprints
-                lbasepoint += MSE(ps[:, -2:][base_footprint_visible], base_footprints[base_footprint_visible])
+                if base_footprint_visible.any():
+                    lbasepoint += MSE(ps[:, -2:][base_footprint_visible], torch.arctan(base_footprints[base_footprint_visible]))
                 # Do binary classification of the visibility of the base footprints
                 lbasevisible += BCEcls(ps[:, -3], base_footprint_visible.type_as(ps))
 
@@ -148,7 +147,7 @@ def compute_loss(combined_predictions, combined_targets, model):
     lbasevisible *= 1.0
 
     # Merge losses
-    loss = lbox + lobj + lcls # +  seg_loss # + lbasepoint + lbasevisible
+    loss = lbox + lobj + lcls + seg_loss + lbasepoint + lbasevisible
 
     return loss, to_cpu(torch.cat((lbox, lobj, lcls, lbasepoint, lbasevisible, seg_loss, loss)))
 

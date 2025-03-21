@@ -67,10 +67,10 @@ def evaluate_model_file(model_path, weights_path, img_path, class_config, batch_
     return metrics_output, seg_class_ious, secondary_metric
 
 
-def print_eval_stats(metrics_output: Optional[Tuple[np.ndarray]], 
-                     seg_class_ious: List[np.float64], 
-                     secondary_metric: Optional[Metric], 
-                     class_config: ClassConfig, 
+def print_eval_stats(metrics_output: Optional[Tuple[np.ndarray]],
+                     seg_class_ious: List[np.float64],
+                     secondary_metric: Optional[Metric],
+                     class_config: ClassConfig,
                      verbose: bool
                      ):
     # Print detection statistics
@@ -80,7 +80,7 @@ def print_eval_stats(metrics_output: Optional[Tuple[np.ndarray]],
         if verbose:
             # Prints class AP and mean AP
             ap_table = [["Index", "Class", "AP"]]
-            class_names = class_config.get_squeezed_det_class_names()
+            class_names = class_config.get_ungrouped_det_class_names()
             for i, c in enumerate(ap_class):
                 ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
             print(AsciiTable(ap_table).table)
@@ -95,7 +95,7 @@ def print_eval_stats(metrics_output: Optional[Tuple[np.ndarray]],
         if verbose:
             classes = class_config.get_group_class_names()
             mbACC_per_class = [secondary_metric.bACC(i) for i in range(len(classes))]
-                        
+
             sec_table = [["Index", "Class", "bACC"]]
             for i, c in enumerate(classes):
                 sec_table += [[i, c, "%.5f" % mbACC_per_class[i]]]
@@ -157,7 +157,7 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
         # Extract labels
         labels += bb_targets[:, 1].tolist()
 
-        # If a subset of the detection classes should be grouped into one class for non-maximum suppression and the 
+        # If a subset of the detection classes should be grouped into one class for non-maximum suppression and the
         # subsequent AP-computation, we need to group those class labels here.
         if class_config.classes_should_be_grouped():
             labels = class_config.group(labels)
@@ -180,9 +180,9 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
             )
 
         sample_stat, secondary_stat = get_batch_statistics(
-            yolo_outputs, 
-            bb_targets, 
-            iou_threshold=iou_thres, 
+            yolo_outputs,
+            bb_targets,
+            iou_threshold=iou_thres,
             group_config=class_config.get_group_config()
         )
 
@@ -202,7 +202,7 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
     # Concatenate sample statistics
     true_positives, pred_scores, pred_labels = [
         np.concatenate(x, 0) for x in list(zip(*sample_metrics))]
-    
+
     yolo_metrics_output = ap_per_class(
         true_positives, pred_scores, pred_labels, labels)
 

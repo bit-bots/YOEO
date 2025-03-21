@@ -93,6 +93,7 @@ def rescale_boxes_to_original_padded_img_size(boxes, output_img_size: int, origi
 
     scale_factor = original_max_size / output_img_size
     boxes[:, 0:4] = boxes[:, 0:4] * scale_factor
+    boxes[:, -2:] = boxes[:, -2:] * scale_factor
 
     return boxes
 
@@ -117,6 +118,8 @@ def unpad_box_coordinates(boxes, original_img_size: Tuple[int, int]):
     boxes[:, 1] = boxes[:, 1] - padding_top
     boxes[:, 2] = boxes[:, 2] - padding_left
     boxes[:, 3] = boxes[:, 3] - padding_top
+    boxes[:, -2] = boxes[:, -2] - padding_left
+    boxes[:, -1] = boxes[:, -1] - padding_top
 
     return boxes
 
@@ -164,7 +167,7 @@ def rescale_segmentation_to_original_padded_img_size(segmentation, original_max_
 def unpad_segmentation(segmentation, original_img_size: Tuple[int, int]):
     """
     Remove paddings, thereby restoring the original image size
-    
+
     :param segmentation: segmentation output
     :type segmentation: torch.Tensor with shape (1, height, width) and height == width
     :param original_img_size: original image size (height, width)
@@ -288,9 +291,9 @@ def compute_ap(recall, precision):
     return ap
 
 
-def get_batch_statistics(outputs, 
-                         targets, 
-                         iou_threshold, 
+def get_batch_statistics(outputs,
+                         targets,
+                         iou_threshold,
                          group_config: Optional[GroupConfig] = None
                          ) -> Tuple[List, Optional[Metric]]:
     """
@@ -374,7 +377,7 @@ def get_batch_statistics(outputs,
 
     return batch_metrics, secondary_metric
 
-def compute_secondary_labels(labels: torch.tensor, group_ids: torch.tensor) -> torch.tensor: 
+def compute_secondary_labels(labels: torch.tensor, group_ids: torch.tensor) -> torch.tensor:
     secondary_labels = labels.clone()
 
     # We replace the actual class labels with values from {0, ...} for classes that should be grouped into a
@@ -382,7 +385,7 @@ def compute_secondary_labels(labels: torch.tensor, group_ids: torch.tensor) -> t
     for idx, squeeze_id in enumerate(group_ids):
         # Replace label with value in {0, ...}
         secondary_labels[labels == squeeze_id] = idx
-        
+
         # Replace all other labels with -1
         secondary_labels[torch.logical_not(torch.isin(labels, group_ids))] = -1
 
@@ -469,14 +472,14 @@ def box_iou(box1, box2):
 def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None,
                         group_config: Optional[GroupConfig] = None):
     """
-    Performs Non-Maximum Suppression (NMS) on inference results. If 'group_config' is not 'None', the contained 
+    Performs Non-Maximum Suppression (NMS) on inference results. If 'group_config' is not 'None', the contained
     classes will be treated as one class ('GroupConfig.surrogate_id') during non-maximum supression.
-    
+
     Returns:
          detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
     """
 
-    nc = prediction.shape[2] - 5  # number of classes
+    nc = prediction.shape[2] - 5 - 3 # number of classes
 
     # Settings
     # (pixels) minimum and maximum box width and height
@@ -501,18 +504,18 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
             continue
 
         # Compute conf
-        x[:, 5:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
+        x[:, 5:-3] *= x[:, 4:5]  # conf = obj_conf * cls_conf
 
         # Box (center x, center y, width, height) to (x1, y1, x2, y2)
         box = xywh2xyxy(x[:, :4])
 
-        # Detections matrix nx6 (xyxy, conf, cls)
+        # Detections matrix nx6 (xyxy, conf, cls, base_footprint_visiblity, base_footprint_x, base_footprint_y)
         if multi_label:
-            i, j = (x[:, 5:] > conf_thres).nonzero(as_tuple=False).T
-            x = torch.cat((box[i], x[i, j + 5, None], j[:, None].float()), 1)
+            i, j = (x[:, 5:-3] > conf_thres).nonzero(as_tuple=False).T
+            x = torch.cat((box[i], x[i, j + 5, None], j[:, None].float(), x[i, -3:]), 1)
         else:  # best class only
-            conf, j = x[:, 5:].max(1, keepdim=True)
-            x = torch.cat((box, conf, j.float()), 1)[conf.view(-1) > conf_thres]
+            conf, j = x[:, 5:-3].max(1, keepdim=True)
+            x = torch.cat((box, conf, j.float(), x[i, -3:]), 1)[conf.view(-1) > conf_thres]
 
         # Filter by class
         if classes is not None:
@@ -530,7 +533,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
         if group_config is None:
             c = x[:, 5:6] * max_wh  # classes
         else:
-            # If for example multiple robot classes are present, all robot classes are treated as one class in order 
+            # If for example multiple robot classes are present, all robot classes are treated as one class in order
             # to perform nms across all classes and not per class. For this, all robot classes get the same offset.
             c = torch.clone(x[:, 5:6])
             c[torch.isin(c, group_ids)] = group_config.surrogate_id

@@ -14,7 +14,9 @@ class ClassNames:
 
     @classmethod
     def load_from(cls, path: str) -> ClassNames:
+        print(path)
         file_content = cls._read_yaml_file(path)
+        print(file_content)
         class_names = cls._parse_yaml_file(file_content)
 
         return class_names

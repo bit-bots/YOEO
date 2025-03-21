@@ -58,7 +58,7 @@ class ImgAug(object):
         # Disable out of image keypoints
         for kp in kps.keypoints:
             if kp.is_out_of_image(img):
-                print(f"Keypoint out of image: {kp.x}, {kp.y} for image of shape {img.shape}")
+                #print(f"Keypoint out of image: {kp.x}, {kp.y} for image of shape {img.shape}")
                 kp.x = np.nan
                 kp.y = np.nan
 
