@@ -214,8 +214,9 @@ def run():
                         ["IoU loss", float(loss_components[0])],
                         ["Object loss", float(loss_components[1])],
                         ["Class loss", float(loss_components[2])],
-                        ["Segmentation loss", float(loss_components[3])],
-                        ["Loss", float(loss_components[4])],
+                        ["Base footprint point loss", float(loss_components[3])],
+                        ["Base footprint visibility loss", float(loss_components[4])],
+                        ["Loss", float(loss_components[5])],
                         ["Batch loss", to_cpu(loss).item()],
                     ]).table)
 
@@ -224,7 +225,9 @@ def run():
                 ("train/iou_loss", float(loss_components[0])),
                 ("train/obj_loss", float(loss_components[1])),
                 ("train/class_loss", float(loss_components[2])),
-                ("train/seg_loss", float(loss_components[3])),
+                ("train/base_footprint_point_loss", float(loss_components[3])),
+                ("train/base_footprint_visibility_loss", float(loss_components[4])),
+                ("train/seg_loss", float(loss_components[5])),
                 ("train/loss", to_cpu(loss).item())]
             logger.list_of_scalars_summary(tensorboard_log, batches_done)
 

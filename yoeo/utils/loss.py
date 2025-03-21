@@ -1,4 +1,5 @@
 import math
+from collections import defaultdict
 
 import torch
 import torch.nn as nn
@@ -66,10 +67,16 @@ def compute_loss(combined_predictions, combined_targets, model):
     seg_loss = nn.CrossEntropyLoss()(seg_predictions[0], seg_targets).unsqueeze(0)
 
     # Add placeholder varables for the different losses
-    lcls, lbox, lobj = torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device)
+    lcls = torch.zeros(1, device=device)
+    lbox = torch.zeros(1, device=device)
+    lobj = torch.zeros(1, device=device)
+    lbasepoint = torch.zeros(1, device=device)
+    lbasevisible = torch.zeros(1, device=device)
 
     # Build yolo targets
-    tcls, tbox, indices, anchors = build_targets(yolo_predictions, yolo_targets, model)  # targets
+    yolo_targets = build_targets(yolo_predictions, yolo_targets, model)  # targets
+
+    print(yolo_targets)
 
     # Define different loss functions classification
     BCEcls = nn.BCEWithLogitsLoss(
@@ -77,10 +84,13 @@ def compute_loss(combined_predictions, combined_targets, model):
     BCEobj = nn.BCEWithLogitsLoss(
         pos_weight=torch.tensor([1.0], device=device))
 
+    # Define the loss for regression
+    MSE = nn.MSELoss()
+
     # Calculate losses for each yolo layer
     for layer_index, layer_predictions in enumerate(yolo_predictions):
         # Get image ids, anchors, grid index i and j for each target in the current yolo layer
-        b, anchor, grid_j, grid_i = indices[layer_index]
+        b, anchor, grid_j, grid_i = yolo_targets['indices'][layer_index]
         # Build empty object target tensor with the same shape as the object prediction
         tobj = torch.zeros_like(layer_predictions[..., 0], device=device)  # target obj
         # Get the number of targets for this layer.
@@ -96,11 +106,11 @@ def compute_loss(combined_predictions, combined_targets, model):
             # Apply sigmoid to xy offset predictions in each cell that has a target
             pxy = ps[:, :2].sigmoid()
             # Apply exponent to wh predictions and multiply with the anchor box that matched best with the label for each cell that has a target
-            pwh = torch.exp(ps[:, 2:4]) * anchors[layer_index]
+            pwh = torch.exp(ps[:, 2:4]) * yolo_targets['anchor'][layer_index]
             # Build box out of xy and wh
             pbox = torch.cat((pxy, pwh), 1)
             # Calculate CIoU or GIoU for each target with the predicted box for its cell + anchor
-            iou = bbox_iou(pbox.T, tbox[layer_index], x1y1x2y2=False, CIoU=True)
+            iou = bbox_iou(pbox.T, yolo_targets['box'][layer_index], x1y1x2y2=False, CIoU=True)
             # We want to minimize our loss so we and the best possible IoU is 1 so we take 1 - IoU and reduce it with a mean
             lbox += (1.0 - iou).mean()  # iou loss
 
@@ -113,9 +123,18 @@ def compute_loss(combined_predictions, combined_targets, model):
             if ps.size(1) - 5 > 1:
                 # Hot one class encoding
                 t = torch.zeros_like(ps[:, 5:], device=device)  # targets
-                t[range(num_targets), tcls[layer_index]] = 1
+                t[range(num_targets), yolo_targets['class'][layer_index]] = 1
                 # Use the tensor to calculate the BCE loss
                 lcls += BCEcls(ps[:, 5:], t)  # BCE
+
+            # Check if we need to calculate the base footprint loss
+            if 'base_footprint' in yolo_targets:
+                # Get the base footprints and the visibility of the base footprints
+                base_footprints, base_footprint_visible = yolo_targets['base_footprint'][layer_index]
+                # Calculate the MSE loss between the predicted base footprints and the target base footprints
+                lbasepoint += MSE(ps[:, -2:][base_footprint_visible], base_footprints[base_footprint_visible])
+                # Do binary classification of the visibility of the base footprints
+                lbasevisible += BCEcls(ps[:, -3], base_footprint_visible.type_as(ps))
 
         # Classification of the objectness the sequel
         # Calculate the BCE loss between the on the fly generated target and the network prediction
@@ -125,11 +144,13 @@ def compute_loss(combined_predictions, combined_targets, model):
     lbox *= 0.2
     lobj *= 10.0
     lcls *= 0.05
+    lbasepoint *= 1.0
+    lbasevisible *= 1.0
 
     # Merge losses
-    loss = lbox + lobj + lcls + seg_loss
+    loss = lbox + lobj + lcls # +  seg_loss # + lbasepoint + lbasevisible
 
-    return loss, to_cpu(torch.cat((lbox, lobj, lcls, seg_loss, loss)))
+    return loss, to_cpu(torch.cat((lbox, lobj, lcls, lbasepoint, lbasevisible, seg_loss, loss)))
 
 
 def build_targets(p, targets, model):
@@ -139,8 +160,9 @@ def build_targets(p, targets, model):
     # Check if we need to build targets for base footprints
     base_footprint_present = targets.shape[1] > 5
 
-    tcls, tbox, indices, anch = [], [], [], []
-    gain = torch.ones(7, device=targets.device)  # normalized to gridspace gain
+    # Initialize the output dictionary
+    output = defaultdict(list)
+
     # Make a tensor that iterates 0-2 for 3 anchors and repeat that as many times as we have target boxes
     anchor_index = torch.arange(na, device=targets.device).float().view(na, 1).repeat(1, nt)
     # Copy target boxes anchor size times and append an anchor index to each copy the anchor index is also expressed by the new first dimension
@@ -149,48 +171,73 @@ def build_targets(p, targets, model):
     for i, yolo_layer in enumerate(model.yolo_layers):
         # Scale anchors by the yolo grid cell size so that an anchor with the size of the cell would result in 1
         anchors = yolo_layer.anchors / yolo_layer.stride
+
+        # Get the grid size of the yolo layer
+        grid_size_x, grid_size_y = p[i].shape[3], p[i].shape[2]
+
         # Add the number of yolo cells in this layer the gain tensor
-        # The gain tensor matches the collums of our targets (img id, class, x, y, w, h, anchor id)
-        gain[2:6] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
+        # The gain tensor matches the columns of our targets (img id, class, x, y, w, h, [base footprint x, base footprint y,] anchor id)
+        if base_footprint_present:
+            # Keep non spatial values the same
+            gain = [1, 1, grid_size_x, grid_size_y, grid_size_x, grid_size_y, grid_size_x, grid_size_y, 1]
+        else:
+            # Keep non spatial values the same
+            gain = [1, 1, grid_size_x, grid_size_y, grid_size_x, grid_size_y, 1]
+        # Create a tensor out of the gain list
+        gain = torch.tensor(gain, device=targets.device, dtype=torch.long)
         # Scale targets by the number of yolo layer cells, they are now in the yolo cell coordinate system
         t = targets * gain
-        # Check if we have targets
-        if nt:
-            t = t.squeeze(0)
-            # Check if we use anchor boxes
-            if na != 1:
-                # Calculate ratio between anchor and target box for both width and height
-                r = t[:, :, 4:6] / anchors[:, None]
-                # Select the ratios that have the highest divergence in any axis and check if the ratio is less than 4
-                j = torch.max(r, 1. / r).max(2)[0] < 4
-                # Only use targets that have the correct ratios for their anchors
-                # That means we only keep ones that have a matching anchor and we loose the anchor dimension
-                # The anchor id is still saved in the 7th value of each target
-                t = t[j]
-        else:
-            t = targets[0]
+
+        # Remove anchor dimension if possible
+        t = t.squeeze(0)
+        # Check if we use anchor boxes
+        if na != 1:
+            # Calculate ratio between anchor and target box for both width and height
+            r = t[:, :, 4:6] / anchors[:, None]
+            # Select the ratios that have the highest divergence in any axis and check if the ratio is less than 4
+            j = torch.max(r, 1. / r).max(2)[0] < 4
+            # Only use targets that have the correct ratios for their anchors
+            # That means we only keep ones that have a matching anchor and we loose the anchor dimension
+            # The anchor id is still saved in the 7th value of each target
+            t = t[j]
 
         # Extract image id in batch and class id
         b, c = t[:, :2].long().T
         # We isolate the target cell associations.
-        # x, y, w, h are allready in the cell coordinate system meaning an x = 1.2 would be 1.2 times cellwidth
-        gxy = t[:, 2:4]
-        gwh = t[:, 4:6]  # grid wh
+        # x, y, w, h are already in the cell coordinate system meaning an x = 1.2 would be 1.2 times cell width
+        gxy = t[:, 2:4]  # xy in grid cell coordinates
+        gwh = t[:, 4:6]  # wh in grid cell coordinates
         # Cast to int to get an cell index e.g. 1.2 gets associated to cell 1
         gij = gxy.long()
         # Isolate x and y index dimensions
         gi, gj = gij.T  # grid xy indices
+        # Get the x and y coordinates in the coordinate system of the cell
+        rxy = gxy - gij
 
         # Convert anchor indexes to int
-        a = t[:, 6].long()
+        a = t[:, -1].long()
+
+        # Check if we need to build targets for base footprints
+        if base_footprint_present:
+            # Extract the base footprints from the target tensor
+            gbxy = t[:, 6:8]
+            # Get the base footprints in the coordinate system of the cell of the corresponding object
+            rbxy = gbxy - gij
+            # Check if we have any nan values in the base footprints
+            # We use them to indicate that the base footprint is not visible
+            # We want to ignore those in the loss calculation and have them as a separate classification target
+            base_footprint_visible = ~torch.isnan(rbxy).any(1)
+            # Add the base footprints to the target lists
+            output['base_footprint'].append((rbxy, base_footprint_visible))
+
         # Add target tensors for this yolo layer to the output lists
         # Add to index list and limit index range to prevent out of bounds
-        indices.append((b, a, gj.clamp_(0, gain[3].long() - 1), gi.clamp_(0, gain[2].long() - 1)))
+        output['indices'].append((b, a, gj.clamp_(0, grid_size_x - 1), gi.clamp_(0, grid_size_y - 1)))
         # Add to target box list and convert box coordinates from global grid coordinates to local offsets in the grid cell
-        tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
+        output['box'].append(torch.cat((rxy, gwh), 1))  # box
         # Add correct anchor for each target to the list
-        anch.append(anchors[a])
+        output['anchor'].append(anchors[a])
         # Add class for each target to the list
-        tcls.append(c)
+        output['class'].append(c)
 
-    return tcls, tbox, indices, anch
+    return output

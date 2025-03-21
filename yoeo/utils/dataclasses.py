@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 class ClassNames:
     detection: List[str]
     segmentation: List[str]
+    base_footprint: List[str]
 
     @classmethod
     def load_from(cls, path: str) -> ClassNames:
@@ -21,7 +22,7 @@ class ClassNames:
     @staticmethod
     def _parse_yaml_file(content: Dict[Any, Any]) -> ClassNames:
         return ClassNames(**content)
-    
+
     @staticmethod
     def _read_yaml_file(path: str) -> Dict[Any, Any]:
         with open(path, "r") as f:

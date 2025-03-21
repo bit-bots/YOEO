@@ -32,7 +32,7 @@ class ImgAug(object):
 
         # Convert bounding boxes to imgaug
         bounding_boxes = BoundingBoxesOnImage(
-            [BoundingBox(*box[1:], label=box[0]) for box in boxes],
+            [BoundingBox(*box[1:5], label=box[0]) for box in boxes],
             shape=img.shape)
 
         # Convert base_footprints to imgaug
@@ -58,6 +58,7 @@ class ImgAug(object):
         # Disable out of image keypoints
         for kp in kps.keypoints:
             if kp.is_out_of_image(img):
+                print(f"Keypoint out of image: {kp.x}, {kp.y} for image of shape {img.shape}")
                 kp.x = np.nan
                 kp.y = np.nan
 
@@ -101,8 +102,8 @@ class RelativeLabels(object):
         boxes[:,[2, 4]] /= h
         # Transform the base_footprint of the box if it exists
         if boxes.shape[1] > 5:
-            boxes[:, 5:] /= w
-            boxes[:, 6:] /= h
+            boxes[:, 5] /= w
+            boxes[:, 6] /= h
         return img, boxes, seg
 
 
@@ -118,8 +119,8 @@ class AbsoluteLabels(object):
         boxes[:,[2, 4]] *= h
         # Transform the base_footprint of the box if it exists
         if boxes.shape[1] > 5:
-            boxes[:, 5:] *= w
-            boxes[:, 6:] *= h
+            boxes[:, 5] *= w
+            boxes[:, 6] *= h
         return img, boxes, seg
 
 

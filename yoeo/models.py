@@ -135,7 +135,7 @@ class YOLOLayer(nn.Module):
         self.num_classes = num_classes
         self.mse_loss = nn.MSELoss()
         self.bce_loss = nn.BCELoss()
-        self.no = num_classes + 5  # number of outputs per anchor
+        self.no = num_classes + 5 + 3   # TODO make basefootprint param    # number of outputs per anchor
         self.grid = torch.zeros(1)  # TODO
 
         anchors = torch.tensor(list(chain(*anchors))).float().view(-1, 2)
