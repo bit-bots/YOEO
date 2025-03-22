@@ -157,6 +157,9 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
         # Extract labels
         labels += bb_targets[:, 1].tolist()
 
+        # Remove the base footprint annotation from the target
+        bb_targets = bb_targets[:, :-2]
+
         # If a subset of the detection classes should be grouped into one class for non-maximum suppression and the
         # subsequent AP-computation, we need to group those class labels here.
         if class_config.classes_should_be_grouped():

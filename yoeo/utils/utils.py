@@ -321,7 +321,7 @@ def get_batch_statistics(outputs,
         if outputs[sample_i] is None:
             continue
 
-        output = outputs[sample_i]
+        output = outputs[sample_i][..., :-3]
         pred_boxes = output[:, :4]
         pred_scores = output[:, 4]
         pred_labels = output[:, -1]
@@ -490,7 +490,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
 
     t = time.time()
-    output = [torch.zeros((0, 6), device="cpu")] * prediction.shape[0]
+    output = [torch.zeros((0, 9), device="cpu")] * prediction.shape[0]
     if group_config:
         group_ids = torch.tensor(group_config.group_ids, device=prediction.device, dtype=prediction.dtype)
 
