@@ -269,7 +269,12 @@ def run():
                     ("validation/recall", recall.mean()),
                     ("validation/mAP", AP.mean()),
                     ("validation/f1", f1.mean()),
-                    ("validation/seg_iou", np.array(seg_class_ious).mean())]
+                    ("validation/seg_iou", np.array(seg_class_ious).mean()),
+                    ("validation/base_footprint_dist", metrics_output[3]['keypoint_distance']),
+                    ("validation/base_footprint_visibility_precision", metrics_output[3]['precision']),
+                    ("validation/base_footprint_visibility_recall", metrics_output[3]['recall']),
+                    ("validation/base_footprint_visibility_f1", metrics_output[3]['f1'])
+                ]
 
                 if metrics_output[2] is not None:
                     evaluation_metrics.append(("validation/secondary_mbACC", metrics_output[2].mbACC()))

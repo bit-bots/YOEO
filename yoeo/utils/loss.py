@@ -143,8 +143,8 @@ def compute_loss(combined_predictions, combined_targets, model):
     lbox *= 0.2
     lobj *= 10.0
     lcls *= 0.05
-    lbasepoint *= 1.0
-    lbasevisible *= 1.0
+    lbasepoint *= 0.5
+    lbasevisible *= 0.1
 
     # Merge losses
     loss = lbox + lobj + lcls + seg_loss + lbasepoint + lbasevisible

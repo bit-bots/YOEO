@@ -321,16 +321,27 @@ def get_batch_statistics(outputs,
         if outputs[sample_i] is None:
             continue
 
-        output = outputs[sample_i][..., :-3]
+        output = outputs[sample_i]
         pred_boxes = output[:, :4]
         pred_scores = output[:, 4]
-        pred_labels = output[:, -1]
+        pred_labels = output[:, 5]
+        pred_base_footprint_visibility = output[:, -3]
+        pred_base_footprint_point = output[:, -2:]
 
         if grouping_active:
             sec_pred_labels = compute_secondary_labels(pred_labels, group_ids)
             pred_labels = group_primary_labels(pred_labels, group_ids, group_config.surrogate_id)
 
         true_positives = np.zeros(pred_boxes.shape[0])
+
+        # Base footprint visibility confusion matrix
+        base_bootprint_visibility_tp = 0
+        base_bootprint_visibility_fn = 0
+        base_bootprint_visibility_fp = 0
+        base_bootprint_visibility_tn = 0
+
+        # Base footprint point distances
+        base_footprint_point_distances = []
 
         annotations = targets[targets[:, 0] == sample_i][:, 1:]
         target_labels = annotations[:, 0] if len(annotations) else []
@@ -341,7 +352,7 @@ def get_batch_statistics(outputs,
 
         if len(annotations):
             detected_boxes = []
-            target_boxes = annotations[:, 1:]
+            target_boxes = annotations[:, 1:-2]
 
             for pred_i, (pred_box, pred_label) in enumerate(zip(pred_boxes, pred_labels)):
                 # If targets are found break
@@ -367,13 +378,43 @@ def get_batch_statistics(outputs,
                     true_positives[pred_i] = 1
                     detected_boxes += [box_index]
 
+                    # Check if the base footprint visibility is correct
+                    target_box_base_footprint_visibility = ~torch.isnan(annotations[box_index, -2:]).any()
+                    pred_box_base_footprint_visibility = pred_base_footprint_visibility[pred_i] > 0.5 # TODO configurable threshold
+
+                    if target_box_base_footprint_visibility and pred_box_base_footprint_visibility:
+                        base_bootprint_visibility_tp += 1
+
+                        # If the base footprint visibility is correct we can look at the x and y coordinates
+                        target_base_footprint_point = annotations[box_index, -2:]
+
+                        # Calculate the euclidean distance between the target and predicted base footprint point
+                        base_footprint_point_distance = torch.dist(target_base_footprint_point, pred_base_footprint_point[pred_i])
+
+                        # Base footprint point distances
+                        base_footprint_point_distances.append(base_footprint_point_distance)
+                    elif target_box_base_footprint_visibility and not pred_box_base_footprint_visibility:
+                        base_bootprint_visibility_fn += 1
+                    elif not target_box_base_footprint_visibility and pred_box_base_footprint_visibility:
+                        base_bootprint_visibility_fp += 1
+                    else:
+                        base_bootprint_visibility_tn += 1
+
                 if grouping_active:
                     sec_pred_label = sec_pred_labels[pred_i]
 
                     if pred_label in group_ids:
                         secondary_metric.update(sec_pred_label.int(), sec_target_labels[box_index].int())
 
-        batch_metrics.append([true_positives, pred_scores, pred_labels])
+        batch_metrics.append([
+            true_positives,
+            pred_scores,
+            pred_labels,
+            np.array([base_bootprint_visibility_tp]),
+            np.array([base_bootprint_visibility_fn]),
+            np.array([base_bootprint_visibility_fp]),
+            np.array([base_bootprint_visibility_tn]),
+            np.array(base_footprint_point_distances)])
 
     return batch_metrics, secondary_metric
 
