@@ -54,10 +54,48 @@ class ImageFolder(Dataset):
 
     def __len__(self):
         return len(self.files)
+    
+
+class NegativeDataset(Dataset):
+    def __init__(self, folder_path, img_size=416, transform=None,negative_dataset_max_len=0):
+        self.img_size = img_size
+        self.transform = transform
+        self.negative_dataset_max_len = negative_dataset_max_len
+        if folder_path:
+            self.files = sorted(glob.glob("%s/*.*" % folder_path))[:self.negative_dataset_max_len]
+        else:
+            self.files = []
+            
+    def __getitem__(self, index):
+        img_path = self.files[index % len(self.files)]
+        img = np.array(
+            Image.open(img_path).convert('RGB'),
+            dtype=np.uint8)
+        
+        # Label Placeholder
+        bb_targets = np.zeros((1, 5))
+        mask_targets = np.zeros_like(img)
+
+        # -----------
+        #  Transform
+        # -----------
+        if self.transform:
+            try:
+                img, bb_targets, mask_targets = self.transform(
+                    (img, bb_targets, mask_targets)
+                )
+            except Exception as e:
+                print(f"Could not apply transform.")
+                raise e
+
+        return img_path, img, bb_targets, mask_targets
+
+    def __len__(self):
+        return len(self.files)
 
 
 class ListDataset(Dataset):
-    def __init__(self, list_path, img_size=416, multiscale=True, transform=None):
+    def __init__(self, list_path, img_size: int =416, multiscale=True, transform=None):
         with open(list_path, "r") as file:
             self.img_files = file.readlines()
 
@@ -81,7 +119,7 @@ class ListDataset(Dataset):
             mask_file = os.path.splitext(mask_file)[0] + '.png'
             self.mask_files.append(mask_file)
 
-        self.img_size = img_size
+        self.img_size: int = img_size
         self.max_objects = 100
         self.multiscale = multiscale
         self.min_size = self.img_size - 3 * 32
@@ -94,9 +132,8 @@ class ListDataset(Dataset):
         # ---------
         #  Image
         # ---------
+        img_path = self.img_files[index % len(self.img_files)].rstrip()
         try:
-            img_path = self.img_files[index % len(self.img_files)].rstrip()
-
             img = np.array(Image.open(img_path).convert('RGB'), dtype=np.uint8)
         except Exception:
             print(f"Could not read image '{img_path}'.")
@@ -105,9 +142,8 @@ class ListDataset(Dataset):
         # ---------
         #  Label
         # ---------
+        label_path = self.label_files[index % len(self.img_files)].rstrip()
         try:
-            label_path = self.label_files[index % len(self.img_files)].rstrip()
-
             # Ignore warning if file is empty
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -119,8 +155,8 @@ class ListDataset(Dataset):
         # ---------
         #  Segmentation Mask
         # ---------
+        mask_path = self.mask_files[index % len(self.img_files)].rstrip()
         try:
-            mask_path = self.mask_files[index % len(self.img_files)].rstrip()
             # Load segmentation mask as numpy array
             mask = np.array(Image.open(mask_path).convert('RGB'))
         except FileNotFoundError as e:
@@ -138,7 +174,6 @@ class ListDataset(Dataset):
             except Exception as e:
                 print(f"Could not apply transform.")
                 raise e
-                return
 
         return img_path, img, bb_targets, mask_targets
 
@@ -147,7 +182,6 @@ class ListDataset(Dataset):
 
         # Drop invalid images
         batch = [data for data in batch if data is not None]
-
         paths, imgs, bb_targets, mask_targets = list(zip(*batch))
 
         # Selects new image size every tenth batch
