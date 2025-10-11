@@ -50,12 +50,11 @@ def evaluate_model_file(model_path, weights_path, img_path, class_config, batch_
     :type nms_thres: float, optional
     :param verbose: If True, prints stats of model, defaults to True
     :type verbose: bool, optional
-    :return: Returns precision, recall, AP, f1, ap_class
     """
     dataloader = _create_validation_data_loader(
         img_path, batch_size, img_size, n_cpu)
     model = load_model(model_path, weights_path)
-    metrics_output, seg_class_ious, secondary_metric = _evaluate(
+    metrics_output, seg_class_ious, secondary_metric, base_footprint_metric  = _evaluate(
         model,
         dataloader,
         class_config,
@@ -64,13 +63,14 @@ def evaluate_model_file(model_path, weights_path, img_path, class_config, batch_
         conf_thres,
         nms_thres,
         verbose)
-    return metrics_output, seg_class_ious, secondary_metric
+    return metrics_output, seg_class_ious, secondary_metric, base_footprint_metric
 
 
-def print_eval_stats(metrics_output: Optional[Tuple[np.ndarray]], 
-                     seg_class_ious: List[np.float64], 
-                     secondary_metric: Optional[Metric], 
-                     class_config: ClassConfig, 
+def print_eval_stats(metrics_output: Optional[Tuple[np.ndarray]],
+                     seg_class_ious: List[np.float64],
+                     secondary_metric: Optional[Metric],
+                     base_footprint_metrics: dict[str, float],
+                     class_config: ClassConfig,
                      verbose: bool
                      ):
     # Print detection statistics
@@ -80,7 +80,7 @@ def print_eval_stats(metrics_output: Optional[Tuple[np.ndarray]],
         if verbose:
             # Prints class AP and mean AP
             ap_table = [["Index", "Class", "AP"]]
-            class_names = class_config.get_squeezed_det_class_names()
+            class_names = class_config.get_ungrouped_det_class_names()
             for i, c in enumerate(ap_class):
                 ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
             print(AsciiTable(ap_table).table)
@@ -95,7 +95,7 @@ def print_eval_stats(metrics_output: Optional[Tuple[np.ndarray]],
         if verbose:
             classes = class_config.get_group_class_names()
             mbACC_per_class = [secondary_metric.bACC(i) for i in range(len(classes))]
-                        
+
             sec_table = [["Index", "Class", "bACC"]]
             for i, c in enumerate(classes):
                 sec_table += [[i, c, "%.5f" % mbACC_per_class[i]]]
@@ -115,6 +115,13 @@ def print_eval_stats(metrics_output: Optional[Tuple[np.ndarray]],
     # Print mean IoU
     mean_seg_class_ious = np.array(seg_class_ious).mean()
     print(f"----Average IoU {mean_seg_class_ious:.5f} ----")
+
+    print("#### Base Footprint ####")
+    # Print base footprint statistics
+    base_footprint_table = [["Metric", "Value"]]
+    for metric, value in base_footprint_metrics.items():
+        base_footprint_table += [[metric, "%.5f" % value]]
+    print(AsciiTable(base_footprint_table).table)
 
 
 def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, nms_thres, verbose):
@@ -136,7 +143,7 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
     :type nms_thres: float
     :param verbose: If True, prints stats of model
     :type verbose: bool
-    :return: Returns precision, recall, AP, f1, ap_class
+    :return: Returns
     """
     model.eval()  # Set model to evaluation mode
 
@@ -157,13 +164,13 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
         # Extract labels
         labels += bb_targets[:, 1].tolist()
 
-        # If a subset of the detection classes should be grouped into one class for non-maximum suppression and the 
+        # If a subset of the detection classes should be grouped into one class for non-maximum suppression and the
         # subsequent AP-computation, we need to group those class labels here.
         if class_config.classes_should_be_grouped():
             labels = class_config.group(labels)
 
         # Rescale target
-        bb_targets[:, 2:] = xywh2xyxy(bb_targets[:, 2:])
+        bb_targets[:, 2:-2] = xywh2xyxy(bb_targets[:, 2:-2])
         bb_targets[:, 2:] *= img_size
 
         imgs = Variable(imgs.type(Tensor), requires_grad=False)
@@ -180,9 +187,9 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
             )
 
         sample_stat, secondary_stat = get_batch_statistics(
-            yolo_outputs, 
-            bb_targets, 
-            iou_threshold=iou_thres, 
+            yolo_outputs,
+            bb_targets,
+            iou_threshold=iou_thres,
             group_config=class_config.get_group_config()
         )
 
@@ -200,12 +207,28 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
     print(f"Times: Mean {1 / np.array(times).mean()}fps | Std: {np.array(times).std()} ms")
 
     # Concatenate sample statistics
-    true_positives, pred_scores, pred_labels = [
+    true_positives, pred_scores, pred_labels, base_bootprint_visibility_tp, base_bootprint_visibility_fn, base_bootprint_visibility_fp, base_bootprint_visibility_tn, base_footprint_point_distances = [
         np.concatenate(x, 0) for x in list(zip(*sample_metrics))]
-    
+
+    # Calculate base footprint metrics
+    base_bootprint_visibility_fn = base_bootprint_visibility_fn.sum()
+    base_bootprint_visibility_fp = base_bootprint_visibility_fp.sum()
+    base_bootprint_visibility_tp = base_bootprint_visibility_tp.sum()
+    base_bootprint_visibility_tn = base_bootprint_visibility_tn.sum()
+    base_footprint_visibility_precision = base_bootprint_visibility_tp / (base_bootprint_visibility_tp + base_bootprint_visibility_fp + np.finfo(float).eps)
+    base_footprint_visibility_recall = base_bootprint_visibility_tp / (base_bootprint_visibility_tp + base_bootprint_visibility_fn + np.finfo(float).eps)
+    base_footprint_metrics = {
+        "precision": base_footprint_visibility_precision,
+        "recall": base_footprint_visibility_recall,
+        "f1": 2 * base_footprint_visibility_precision * base_footprint_visibility_recall / (base_footprint_visibility_precision + base_footprint_visibility_recall + np.finfo(float).eps),
+        'keypoint_distance': base_footprint_point_distances.mean()
+    }
+
+    # Calculate yolo metrics
     yolo_metrics_output = ap_per_class(
         true_positives, pred_scores, pred_labels, labels)
 
+    # Calculate segmentation metrics
     def seg_iou_mean_without_nan(seg_iou: List[float]) -> np.ndarray:
         """This helper function is needed to remove cases, where the segmentation IOU is NaN.
         This is the case, if a whole batch does not contain any pixels of a segmentation class.
@@ -218,9 +241,9 @@ def _evaluate(model, dataloader, class_config, img_size, iou_thres, conf_thres, 
 
     seg_class_ious = [seg_iou_mean_without_nan(class_ious) for class_ious in list(zip(*seg_ious))]
 
-    print_eval_stats(yolo_metrics_output, seg_class_ious, secondary_metric, class_config, verbose)
+    print_eval_stats(yolo_metrics_output, seg_class_ious, secondary_metric, base_footprint_metrics, class_config, verbose)
 
-    return yolo_metrics_output, seg_class_ious, secondary_metric
+    return yolo_metrics_output, seg_class_ious, secondary_metric, base_footprint_metrics
 
 
 def _create_validation_data_loader(img_path, batch_size, img_size, n_cpu):

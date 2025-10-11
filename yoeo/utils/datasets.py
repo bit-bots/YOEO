@@ -111,7 +111,8 @@ class ListDataset(Dataset):
             # Ignore warning if file is empty
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                boxes = np.loadtxt(label_path).reshape(-1, 5)
+                boxes = np.loadtxt(label_path).reshape(-1, 7) # TODO use 5 if we do not use a base_footprint annotation
+
         except Exception:
             print(f"Could not read label '{label_path}'.")
             return

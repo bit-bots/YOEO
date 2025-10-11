@@ -71,10 +71,10 @@ def detect_directory(model_path, weights_path, img_path, class_config: ClassConf
     print(f"---- Detections were saved to: '{output_path}' ----")
 
 
-def detect_image(model, 
-                 image: np.ndarray,  
-                 img_size: int = 416, 
-                 conf_thres: float = 0.5, 
+def detect_image(model,
+                 image: np.ndarray,
+                 img_size: int = 416,
+                 conf_thres: float = 0.5,
                  nms_thres: float = 0.5,
                  group_config: Optional[GroupConfig] = None
                  ):
@@ -97,7 +97,7 @@ def detect_image(model,
     :rtype: nd.array, nd.array
     """
     model.eval()  # Set model to evaluation mode
-    
+
     # Configure input
     input_img = transforms.Compose([
         DEFAULT_TRANSFORMS,
@@ -113,9 +113,9 @@ def detect_image(model,
     with torch.no_grad():
         detections, segmentations = model(input_img)
         detections = non_max_suppression(
-            prediction=detections, 
-            conf_thres=conf_thres, 
-            iou_thres=nms_thres, 
+            prediction=detections,
+            conf_thres=conf_thres,
+            iou_thres=nms_thres,
             group_config=group_config
         )
         detections = rescale_boxes(detections[0], img_size, image.shape[0:2])
@@ -124,9 +124,9 @@ def detect_image(model,
 
 
 def detect(model,
-           dataloader: DataLoader, 
-           output_path: str, 
-           conf_thres: float = 0.5, 
+           dataloader: DataLoader,
+           output_path: str,
+           conf_thres: float = 0.5,
            nms_thres: float = 0.5,
            group_config: Optional[GroupConfig] = None
             ):
@@ -169,9 +169,9 @@ def detect(model,
         with torch.no_grad():
             detections, segmentations = model(input_imgs)
             detections = non_max_suppression(
-                prediction=detections, 
-                conf_thres=conf_thres, 
-                iou_thres=nms_thres, 
+                prediction=detections,
+                conf_thres=conf_thres,
+                iou_thres=nms_thres,
                 group_config=group_config
             )
 
@@ -254,7 +254,7 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
     # Bounding-box colors
     cmap = plt.get_cmap("tab20b")
     colors = [cmap(i) for i in np.linspace(0, 1, len(classes))]
-    for x1, y1, x2, y2, conf, cls_pred in detections:
+    for x1, y1, x2, y2, conf, cls_pred, b, bx, by in detections:
 
         print(f"\t+ Label: {classes[int(cls_pred)]} | Confidence: {conf.item():0.4f}")
 
@@ -265,8 +265,12 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
         bbox = patches.Rectangle((x1, y1), box_w, box_h, linewidth=2, edgecolor=colors[int(cls_pred)], facecolor="none")
         # Add the bbox to the plot
         ax.add_patch(bbox)
+
+        # Add red dot for base_footprint if it exists
+        if b > 0.5:
+            ax.plot(bx, by, 'ro')
+
         # Add label
-        """
         plt.text(
             x1,
             y1,
@@ -274,7 +278,6 @@ def _draw_and_save_output_image(image_path, detections, seg, img_size, output_pa
             color="white",
             verticalalignment="top",
             bbox={"color": colors[int(cls_pred)], "pad": 0})
-        """
 
     # Save generated image with detections
     plt.axis("off")

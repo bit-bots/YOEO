@@ -30,6 +30,7 @@ parser.add_argument("--skip-blurred", action="store_true", help="Skip blurred la
 parser.add_argument("--skip-concealed", action="store_true", help="Skip concealed labels")
 parser.add_argument("--skip-classes", nargs="+", default=[], help="These bounding box classes will be skipped")
 parser.add_argument("--robots-with-team-colors", action="store_true", help="The robot class will be subdivided into subclasses, one for each team color (currently either 'blue', 'red' or 'unknown').")
+parser.add_argument("--add-base-footprint", action="store_true", help="Add base_footprint to bounding box annotations")
 args = parser.parse_args()
 
 # Available classes for YOEO
@@ -53,6 +54,9 @@ create_symlinks = False
 assert os.path.exists(args.dataset_collection_dir), f"Is the given path correct? Directory does not exist: '{args.dataset_collection_dir}'"
 dataset_collection_dir = args.dataset_collection_dir
 destination_dir = args.dataset_collection_dir
+
+# Keep track of all classes with base_footprint annotations
+classes_with_base_footprint = set()
 
 # Overwrite defaults, if destination path is given
 if args.destination_dir:
@@ -138,10 +142,10 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
                 (args.skip_concealed and annotation.get('concealed', False))):
                 continue
             elif class_name in CLASSES['bb_classes']:  # Handle bounding boxes
-                min_x = min(map(lambda x: x[0], annotation['vector']))
-                max_x = max(map(lambda x: x[0], annotation['vector']))
-                min_y = min(map(lambda x: x[1], annotation['vector']))
-                max_y = max(map(lambda x: x[1], annotation['vector']))
+                min_x = min(pt[0] for pt in annotation['vector'])
+                max_x = max(pt[0] for pt in annotation['vector'])
+                min_y = min(pt[1] for pt in annotation['vector'])
+                max_y = max(pt[1] for pt in annotation['vector'])
 
                 annotation_width = max_x - min_x
                 annotation_height = max_y - min_y
@@ -154,8 +158,27 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
                 relative_center_y = center_y / img_height
 
                 # Derive classID from index in predefined classes
-                classID = CLASSES['bb_classes'].index(class_name)                
-                annotations.append(f"{classID} {relative_center_x} {relative_center_y} {relative_annotation_width} {relative_annotation_height}")
+                classID = CLASSES['bb_classes'].index(class_name)
+
+                # Serialize bounding box
+                serialized_bounding_box = f"{classID} {relative_center_x} {relative_center_y} {relative_annotation_width} {relative_annotation_height}"
+
+                # Extract other properties
+                if args.add_base_footprint:
+                    # Default value if key point is not present
+                    base_footprint_x, base_footprint_y = -1, -1
+                    # Check if the annotation exists (some classes do not have base_footprint)
+                    if 'base_footprint' in annotation:
+                        classes_with_base_footprint.add(class_name)
+                        # Check if the base_footprint is not None (negative label)
+                        if annotation['base_footprint']:
+                            base_footprint_x = annotation['base_footprint'][0] / img_width
+                            base_footprint_y = annotation['base_footprint'][1] / img_height
+                    # Serialize base_footprint key point
+                    serialized_bounding_box += f" {base_footprint_x} {base_footprint_y}"
+
+                # Add row to file
+                annotations.append(serialized_bounding_box)
             else:
                 print(f"The annotation type '{class_name}' is not supported. Image: '{img_name_with_extension}'")
 
@@ -180,8 +203,14 @@ for partition in ['train', 'test']:  # Handle both TORSO-21 partitions
 names_path = os.path.join(destination_dir, "yoeo_names.yaml")
 names = {
     'detection': CLASSES['bb_classes'],
-    'segmentation': CLASSES["segmentation_classes"],
+    'segmentation': CLASSES["segmentation_classes"]
 }
+
+# Add base_footprint classes to names file
+if args.add_base_footprint:
+    names['base_footprint'] = list(classes_with_base_footprint)
+
+# Save names to yaml file
 with open(names_path, "w") as names_file:
     yaml.dump(names, names_file)
 

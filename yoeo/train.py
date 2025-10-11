@@ -167,9 +167,9 @@ def run():
         for batch_i, (_, imgs, bb_targets, mask_targets) in enumerate(tqdm.tqdm(dataloader, desc=f"Training Epoch {epoch}")):
             batches_done = len(dataloader) * epoch + batch_i
 
-            imgs = Variable(imgs.to(device, non_blocking=True))
-            bb_targets = Variable(bb_targets.to(device), requires_grad=False)
-            mask_targets = Variable(mask_targets.to(device=device), requires_grad=False)
+            imgs = imgs.to(device, non_blocking=True)
+            bb_targets = bb_targets.to(device)
+            mask_targets = mask_targets.to(device=device)
 
             outputs = model(imgs)
 
@@ -214,8 +214,9 @@ def run():
                         ["IoU loss", float(loss_components[0])],
                         ["Object loss", float(loss_components[1])],
                         ["Class loss", float(loss_components[2])],
-                        ["Segmentation loss", float(loss_components[3])],
-                        ["Loss", float(loss_components[4])],
+                        ["Base footprint point loss", float(loss_components[3])],
+                        ["Base footprint visibility loss", float(loss_components[4])],
+                        ["Segmentation loss", float(loss_components[5])],
                         ["Batch loss", to_cpu(loss).item()],
                     ]).table)
 
@@ -224,7 +225,9 @@ def run():
                 ("train/iou_loss", float(loss_components[0])),
                 ("train/obj_loss", float(loss_components[1])),
                 ("train/class_loss", float(loss_components[2])),
-                ("train/seg_loss", float(loss_components[3])),
+                ("train/base_footprint_point_loss", float(loss_components[3])),
+                ("train/base_footprint_visibility_loss", float(loss_components[4])),
+                ("train/seg_loss", float(loss_components[5])),
                 ("train/loss", to_cpu(loss).item())]
             logger.list_of_scalars_summary(tensorboard_log, batches_done)
 
@@ -266,8 +269,13 @@ def run():
                     ("validation/recall", recall.mean()),
                     ("validation/mAP", AP.mean()),
                     ("validation/f1", f1.mean()),
-                    ("validation/seg_iou", np.array(seg_class_ious).mean())]
-                
+                    ("validation/seg_iou", np.array(seg_class_ious).mean()),
+                    ("validation/base_footprint_dist", metrics_output[3]['keypoint_distance']),
+                    ("validation/base_footprint_visibility_precision", metrics_output[3]['precision']),
+                    ("validation/base_footprint_visibility_recall", metrics_output[3]['recall']),
+                    ("validation/base_footprint_visibility_f1", metrics_output[3]['f1'])
+                ]
+
                 if metrics_output[2] is not None:
                     evaluation_metrics.append(("validation/secondary_mbACC", metrics_output[2].mbACC()))
 
