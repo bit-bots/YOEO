@@ -19,7 +19,7 @@ assignees: ''
 ## Necessary Checks
 <!--- Please ensure, you have completed the following checks. This helps to give insight into the issue and prevent already resolved issues. -->
 - [ ] The issue occurred on the newest version
-<!--- If installed manually, run: 'git pull && poetry install'  -->
+<!--- If installed manually, run: 'git pull && uv sync'  -->
 <!--- If installed via PIP, run: 'pip install --upgrade yoeo' -->
 - [ ] I couldn't find a similar issue here on this project's github repo
 - [ ] If the issue is CUDA related (CUDA error), I have tested and provided the traceback also when CUDA is turned off <!--- For linux, rerun your steps with the prefix CUDA_VISIBLE_DEVICES="" -->

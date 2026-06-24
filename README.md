@@ -13,17 +13,17 @@ This project is based upon [PyTorch-YOLOv3](https://github.com/eriklindernoren/P
 ## Installation
 ### Installing from source
 
-For normal training and evaluation we recommend installing the package from source using a poetry virtual environment.
+For normal training and evaluation we recommend installing the package from source using a uv virtual environment.
 
 ```bash
 git clone https://github.com/bit-bots/YOEO
 cd YOEO/
-pip3 install poetry --user
-poetry install
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv sync
 ```
 
-You need to join the virtual environment by running `poetry shell` in this directory before running any of the following commands without the `poetry run` prefix.
-Also have a look at the other installing method, if you want to use the commands everywhere without opening a poetry-shell.
+You need to join the virtual environment by running `source .venv/bin/activate` in this directory before running any of the following commands without the `uv run` prefix.
+Also have a look at the other installing method, if you want to use the commands everywhere without activating the virtual environment.
 
 #### Download pretrained weights
 
@@ -36,20 +36,20 @@ Evaluates the model on the test dataset.
 See help page for more details.
 
 ```bash
-poetry run yoeo-test -h
+uv run yoeo-test -h
 ```
 
 ## Inference
 Uses pretrained weights to make predictions on images.
 
 ```bash
-poetry run yoeo-detect --images data/samples/
+uv run yoeo-detect --images data/samples/
 ```
 
 <p align="center"><img src="https://user-images.githubusercontent.com/15075613/131503350-3e232e91-016b-4034-8bda-15e6619b0f98.png" width="480"\></p>
 
 ## Train
-For argument descriptions have a look at `poetry run yoeo-train --h`
+For argument descriptions have a look at `uv run yoeo-train --h`
 
 #### Tensorboard
 Track training progress in Tensorboard:
@@ -58,7 +58,7 @@ Track training progress in Tensorboard:
 * Go to http://localhost:6006/
 
 ```bash
-poetry run tensorboard --logdir='logs' --port=6006
+uv run tensorboard --logdir='logs' --port=6006
 ```
 
 Storing the logs on a slow drive possibly leads to a significant training speed decrease.
@@ -86,7 +86,7 @@ In `data/custom/train.txt` and `data/custom/valid.txt`, add paths to images that
 To train on the custom dataset run:
 
 ```bash
-poetry run yoeo-train --model config/yoeo-custom.cfg --data config/custom.data
+uv run yoeo-train --model config/yoeo-custom.cfg --data config/custom.data
 ```
 
 ## API
@@ -130,7 +130,7 @@ For more advanced usage look at the method's doc strings.
 To convert your YOEO model to an ONNX model, you can use the following command:
 
 ```bash
-poetry run yoeo-to-onnx config/yoeo.cfg  # Replace path with your .cfg file
+uv run yoeo-to-onnx config/yoeo.cfg  # Replace path with your .cfg file
 ```
 
 For more information on ONNX, read the [ONNX runtime website](https://onnxruntime.ai/).
@@ -140,7 +140,7 @@ For more information on ONNX, read the [ONNX runtime website](https://onnxruntim
 After successful conversion of your YOEO model to an ONNX model using [this guide](#convert-your-yoeo-model-to-an-onnx-model), you can move on with the next conversion to an OpenVino IR model (intermediate representation) model using the following command:
 
 ```bash
-poetry run yoeo-onnx-to-openvino config/yoeo.onnx  # Replace path with your .onnx file
+uv run yoeo-onnx-to-openvino config/yoeo.onnx  # Replace path with your .onnx file
 ```
 
 For more information on OpenVino, read the [OpenVino documentation](https://docs.openvino.ai).

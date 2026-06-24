@@ -579,12 +579,12 @@ def print_environment_info():
     # Print OS information
     print(f"System: {platform.system()} {platform.release()}")
 
-    # Print poetry package version
+    # Print package version
     try:
         print(
-            f"Current Version: {subprocess.check_output(['poetry', 'version'], stderr=subprocess.DEVNULL).decode('ascii').strip()}")
+            f"Current Version: {subprocess.check_output(['uv', 'version'], stderr=subprocess.DEVNULL).decode('ascii').strip()}")
     except (subprocess.CalledProcessError, FileNotFoundError):
-        print("Not using the poetry package")
+        print("Not using the uv package manager")
 
     # Print commit hash if possible
     try:
