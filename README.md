@@ -73,7 +73,7 @@ Add class names to `data/custom/yoeo_names.yaml`.
 Run the following command to adapt the model file (cfg) to the new number of classes:
 
 ```bash
-poetry run yoeo-custiomize-cfg -c config/yoeo.cfg -d config/custom.data -o config/yoeo-custom.cfg
+uv run yoeo-custiomize-cfg -c config/yoeo.cfg -d config/custom.data -o config/yoeo-custom.cfg
 ```
 
 This changes the layers of the model to fit the number of classes in your dataset.
