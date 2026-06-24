@@ -25,8 +25,13 @@ def pad_to_square(img, pad_value):
     return img, pad
 
 
-def resize(image, size):
-    image = F.interpolate(image.unsqueeze(0), size=size, mode="nearest").squeeze(0)
+def resize(image, size, mode="nearest"):
+    # Images should use "bilinear" to avoid aliasing; label masks must stay "nearest"
+    # to preserve discrete class ids.
+    align_corners = False if mode in ("bilinear", "bicubic") else None
+    image = F.interpolate(
+        image.unsqueeze(0), size=size, mode=mode, align_corners=align_corners
+    ).squeeze(0)
     return image
 
 
@@ -155,8 +160,8 @@ class ListDataset(Dataset):
             self.img_size = random.choice(
                 range(self.min_size, self.max_size + 1, 32))
 
-        # Resize images to input shape
-        imgs = torch.stack([resize(img, self.img_size) for img in imgs])
+        # Resize images to input shape (bilinear to avoid aliasing on downscale)
+        imgs = torch.stack([resize(img, self.img_size, mode="bilinear") for img in imgs])
 
         # Add sample index to targets
         for i, boxes in enumerate(bb_targets):

@@ -6,6 +6,10 @@ build
 dist
 output/
 data/*
+config/torso25.data
+config/yoeo-torso25.cfg
+config/torso_combined.data
+config/yoeo-torso_combined.cfg
 backup
 weights/
 __pycache__

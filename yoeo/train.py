@@ -175,13 +175,20 @@ def run():
 
             loss, loss_components = compute_loss(outputs, (bb_targets, mask_targets), model)
 
-            loss.backward()
+            # Normalize by the number of accumulation steps so that gradients accumulated
+            # over `subdivisions` mini-batches average to the gradient of one full batch
+            # (instead of summing to `subdivisions` times its magnitude).
+            (loss / model.hyperparams['subdivisions']).backward()
 
             ###############
             # Run optimizer
             ###############
 
-            if batches_done % model.hyperparams['subdivisions'] == 0:
+            # Step once per `subdivisions` mini-batches. The boundary is tracked within the
+            # epoch (not via the global counter, whose phase otherwise drifts every epoch),
+            # and the remaining gradients are flushed at the end of the epoch so they do not
+            # leak into the next one.
+            if (batch_i + 1) % model.hyperparams['subdivisions'] == 0 or (batch_i + 1) == len(dataloader):
                 # Adapt learning rate
                 # Get learning rate defined in cfg
                 lr = model.hyperparams['learning_rate']

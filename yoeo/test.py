@@ -80,7 +80,7 @@ def print_eval_stats(metrics_output: Optional[Tuple[np.ndarray]],
         if verbose:
             # Prints class AP and mean AP
             ap_table = [["Index", "Class", "AP"]]
-            class_names = class_config.get_squeezed_det_class_names()
+            class_names = class_config.get_grouped_det_class_names()
             for i, c in enumerate(ap_class):
                 ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
             print(AsciiTable(ap_table).table)

@@ -39,6 +39,7 @@ dev = [
     "pnnx>=20251119",
     "tensorboard>=2.18.0,<3",
     "ipython>=8.37.0",
+    "pycocotools>=2.0.11",
 ]
 
 [build-system]

@@ -116,7 +116,8 @@ class Resize(object):
 
     def __call__(self, data):
         img, boxes, seg = data
-        img = F.interpolate(img.unsqueeze(0), size=self.size, mode="nearest").squeeze(0)
+        # Bilinear for the image to avoid aliasing; nearest for the mask to keep class ids intact.
+        img = F.interpolate(img.unsqueeze(0), size=self.size, mode="bilinear", align_corners=False).squeeze(0)
         seg = F.interpolate(seg.unsqueeze(0), size=self.size, mode="nearest").squeeze(0)
         return img, boxes, seg
 
