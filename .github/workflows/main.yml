@@ -11,33 +11,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Poetry
-        run: pipx install poetry
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.x
-          cache: "poetry"
 
       - name: Install Dependencies
-        run: poetry install --with dev
+        run: uv sync --group dev
 
       # Prints the help pages of all scripts to see if the imports etc. work
       - name: Test the help pages
         run: |
-          poetry run yoeo-train -h
-          poetry run yoeo-test -h
-          poetry run yoeo-detect -h
+          uv run yoeo-train -h
+          uv run yoeo-test -h
+          uv run yoeo-detect -h
 
       - name: Demo Training
-        run: poetry run yoeo-train --data config/custom.data --epochs 30
+        run: uv run yoeo-train --data config/custom.data --epochs 30
 
       - name: Demo Evaluate
-        run: poetry run yoeo-test --data config/custom.data --weights checkpoints/yoeo_checkpoint_29.pth
+        run: uv run yoeo-test --data config/custom.data --weights checkpoints/yoeo_checkpoint_29.pth
 
       - name: Demo Detect
-        run: poetry run yoeo-detect --batch_size 2 --weights checkpoints/yoeo_checkpoint_29.pth
+        run: uv run yoeo-detect --batch_size 2 --weights checkpoints/yoeo_checkpoint_29.pth
 
   linter:
     runs-on: ubuntu-22.04

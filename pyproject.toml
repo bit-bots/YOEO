@@ -1,35 +1,27 @@
-[tool.poetry]
+[project]
 name = "YOEO"
 version = "1.6.1"
 description = "A hybrid CNN for object detection and semantic segmentation"
-authors = ["Florian Vahl <git@flova.de>", "Jan Gutsche <git@jagut.de>"]
+authors = [
+    { name = "Florian Vahl", email = "git@flova.de" },
+    { name = "Jan Gutsche", email = "git@jagut.de" },
+]
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "matplotlib>=3.3.3,<4",
+    "terminaltables>=3.1.10,<4",
+    "imgaug>=0.4.0,<0.5",
+    "numpy>=1.26,<2",
+    "torch>=2.5.1,<3",
+    "torchvision>=0.20.1,<0.21",
+    "pillow>=11.0.0,<12",
+    "torchsummary>=1.5.1,<2",
+    "tqdm>=4.67.0,<5",
+    "opencv-python>=4.10.0.84,<5",
+    "pyyaml>=6.0.2,<7",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.10,<4.0"
-matplotlib = "^3.3.3"
-terminaltables = "^3.1.10"
-imgaug = "^0.4.0"
-numpy = "^1.26"
-torch = "^2.5.1"
-torchvision = "^0.20.1"
-pillow = "^11.0.0"
-torchsummary = "^1.5.1"
-tqdm = "^4.67.0"
-opencv-python = "^4.10.0.84"
-pyyaml = "^6.0.2"
-tensorboard = "^2.18.0"
-
-[tool.poetry.group.dev.dependencies]
-onnxruntime = "^1.14.0"
-profilehooks = "^1.12.0"
-onnx = "^1.9.0"
-onnx-simplifier = "^0.3.5"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.scripts]
+[project.scripts]
 yoeo-detect = "yoeo.detect:run"
 yoeo-train = "yoeo.train:run"
 yoeo-test = "yoeo.test:run"
@@ -37,3 +29,18 @@ yoeo-to-onnx = "yoeo.scripts.convertPyTorchModelToONNX:run"
 yoeo-onnx-to-openvino = "yoeo.scripts.convertONNXModelToOpenVinoIR:run"
 yoeo-onnx-to-tvm = "yoeo.scripts.convertONNXModelToTVM:run"
 yoeo-custiomize-cfg = "yoeo.scripts.customizeCfg:run"
+
+[dependency-groups]
+dev = [
+    "onnxruntime>=1.14.0,<2",
+    "profilehooks>=1.12.0,<2",
+    "onnx>=1.9.0,<2",
+    "onnx-simplifier>=0.3.5,<0.4",
+    "pnnx>=20251119",
+    "tensorboard>=2.18.0,<3",
+    "ipython>=8.37.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

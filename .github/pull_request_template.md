@@ -7,7 +7,7 @@
 <!--- If fixing a bug, there should be an issue describing it with steps to reproduce -->
 
 ## Necessary checks
-- [ ] Update poetry package version [semantically](https://semver.org/)
+- [ ] Update package version [semantically](https://semver.org/)
 - [ ] Write documentation
 - [ ] Create issues for future work
 - [ ] Test on your machine
