@@ -1,6 +1,7 @@
+from typing import Any
 
 
-def parse_model_config(path):
+def parse_model_config(path: str) -> list[dict[str, str]]:
     """Parses the yolo-v3 layer configuration file and returns module definitions"""
     file = open(path, 'r')
     lines = file.read().split('\n')
@@ -19,6 +20,17 @@ def parse_model_config(path):
             module_defs[-1][key.rstrip()] = value.strip()
 
     return module_defs
+
+
+def write_model_config(module_defs: list[dict[str, Any]], path: str):
+    """Writes module definitions to the file"""
+    with open(path, 'w') as f:
+        for module_def in module_defs:
+            f.write(f"[{module_def['type']}]\n")
+            for key, value in module_def.items():
+                if key != 'type' and not (key == 'batch_normalize' and int(value) == 0):
+                    f.write(f"{key}={value}\n")
+            f.write("\n")
 
 
 def parse_data_config(path):
