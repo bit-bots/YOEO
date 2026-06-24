@@ -1,6 +1,6 @@
 [project]
 name = "YOEO"
-version = "1.6.0"
+version = "1.6.1"
 description = "A hybrid CNN for object detection and semantic segmentation"
 authors = [
     { name = "Florian Vahl", email = "git@flova.de" },
@@ -19,10 +19,6 @@ dependencies = [
     "tqdm>=4.67.0,<5",
     "opencv-python>=4.10.0.84,<5",
     "pyyaml>=6.0.2,<7",
-    "tensorboard>=2.18.0,<3",
-    "ipython>=8.37.0",
-    "pnnx>=20251119",
-    "ncnn>=1.0.20250916",
 ]
 
 [project.scripts]
@@ -32,6 +28,7 @@ yoeo-test = "yoeo.test:run"
 yoeo-to-onnx = "yoeo.scripts.convertPyTorchModelToONNX:run"
 yoeo-onnx-to-openvino = "yoeo.scripts.convertONNXModelToOpenVinoIR:run"
 yoeo-onnx-to-tvm = "yoeo.scripts.convertONNXModelToTVM:run"
+yoeo-custiomize-cfg = "yoeo.scripts.customizeCfg:run"
 
 [dependency-groups]
 dev = [
@@ -39,6 +36,9 @@ dev = [
     "profilehooks>=1.12.0,<2",
     "onnx>=1.9.0,<2",
     "onnx-simplifier>=0.3.5,<0.4",
+    "pnnx>=20251119",
+    "tensorboard>=2.18.0,<3",
+    "ipython>=8.37.0",
 ]
 
 [build-system]
