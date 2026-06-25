@@ -1,6 +1,7 @@
 from __future__ import division, annotations
 
 import time
+import math
 import platform
 import tqdm
 import torch
@@ -9,6 +10,7 @@ import torchvision
 import numpy as np
 import subprocess
 import random
+from copy import deepcopy
 from typing import List, Optional, Tuple
 
 from yoeo.utils.dataclasses import GroupConfig
@@ -52,6 +54,35 @@ def weights_init_normal(m):
     elif classname.find("BatchNorm2d") != -1:
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0.0)
+
+
+class ModelEMA:
+    """Exponential Moving Average of the model weights.
+
+    Keeps a shadow copy of the model whose weights follow the training weights with an
+    exponential decay. The averaged ("ema") model is usually more robust than the raw
+    training weights and is what you evaluate and deploy. The decay ramps up over the
+    first updates (via `tau`) so early, noisy weights are not over-weighted. Based on the
+    implementation popularized by Ultralytics YOLO.
+    """
+
+    def __init__(self, model, decay=0.9999, tau=2000, updates=0):
+        self.ema = deepcopy(model).eval()  # the shadow model
+        self.updates = updates
+        # Decay schedule: starts small, asymptotically approaches `decay`
+        self.decay_fn = lambda x: decay * (1 - math.exp(-x / tau))
+        for p in self.ema.parameters():
+            p.requires_grad_(False)
+
+    @torch.no_grad()
+    def update(self, model):
+        self.updates += 1
+        d = self.decay_fn(self.updates)
+        msd = model.state_dict()
+        for k, v in self.ema.state_dict().items():
+            if v.dtype.is_floating_point:  # skip int buffers (e.g. num_batches_tracked)
+                v.mul_(d)
+                v.add_(msd[k].detach(), alpha=1 - d)
 
 
 def rescale_boxes(boxes, output_img_size, original_img_size):

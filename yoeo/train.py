@@ -15,7 +15,7 @@ from torch.autograd import Variable
 
 from yoeo.models import load_model
 from yoeo.utils.logger import Logger
-from yoeo.utils.utils import to_cpu, print_environment_info, provide_determinism, worker_seed_set
+from yoeo.utils.utils import to_cpu, print_environment_info, provide_determinism, worker_seed_set, ModelEMA
 from yoeo.utils.datasets import ListDataset
 from yoeo.utils.dataclasses import ClassNames
 from yoeo.utils.class_config import ClassConfig
@@ -155,6 +155,18 @@ def run():
     else:
         print("Unknown optimizer. Please choose between (adam, sgd).")
 
+    # ##########################
+    # Optional weight EMA (cfg)
+    # ##########################
+
+    # Enabled via the cfg [net] section: `ema=1` (and optionally `ema_decay=0.9999`).
+    use_ema = bool(int(model.hyperparams.get("ema", 0)))
+    ema = None
+    if use_ema:
+        ema_decay = float(model.hyperparams.get("ema_decay", 0.9999))
+        ema = ModelEMA(model, decay=ema_decay)
+        print(f"---- Using model weight EMA (decay={ema_decay}) ----")
+
     # skip epoch zero, because then the calculations for when to evaluate/checkpoint makes more intuitive sense
     # e.g. when you stop after 30 epochs and evaluate every 10 epochs then the evaluations happen after: 10,20,30
     # instead of: 0, 10, 20
@@ -211,6 +223,10 @@ def run():
                 # Reset gradients
                 optimizer.zero_grad()
 
+                # Update the EMA shadow weights after each optimizer step
+                if ema is not None:
+                    ema.update(model)
+
             # ############
             # Log progress
             # ############
@@ -241,11 +257,12 @@ def run():
         # Save progress
         # #############
 
-        # Save model to checkpoint file
+        # Save model to checkpoint file (the EMA weights, if EMA is enabled)
         if epoch % args.checkpoint_interval == 0:
             checkpoint_path = os.path.join(args.checkpoint_dir, f"yoeo_checkpoint_{epoch}.pth")
             print(f"---- Saving checkpoint to: '{checkpoint_path}' ----")
-            torch.save(model.state_dict(), checkpoint_path)
+            checkpoint_model = ema.ema if ema is not None else model
+            torch.save(checkpoint_model.state_dict(), checkpoint_path)
 
         # ########
         # Evaluate
@@ -253,9 +270,9 @@ def run():
 
         if epoch % args.evaluation_interval == 0:
             print("\n---- Evaluating Model ----")
-            # Evaluate the model on the validation set
+            # Evaluate the model on the validation set (use the EMA weights if enabled)
             metrics_output = _evaluate(
-                model,
+                ema.ema if ema is not None else model,
                 validation_dataloader,
                 class_config=class_config,
                 img_size=model.hyperparams['height'],

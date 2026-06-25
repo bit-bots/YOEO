@@ -63,6 +63,91 @@ def create_modules(module_defs):
             if module_def["activation"] == "mish":
                 modules.add_module(f"mish_{module_i}", Mish())
 
+        elif module_def["type"] == "sepconv":
+            # Depthwise-separable convolution: a depthwise 3x3 (one filter per input
+            # channel) followed by a pointwise 1x1 that mixes channels. Roughly an
+            # order of magnitude fewer FLOPs than a dense conv with the same shape.
+            bn = int(module_def.get("batch_normalize", 0))
+            filters = int(module_def["filters"])
+            kernel_size = int(module_def["size"])
+            stride = int(module_def["stride"])
+            pad = (kernel_size - 1) // 2
+            in_channels = output_filters[-1]
+            activation = module_def["activation"]
+
+            # Depthwise
+            modules.add_module(
+                f"sepconv_dw_{module_i}",
+                nn.Conv2d(in_channels, in_channels, kernel_size, stride=stride,
+                          padding=pad, groups=in_channels, bias=not bn),
+            )
+            if bn:
+                modules.add_module(f"sepconv_dw_bn_{module_i}",
+                                   nn.BatchNorm2d(in_channels, momentum=0.1, eps=1e-5))
+            if activation == "leaky":
+                modules.add_module(f"sepconv_dw_leaky_{module_i}", nn.LeakyReLU(0.1))
+            elif activation == "mish":
+                modules.add_module(f"sepconv_dw_mish_{module_i}", Mish())
+
+            # Pointwise
+            modules.add_module(
+                f"sepconv_pw_{module_i}",
+                nn.Conv2d(in_channels, filters, 1, stride=1, padding=0, bias=not bn),
+            )
+            if bn:
+                modules.add_module(f"sepconv_pw_bn_{module_i}",
+                                   nn.BatchNorm2d(filters, momentum=0.1, eps=1e-5))
+            if activation == "leaky":
+                modules.add_module(f"sepconv_pw_leaky_{module_i}", nn.LeakyReLU(0.1))
+            elif activation == "mish":
+                modules.add_module(f"sepconv_pw_mish_{module_i}", Mish())
+
+        elif module_def["type"] == "dwconv":
+            # Depthwise convolution: one spatial filter per channel, no channel mixing.
+            # Pair it with a following 1x1 conv (e.g. the seg head) to form a separable
+            # conv without a dedicated intermediate pointwise.
+            bn = int(module_def.get("batch_normalize", 0))
+            kernel_size = int(module_def["size"])
+            stride = int(module_def["stride"])
+            pad = (kernel_size - 1) // 2
+            in_channels = output_filters[-1]
+            filters = in_channels  # depthwise preserves the channel count
+            activation = module_def["activation"]
+            modules.add_module(
+                f"dwconv_{module_i}",
+                nn.Conv2d(in_channels, in_channels, kernel_size, stride=stride,
+                          padding=pad, groups=in_channels, bias=not bn),
+            )
+            if bn:
+                modules.add_module(f"dwconv_bn_{module_i}",
+                                   nn.BatchNorm2d(in_channels, momentum=0.1, eps=1e-5))
+            if activation == "leaky":
+                modules.add_module(f"dwconv_leaky_{module_i}", nn.LeakyReLU(0.1))
+            elif activation == "mish":
+                modules.add_module(f"dwconv_mish_{module_i}", Mish())
+
+        elif module_def["type"] == "se":
+            filters = output_filters[-1]  # SE keeps the channel count unchanged
+            reduction = int(module_def.get("reduction", 16))
+            modules.add_module(f"se_{module_i}", SEBlock(filters, reduction))
+
+        elif module_def["type"] == "scse":
+            filters = output_filters[-1]  # scSE keeps the channel count unchanged
+            reduction = int(module_def.get("reduction", 16))
+            modules.add_module(f"scse_{module_i}", scSEBlock(filters, reduction))
+
+        elif module_def["type"] == "cbam":
+            filters = output_filters[-1]  # CBAM keeps the channel count unchanged
+            reduction = int(module_def.get("reduction", 16))
+            modules.add_module(f"cbam_{module_i}", CBAMBlock(filters, reduction))
+
+        elif module_def["type"] == "globalcontext":
+            in_channels = output_filters[-1]
+            ctx_channels = int(module_def.get("ctx_channels", max(1, in_channels // 4)))
+            modules.add_module(f"globalcontext_{module_i}",
+                               GlobalContextInject(in_channels, ctx_channels))
+            filters = in_channels + ctx_channels  # concat grows the channel count
+
         elif module_def["type"] == "maxpool":
             kernel_size = int(module_def["size"])
             stride = int(module_def["stride"])
@@ -125,6 +210,119 @@ class Mish(nn.Module):
 
     def forward(self, x):
         return x * torch.tanh(F.softplus(x))
+
+
+class SEBlock(nn.Module):
+    """Squeeze-and-Excitation channel attention.
+
+    Pools the feature map to a single vector (global context), learns a per-channel
+    gate from it, and rescales the channels. Cheap (O(C)) and ONNX/edge friendly, so
+    it is a good way to inject global context into the decoder without spatial attention.
+    """
+
+    def __init__(self, channels, reduction=16):
+        super(SEBlock, self).__init__()
+        reduced = max(1, channels // reduction)
+        # 1x1 convs instead of Linear layers to avoid reshapes (export friendly)
+        self.fc1 = nn.Conv2d(channels, reduced, kernel_size=1)
+        self.fc2 = nn.Conv2d(reduced, channels, kernel_size=1)
+
+    def forward(self, x):
+        scale = F.adaptive_avg_pool2d(x, 1)
+        scale = F.relu(self.fc1(scale), inplace=True)
+        scale = torch.sigmoid(self.fc2(scale))
+        return x * scale
+
+
+class scSEBlock(nn.Module):
+    """Concurrent spatial and channel Squeeze-and-Excitation (Roy et al., 2018).
+
+    Combines a channel gate (cSE: "which feature maps matter", global average pooled)
+    with a spatial gate (sSE: "which pixels/regions matter", a 1x1 conv -> 1 channel).
+    The spatial gate is O(C*H*W) and stays cheap as long as it is used at a low-resolution
+    point (e.g. the decoder bottleneck), unlike self-attention which is O((H*W)^2).
+    """
+
+    def __init__(self, channels, reduction=16):
+        super(scSEBlock, self).__init__()
+        reduced = max(1, channels // reduction)
+        # Channel branch (cSE): squeeze -> ReLU -> excite
+        self.fc1 = nn.Conv2d(channels, reduced, kernel_size=1)
+        self.fc2 = nn.Conv2d(reduced, channels, kernel_size=1)
+        # Spatial branch (sSE): a hidden layer (ReLU) + a 7x7 conv so the gate is both
+        # non-linear and neighbourhood-aware (a plain 1x1 gate would be purely per-pixel).
+        # The 7x7 is cheap here because this block runs at the low-res bottleneck.
+        self.spatial = nn.Sequential(
+            nn.Conv2d(channels, reduced, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(reduced, 1, kernel_size=7, padding=3),
+        )
+
+    def forward(self, x):
+        # Channel squeeze-and-excite
+        c = F.adaptive_avg_pool2d(x, 1)
+        c = F.relu(self.fc1(c), inplace=True)
+        c = torch.sigmoid(self.fc2(c))
+        cse = x * c
+        # Spatial squeeze-and-excite
+        s = torch.sigmoid(self.spatial(x))
+        sse = x * s
+        # Concurrent (parallel) recombination by addition -> this is "scSE".
+        # Applying them sequentially instead (sSE(cSE(x))) would be CBAM.
+        return cse + sse
+
+
+class GlobalContextInject(nn.Module):
+    """Injects a global descriptor into every spatial location (cf. ParseNet / PSPNet).
+
+    Global-average-pools the feature map to one vector, projects it (1x1 + ReLU), then
+    broadcasts it back to all positions and concatenates it onto the input. Unlike SE,
+    which *gates* existing channels, this *adds information*: every pixel gains access to
+    image-level context. Output has ``channels + ctx_channels`` channels.
+    """
+
+    def __init__(self, channels, ctx_channels):
+        super(GlobalContextInject, self).__init__()
+        self.proj = nn.Conv2d(channels, ctx_channels, kernel_size=1)
+
+    def forward(self, x):
+        g = F.adaptive_avg_pool2d(x, 1)            # (B, C, 1, 1) global descriptor
+        g = F.relu(self.proj(g), inplace=True)     # (B, ctx, 1, 1)
+        g = g.expand(-1, -1, x.shape[2], x.shape[3])  # broadcast to every location
+        return torch.cat([x, g], dim=1)            # (B, C + ctx, H, W)
+
+
+class CBAMBlock(nn.Module):
+    """Convolutional Block Attention Module (Woo et al., 2018).
+
+    Sequential channel-THEN-spatial attention (in contrast to scSE's parallel branches):
+      - Channel attention uses both average- and max-pooled descriptors through a shared
+        MLP, summed and gated.
+      - Spatial attention pools across channels (avg + max -> 2 maps) and gates with a
+        7x7 conv.
+    Cheap when applied at a low-resolution point such as the decoder bottleneck.
+    """
+
+    def __init__(self, channels, reduction=16):
+        super(CBAMBlock, self).__init__()
+        reduced = max(1, channels // reduction)
+        # Channel attention (shared MLP applied to avg- and max-pooled descriptors)
+        self.mlp1 = nn.Conv2d(channels, reduced, kernel_size=1)
+        self.mlp2 = nn.Conv2d(reduced, channels, kernel_size=1)
+        # Spatial attention
+        self.spatial = nn.Conv2d(2, 1, kernel_size=7, padding=3)
+
+    def forward(self, x):
+        # ---- Channel attention ----
+        avg = self.mlp2(F.relu(self.mlp1(F.adaptive_avg_pool2d(x, 1)), inplace=True))
+        mx = self.mlp2(F.relu(self.mlp1(F.adaptive_max_pool2d(x, 1)), inplace=True))
+        x = x * torch.sigmoid(avg + mx)
+        # ---- Spatial attention (applied after, on the channel-refined features) ----
+        avg_c = torch.mean(x, dim=1, keepdim=True)
+        max_c = torch.max(x, dim=1, keepdim=True)[0]
+        s = torch.sigmoid(self.spatial(torch.cat([avg_c, max_c], dim=1)))
+        x = x * s
+        return x
 
 class YOLOLayer(nn.Module):
     """Detection layer"""
@@ -200,7 +398,8 @@ class Darknet(nn.Module):
         loss = 0
         layer_outputs, yolo_outputs, segmentation_outputs = [], [], []
         for i, (module_def, module) in enumerate(zip(self.module_defs, self.module_list)):
-            if module_def["type"] in ["convolutional", "upsample", "maxpool"]:
+            if module_def["type"] in ["convolutional", "sepconv", "dwconv", "se", "scse",
+                                       "cbam", "globalcontext", "upsample", "maxpool"]:
                 x = module(x)
             elif module_def["type"] == "route":
                 combined_outputs = torch.cat([layer_outputs[int(layer_i)] for layer_i in module_def["layers"].split(",")], 1)

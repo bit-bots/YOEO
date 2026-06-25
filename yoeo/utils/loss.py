@@ -163,6 +163,21 @@ def build_targets(p, targets, model):
                 # That means we only keep ones that have a matching anchor and we loose the anchor dimension
                 # The anchor id is still saved in the 7th value of each target
                 t = t[j]
+            else:
+                # Anchor-free assignment: each target is handled by exactly one detection
+                # layer, chosen by object size. Small objects go to the finest (smallest
+                # stride) layer, large objects to the coarsest, split at a normalized size
+                # threshold. This replaces anchor-ratio matching while still specializing
+                # each head to a scale range.
+                obj_size_threshold = float(model.hyperparams.get("obj_size_threshold", 0.1))
+                # Normalized object size: geometric mean of w, h relative to the grid.
+                # (t[:, 4:6] are grid-cell sizes; gain[2:4] are the grid width/height.)
+                size_norm = torch.sqrt((t[:, 4] / gain[2]) * (t[:, 5] / gain[3]))
+                strides = [yolo_layer_.stride for yolo_layer_ in model.yolo_layers]
+                if yolo_layer.stride == min(strides):       # finest level -> small objects
+                    t = t[size_norm < obj_size_threshold]
+                elif yolo_layer.stride == max(strides):     # coarsest level -> large objects
+                    t = t[size_norm >= obj_size_threshold]
         else:
             t = targets[0]
 
